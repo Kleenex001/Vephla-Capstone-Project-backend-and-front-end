@@ -1,5 +1,5 @@
 // signup.js
-import { endpoints, apiRequest } from './api.js';
+
 
 const signupForm = document.getElementById('signupForm');
 
@@ -25,7 +25,6 @@ signupForm.addEventListener('submit', async (e) => {
     firstName: document.getElementById('firstName'),
     lastName: document.getElementById('lastName'),
     businessName: document.getElementById('bName'),
-    username: document.getElementById('username'), // ✅ new
     email: document.getElementById('email'),
     phoneNumber: document.getElementById('phoneNumber'),
     password: document.getElementById('pWord'),
@@ -39,7 +38,6 @@ signupForm.addEventListener('submit', async (e) => {
     firstName: document.getElementById('firstNameError'),
     lastName: document.getElementById('lastNameError'),
     businessName: document.getElementById('BnameError'),
-    username: document.getElementById('usernameError'),
     email: document.getElementById('emailError'),
     phoneNumber: document.getElementById('phoneError'),
     password: document.getElementById('pwordError'),
@@ -65,11 +63,6 @@ signupForm.addEventListener('submit', async (e) => {
     showError(fields.businessName, errors.businessName, 'Business name must be at least 2 characters.');
     valid = false;
   } else clearError(fields.businessName, errors.businessName);
-
-  if (fields.username.value.trim().length < 3) {
-    showError(fields.username, errors.username, 'Username must be at least 3 characters.');
-    valid = false;
-  } else clearError(fields.username, errors.username);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(fields.email.value.trim())) {
@@ -106,8 +99,6 @@ signupForm.addEventListener('submit', async (e) => {
       firstName: fields.firstName.value.trim(),
       lastName: fields.lastName.value.trim(),
       businessName: fields.businessName.value.trim(),
-      username: fields.username.value.trim(),   // ✅
-      userName: fields.username.value.trim(),  // ✅ backend-safe (camelCase)
       email: fields.email.value.trim(),
       phoneNumber: fields.phoneNumber.value.trim(),
       password: fields.password.value.trim(),
