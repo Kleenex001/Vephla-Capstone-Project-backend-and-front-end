@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BizBoost Hero</title>
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <!-- Navigation -->
+   
+ 
+  <!-- Hero Section (Navbar included) -->
+<section class="hero" style="background-image: url('Assets/New hero.png');">
+  <!-- Navbar inside Hero -->
+<header>
+            <nav class="navbar ">
+               <div id="logo"><a href="index.html"><img src="Assets/LOGO-11 1.svg" alt="Logo"></a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="index.html" class="spacer">Home</a></li>
+                    <li class="nav-item"><a href="features.html" class="spacer">Features</a></li>
+                    <li class="nav-item"><a href="pricing.html" class="spacer">Pricing</a></li>
+                    <li class="nav-item"><a href="aboutus.html" class="spacer">About Us</a></li>
+                    <li class="nav-item"><a href="contactus.html" class="spacer">Contact Us</a></li>
+                    <li class="nav-item"><a href="sign in.html" id="sign-in">Sign In</a></li>
+                    <li class="nav-item"><a href="sign up.html" id="sign-up" >Sign Up</a></li>
+                    <li onclick="toggleSidebar()" class="fa-solid"><a href="#" title="Open menu"><i class="fa-solid fa-bars"></i></a></li>
+                </ul>
+                <!-- Sidebar for small screens -->
+                <script>
+                    function toggleSidebar(none) {
+                        const sidebar = document.querySelector('.side-bar');
+                        sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
+                    }
+                    function hideSidebar() {
+                        const sidebar = document.querySelector('.side-bar');
+                        sidebar.style.display = 'none';
+                    }
+                </script>
+                <div class="hamburger">
+                    <ul class="side-bar">
+                        <li onclick="hideSidebar()"><a href="#" title="close menu"><i class="fa-solid fa-xmark"></i></a></li>
+                     <li><a href="index.html">Home</a></li>
+                     <li><a href="features.html">Features</a></li>
+                     <li><a href="pricing.html">Pricing</a></li>
+                     <li><a href="aboutus.html">About Us</a></li>
+                     <li><a href="contactus.html">Contact Us</a></li>
+                     <li><a href="sign in.html">Sign In</a></li>
+                     <li><a href="sign up.html">Sign Up</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+  <!--User stat -->
+    <div class="user-stat">
+  <span class="user-count">50k+</span>
+  <span class="user-text">SaaS for Nigeria's micro-retailers</span>
+</div>
+
+  <!-- Hero Content -->
+  <div class="hero-content">
+    <h1>Run your shop smarter — sales, inventory & IOUs in one app.</h1>
+    <p>
+    BizBoost helps market stalls, mini‑marts and roadside vendors track sales, stock and customer credit — even offline. Share receipts on WhatsApp and qualify for loans with your digital records.
+    </p>
+    <div class="hero-buttons">
+      <button class="btn-primary" onclick="location.href='sign up.html'">Set Up For Free</button>
+      <button class="btn-secondary">Watch Demo</button>
+    </div>
+  </div>
+</section>
+
+<section class="features-intro">
+  <h2>Grow faster with tools built for your business</h2>
+  <p>
+    BizBoost combines easy-to-use features with the reliability you need to keep your shop running smoothly. 
+    Track sales, manage stock, and record customer credit in one place — even without the internet. 
+    As you work, BizBoost builds a digital business profile that helps you qualify for loans and supplier deals, 
+    turning today’s shop into tomorrow’s success story.
+  </p>
+</section>
+
+
+<!-- Services Section -->
+<section class="services">
+  <h2>Our Services</h2>
+  <div class="services-container">
+    <!-- Row 1 -->
+    <div class="service-card">
+      <div class="service-icon"><i class="fas fa-coins"></i></div>
+      <h3>Service Management</h3>
+      <p>Efficiently manage and streamline all your service operations.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon"><i class="fas fa-warehouse"></i></div>
+      <h3>Inventory Management</h3>
+      <p>Track and organize your stock with real-time accuracy.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon"><i class="fas fa-user"></i></div>
+      <h3>Customer Management</h3>
+      <p>Maintain strong relationships and deliver better customer service.</p>
+    </div>
+  </div>
+
+  <!-- Row 2 -->
+  <div class="services-container second-row">
+    <div class="service-card">
+      <div class="service-icon"><i class="fas fa-truck"></i></div>
+      <h3>Delivery Management</h3>
+      <p>Ensure timely deliveries with optimized tracking solutions.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon"><i class="fas fa-user-tie"></i></div>
+      <h3>Supplier Management</h3>
+      <p>Manage and coordinate effectively with your trusted suppliers.</p>
+    </div>
+  </div>
+</section>
+<section id="feature-item">
+  <ul id="service-container">
+    <li>
+      <div id="service">
+      <i class="fas fa-coins" id="service"></i></div>
+      <h3>Inventory Management</h3>
+      <p>Track stock levels automatically. Get instant alerts when items are running low so you can restock before customers walk away. Get instant alerts when items are running low so you can restock before customers walk away.</p>
+    </li>
+    <li>
+      <div>
+        <div id="service">
+      <i class="fas fa-warehouse" ></i></div>
+      <h3>Sales Management</h3>
+      <p>Easily record every sale — cash, transfer, or mobile payments — in seconds. See your profit grow in real time and never guess your daily earnings again.</p>
+    </li>
+    <li>
+      <div id="service"><i class="fas fa-user"></i></div>
+      <h3>Customer Management</h3>
+      <p>Track stock levels automatically. Get instant alerts when items are running low so you can restock before customers walk away. Get instant alerts when items are running low so you can restock before customers walk away.</p>
+    </li>
+    <li>
+      <div id="service">
+      <i class="fas fa-truck"></i></div>
+      <h3>Delivery Management</h3>
+      <p>Easily record every sale — cash, transfer, or mobile payments — in seconds. See your profit grow in real time and never guess your daily earnings again.</p>
+    </li>
+    <li>
+      <div id="service">
+      <i class="fas fa-user-tie"></i></div>
+      <h3>Supplier Management</h3>
+      <p>Track stock levels automatically. Get instant alerts when items are running low so you can restock before customers walk away. Get instant alerts when items are running low so you can restock before customers walk away.</p>
+    </li>
+  </ul>
+</section>
+
+<!-- Demo Video Section -->
+<section class="demo-section">
+  <div class="demo-container">
+    <h2>See BizBoost in Action</h2>
+    <p>
+      Watch this demo to explore how BizBoost helps you manage your services, 
+      track inventory, handle customers, streamline delivery, and manage suppliers all in one place. 
+      This video walks you through the platform step by step, showing you how simple it is to get started 
+      and achieve more with less effort.
+    </p>
+    </div>
+    <div class="container-demo">
+      <h1>From sale to success — in just a few taps</h1>
+      <p>
+        BizBoost keeps your shop organized and your profits growing without the stress. Record sales, track stock, manage customer credit, and get daily insights — all from one easy-to-use app that works online or offline. The more you use it, the more it works for you, helping you build a business profile that opens doors to loans, grants, and bigger opportunities.
+      </p>
+    </div>
+    <!-- Replace the src with your actual video link -->
+    <div class="video-wrapper">
+      <iframe 
+    width="640" 
+    height="360" 
+    src="https://youtube.com/embed/wQiseIJtvOA?autoplay=1&mute=1" 
+    frameborder="0" 
+    allow="autoplay; encrypted-media; gyroscope; picture-in-picture" 
+    allowfullscreen>
+    </iframe>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+
+ <section class="features-intro">
+  <h2>Simple, affordable plans for every shop</h2>
+  <p>
+   Start free and upgrade only when your business is ready. Whether you run a kiosk, market stall, or mini-mart, BizBoost has a plan that fits your needs — with no hidden fees and no surprises.
+  </p>
+</section>
+
+  <section class="pricing-section">
+    
+    <div class="pricing-card">
+      <div class="pricing-header">
+        <h3>Starter</h3>
+        <span class="price">$0</span>
+      </div>
+      <p class="pricing-subtext">Perfect for getting started</p>
+      <ul class="pricing-features">
+        <li><span class="check">✔</span> Track sales & stock</li>
+        <li><span class="check">✔</span> Manage up to 50 products</li>
+        <li><span class="check">✔</span> Record customer credit</li>
+        <li><span class="check">✔</span> Daily business reports</li>
+        <li><span class="check">✔</span> Works offline</li>
+      </ul>
+      <button class="pricing-btn active" onclick="location.href='sign up.html'">Get Started</button>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-header">
+        <h3>Pro</h3>
+        <span class="price">$79/Month</span>
+      </div>
+      <p class="pricing-subtext">For growing shops that need more power</p>
+      <ul class="pricing-features">
+        <li><span class="check">✔</span> Everything in Free</li>
+        <li><span class="check">✔</span> Unlimited products & customers</li>
+        <li><span class="check">✔</span> Automated low-stocks alerts</li>
+        <li><span class="check">✔</span> Digital receipt via WhatsApp</li>
+        <li><span class="check">✔</span> Priority support</li>
+      </ul>
+      <button class="pricing-btn inactive">Get Started</button>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-header">
+        <h3>Enterprise</h3>
+        <span class="price">Custom</span>
+      </div>
+      <p class="pricing-subtext">For serious owners ready to scale</p>
+      <ul class="pricing-features">
+        <li><span class="check">✔</span> Everything in Pro</li>
+        <li><span class="check">✔</span> Multiple shop locations</li>
+        <li><span class="check">✔</span> Staff accounts & permissions</li>
+        <li><span class="check">✔</span> Expense analytics & profit trends</li>
+        <li><span class="check">✔</span> Loans & suppliers credit eligibility profile</li>
+      </ul>
+      <button class="pricing-btn inactive">Get Started</button>
+    </div>
+  </section> 
+ 
+<!-- Testimonials Section -->
+<section class="testimonials">
+  <div id="testimonials-text"><h4>What Our Customers Says</h4>
+  <br>
+    <p>Real stories. Real results. Here’s what our customers have to say.</p></div>
+  <div class="testimonials-container">
+    
+    <br><br>
+    
+    <!-- Card 1 -->
+    <div class="testimonial-card">
+      <h3></h3>
+      <p class="testimonial-text">
+        We were skeptical at first, but now it’s part of our daily workflow. Productivity has gone up, and stress levels have gone down.
+      </p>
+      <div class="testimonial-footer">
+        <img src="Assets/Facecard 4.png" alt="Ngozi" class="testimonial-img">
+        <div class="testimonial-user">
+          <span class="testimonial-name">Ngozi, A.O</span><br>
+          <small>Marketing Lead, Brightpath</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="testimonial-card">
+      
+      <p class="testimonial-text">
+       Before, I used to forget who owed me or how much stock I had left. With this platform, everything is in one place and easy to see. It has really made running my shop less stressful.
+      </p>
+      <div class="testimonial-footer">
+        <img src="Assets/Facecard 6.png" alt="David" class="testimonial-img">
+        <div class="testimonial-user">
+          <span class="testimonial-name">Sarah, K.M</span><br>
+          <small>Operations Manager, FreshMart</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="testimonial-card">
+      <p class="testimonial-text">
+I like how simple it is. I can check my deliveries, customers, and suppliers without writing things down in a notebook. It just makes my work faster and easier
+      </p>
+      <div class="testimonial-footer">
+        <img src="Assets/Facecard 5.png" alt="Amaka" class="testimonial-img">
+        <div class="testimonial-user">
+          <span class="testimonial-name">Amaka, L.O</span><br>
+          <small>CEO, SwiftTech</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+ <!-- Meet the Team Section -->
+<section class="team-section">
+  <div class="team-header">
+    <h2>Meet the Team Behind BizBoost</h2>
+    <p>We’re a passionate group of builders, designers, and problem-solvers on a mission to make AI support simple and human. Every line of code and every feature we create is designed to help small businesses thrive.</p>
+  </div>
+
+  <div class="team-cards">
+    <!-- Team Member 1 -->
+    <div class="team-card">
+      <div class="team-image">
+        <img src="Assets/facecard 4.png" alt="Team Member 1">
+      </div>
+      <h3>Henry Olaniyi</h3>
+      <p class="position">Developer</p>
+      <p class="bio">Jane is passionate about innovation and drives the team with visionary leadership and strategic expertise.</p>
+    </div>
+
+    <!-- Team Member 2 -->
+    <div class="team-card">
+      <div class="team-image">
+        <img src="Assets/Facecard 2.png" alt="Team Member 2">
+      </div>
+      <h3>Mr Joel</h3>
+      <p class="position">Lead Developer</p>
+      <p class="bio">John specializes in building scalable digital solutions and ensures seamless execution of every project.</p>
+    </div>
+
+    <!-- Team Member 3 -->
+    <div class="team-card">
+      <div class="team-image">
+        <img src="Assets/Facecard 1.png" alt="Team Member 3">
+      </div>
+      <h3>Ogunsusi Babatunde Olawale</h3>
+      <p class="position">Design Lead</p>
+      <p class="bio">Emily creates impactful strategies that connect people to our brand and drive sustainable growth.</p>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- Newsletter / Contact Section -->
+<section class="newsletter-section">
+  <div class="newsletter-container">
+    <h2>We Would Love to Hear From You</h2>
+    <p>Fill out the form below and our team will get back to you shortly.</p>
+
+    <form class="newsLetter-form">
+      <!-- Full Name -->
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" placeholder="Enter your full name">
+      <div class="error" id="nameError"></div>
+
+      <!-- Email -->
+      <label for="email">Email Address</label>
+      <input type="email" id="email" name="email" placeholder="Enter your email">
+      <div class="error" id="emailError"></div>
+
+      <!-- Comments -->
+      <label for="comments">Comments</label>
+      <textarea id="comments" name="comments" rows="4" placeholder="Enter your comments"></textarea>
+      <div class="error" id="commentsError"></div>
+      <div id="successMsg">Form Submitted!</div>
+      <!-- Submit Button -->
+      <button type="submit">Submit</button>
+      
+    </form>
+  </div>
+
+  <script>
+    const newsLetterForm = document.getElementsByClassName("newsLetter-form")[0];
+    const successMsg = document.getElementById("successMsg");
+
+    newsLetterForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+    //get form values
+    const name=document.getElementById("name");
+    const email=document.getElementById("email");
+    const comments=document.getElementById("comments");
+
+    //error handling
+
+
+    const errors = {
+      name: document.getElementById("nameError"),
+      email: document.getElementById("emailError"),
+      comments: document.getElementById("commentsError"),
+    };
+
+    // Form validation
+    let isValid=true;
+    //name validation
+    if (name.value.trim() === "" || name.value.length < 3) {
+      nameError.textContent= "Enter your full name";
+      nameError.style.display="block";
+      name.classList.add("input-error");
+      isValid=false;
+    } else {
+      nameError.textContent="";
+      nameError.style.display="none";
+      name.classList.remove("input-error");
+    }
+    //email validation
+    if (email.value.includes("@") && email.value.includes(".com")) {
+      emailError.textContent = "";
+      emailError.style.display = "none";
+      email.classList.remove("input-error");
+    } else {
+      emailError.textContent = "Enter a valid email address";
+      emailError.style.display = "block";
+      email.classList.add("input-error");
+      isValid = false;
+    }
+    //comments validation
+    if (comments.value.trim() === "") {
+      commentsError.textContent = "Enter your comments";
+      commentsError.style.display = "block";
+      comments.classList.add("input-error");
+      isValid = false;
+    } else {
+      commentsError.style.display = "none";
+      comments.classList.remove("input-error");
+    }
+
+    if (isValid) {
+      successMsg.style.display = "block";
+      // Clear form fields
+      name.value = "";
+      email.value = "";
+      comments.value = "";
+      newsLetterForm.reset();
+    } else {
+      successMsg.style.display = "none";
+    }
+  });
+
+  </script>
+</section>
+
+
+<!-- Call To Action Section -->
+<section class="cta-section" aria-labelledby="cta-heading">
+  <div class="cta-container">
+    <h2 id="cta-heading">Your business deserves better tools — let’s get started</h2>
+    <p>
+      Join thousands of Nigerian traders already using <strong>BizBoost</strong> to track sales,
+      manage stock, and grow profits. It’s free to start, works offline, and is built for the way you do business.
+    </p>
+    <div class="cta-buttons">
+      <a href="sign up.html" class="btn-brand">Get Started</a>
+      <a href="#watch-demo" class="btn-outline">Watch Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer Section -->
+<footer class="footer">
+  <img src="Assets/LOGO-11 1.svg" alt="Logo" class="footer-logo">
+  <div class="footer-container">
+    
+    <!-- Contact Column -->
+    <div class="footer-column">
+      <h3>Contact Us</h3>
+      <p><i class="fas fa-envelope"></i> customercare<br>@bizboost.com</p>
+      <p><i class="fas fa-phone"></i> +2348101234567</p>
+      <p><i class="fas fa-map-marker-alt"></i> Nexora HQ, 45 Unity Crescent, Lagos, Nigeria</p>
+      <p><i class="fas fa-briefcase"></i> Monday – Friday: 9:00 AM – 5:00 PM (WAT)</p>
+
+      <div class="social-icons">
+        <a href=" " title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href=" " title="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href=" " title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        <a href=" " title="Instagram"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+
+    <!-- Solutions Column -->
+    <div class="footer-column">
+      <h3>Solutions</h3>
+      <a href=" ">Sales Management</a>
+      <a href=" ">Inventory Management</a>
+      <a href=" ">Customer and IOU Management</a>
+    </div>
+
+    <!-- Pricing Column -->
+    <div class="footer-column">
+      <h3>Pricing</h3>
+      <a href=" ">Free Starter</a>
+      <a href=" ">Pro</a>
+      <a href=" ">Enterprise</a>
+    </div>
+
+    <!-- Company Column -->
+    <div class="footer-column">
+      <h3>Our Company</h3>
+      <a href="aboutus.html">About Us</a>
+      <a href="contactus.html">Contact Us</a>
+      <a href=" ">Meet The Team</a>
+      <a href=" ">Privacy Policy</a>
+      <a href=" ">Terms of Use</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <hr>
+    <p>&copy; 2025 BizBoost. All rights reserved.</p>
+  </div>
+</footer>
+
+
+</body>
+</html>

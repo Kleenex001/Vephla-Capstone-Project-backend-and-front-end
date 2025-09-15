@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bizboost Pricing Page</title>
+  <link rel="stylesheet" href="pricing.css">
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  
+ <!-- Navigation -->
+   
+ 
+  <!-- Hero Section (Navbar included) -->
+  <section class="hero" style="background-image: url('Assets/Desktop\ -\ 1478.png');">
+    <!-- Navbar inside Hero -->
+   <header>
+             <nav class="navbar ">
+              <div id="logo"><a href="index.html"><img src="Assets/LOGO-TRANS 1.png" alt="Logo"></a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="index.html" class="spacer">Home</a></li>
+                    <li class="nav-item"><a href="features.html" class="spacer">Features</a></li>
+                    <li class="nav-item"><a href="pricing.html" class="spacer">Pricing</a></li>
+                    <li class="nav-item"><a href="aboutus.html" class="spacer">About Us</a></li>
+                    <li class="nav-item"><a href="contactus.html" class="spacer">Contact Us</a></li>
+                    <li class="nav-item"><a href="sign in.html" id="sign-in">Sign In</a></li>
+                    <li class="nav-item"><a href="sign up.html" id="sign-up" >Sign Up</a></li>
+                    <li onclick="toggleSidebar()" class="fa-solid"><a href="#" title="Open menu"><i class="fa-solid fa-bars"></i></a></li>
+                </ul>
+                <!-- Sidebar for small screens -->
+                <script>
+                    function toggleSidebar(none) {
+                        const sidebar = document.querySelector('.side-bar');
+                        sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
+                    }
+                    function hideSidebar() {
+                        const sidebar = document.querySelector('.side-bar');
+                        sidebar.style.display = 'none';
+                    }
+                </script>
+                <div class="hamburger">
+                    <ul class="side-bar">
+                        <li onclick="hideSidebar()"><a href="#" title="close menu"><i class="fa-solid fa-xmark"></i></a></li>
+                     <li><a href="index.html">Home</a></li>
+                     <li><a href="features.html">Features</a></li>
+                     <li><a href="pricing.html">Pricing</a></li>
+                     <li><a href="aboutus.html">About Us</a></li>
+                     <li><a href="contactus.html">Contact Us</a></li>
+                     <li><a href="sign in.html">Sign In</a></li>
+                     <li><a href="sign up.html">Sign Up</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+
+    <!--User stat -->
+    <div class="user-stat">
+  <span class="user-count">50k+</span>
+  <span class="user-text">SaaS for Nigeria's micro-retailers</span>
+</div> 
+
+    <!-- Hero Content -->
+    <div class="hero-content">
+      <h1>Simple pricing for serious growth</h1>
+      <p>
+      Choose a plan that fits your shop today — and upgrade when your business is ready to grow. With BizBoost, you only pay for what you need, and you’ll always get the tools to track sales, manage stock, and build your business profile for loans and supplier credit.
+      </p>
+      <div class="hero-buttons">
+        <button class="btn primary" onclick="location.href='sign up.html'">Set Up For Free</button>
+        <button class="btn secondary">Watch Demo</button>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- Pricing Section -->
+  <section class="features-intro price-intro">
+  <h2>Simple, affordable plans for every shop</h2>
+  <p>
+   Start free and upgrade only when your business is ready. Whether you run a kiosk, market stall, or mini-mart, BizBoost has a plan that fits your needs — with no hidden fees and no surprises.
+  </p>
+</section>
+
+
+
+<section class="pricing-section">
+  <div class="pricing-card">
+    <div class="pricing-header">
+      <h3>Starter</h3>
+      <span class="price">$0</span>
+    </div>
+    <p class="pricing-subtext">Perfect for getting started</p>
+    <ul class="pricing-features">
+      <li><span class="check">✔</span> Track sales & stock</li>
+      <li><span class="check">✔</span> Manage up to 50 products</li>
+      <li><span class="check">✔</span> Record customer credit</li>
+      <li><span class="check">✔</span> Daily business reports</li>
+      <li><span class="check">✔</span> Works offline</li>
+    </ul>
+    <button class="pricing-btn active">Get Started</button>
+  </div>
+
+  <div class="pricing-card">
+    <div class="pricing-header">
+      <h3>Pro</h3>
+      <span class="price">$79/Month</span>
+    </div>
+    <p class="pricing-subtext">For growing shops that need more power</p>
+    <ul class="pricing-features">
+      <li><span class="check">✔</span> Everything is Free</li>
+      <li><span class="check">✔</span> Unlimited products & customers</li>
+      <li><span class="check">✔</span> Automated low-stocks alerts</li>
+      <li><span class="check">✔</span> Digital receipt via whatsapp</li>
+      <li><span class="check">✔</span> Priority support</li>
+    </ul>
+    <button class="pricing-btn inactive">Get Started</button>
+  </div>
+
+  <div class="pricing-card">
+    <div class="pricing-header">
+      <h3>Enterprise</h3>
+      <span class="price">Custom</span>
+    </div>
+    <p class="pricing-subtext">For For serious owners ready to scale</p>
+    <ul class="pricing-features">
+      <li><span class="check">✔</span> Everything in pro</li>
+      <li><span class="check">✔</span> Multiple shop locations</li>
+      <li><span class="check">✔</span>Staff accounts & permissions</li>
+      <li><span class="check">✔</span>Expense analytics & profit trends</li>
+      <li><span class="check">✔</span> Loans & suppliers credit eligibilit profile</li>
+    </ul>
+    <button class="pricing-btn inactive">Get Started</button>
+  </div>
+</section>
+
+
+
+<section class="features-intro testimonial-intro">
+  <h2>What Our Customers Says</h2>
+  <p>
+   Real stories. Real results. Here’s what our customers have to say.
+  </p>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials">
+  
+  <div class="testimonials-container">
+    
+    <!-- Card 1 -->
+    <div class="testimonial-card">
+      <h3></h3>
+      <p class="testimonial-text">
+        We were skeptical at first, but now it’s part of our daily workflow. Productivity has gone up, and stress levels have gone down.
+      </p>
+      <div class="testimonial-footer">
+        <img src="Assets/facecard 4.png" alt="Ngozi" class="testimonial-img">
+        <div class="testimonial-user">
+          <span class="testimonial-name">Ngozi, A.O</span><br>
+          <small>Marketing Lead, Brightpath</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="testimonial-card">
+      
+      <p class="testimonial-text">
+       Before, I used to forget who owed me or how much stock I had left. With this platform, everything is in one place and easy to see. It has really made running my shop less stressful.
+      </p>
+      <div class="testimonial-footer">
+        <img src="Assets/Facecard 6.png" alt="David" class="testimonial-img">
+        <div class="testimonial-user">
+          <span class="testimonial-name">Sarah, K.M</span><br>
+          <small>Operations Manager, FreshMart</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="testimonial-card">
+      <p class="testimonial-text">
+I like how simple it is. I can check my deliveries, customers, and suppliers without writing things down in a notebook. It just makes my work faster and easier
+      </p>
+      <div class="testimonial-footer">
+        <img src="Assets/Facecard 5.png" alt="Amaka" class="testimonial-img">
+        <div class="testimonial-user">
+          <span class="testimonial-name">Amaka, L.O</span><br>
+          <small>CEO, SwiftTech</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- FAQ Section -->
+  <section class="faq-section">
+    <h2>Things You Might Wonder</h2>
+    <p class="faq-intro">
+      Got questions about BizBoost? We’ve answered the most common ones below so you can get started with confidence. 
+      If you still need help, our friendly support team is just a message away.
+    </p>
+
+    <div class="faq-container">
+      <details>
+        <summary>What is BizBoost?</summary>
+        <p>BizBoost is an all-in-one platform designed to help small businesses streamline operations, manage customers, and scale efficiently.</p>
+      </details>
+
+      <details>
+        <summary>How do I get started with BizBoost?</summary>
+        <p>You simply create an account, set up your business profile, and start exploring the tools like inventory, customer, and delivery management.</p>
+      </details>
+
+      <details>
+        <summary>Is BizBoost free to use?</summary>
+        <p>We offer a free trial to get started. Afterward, you can choose from flexible subscription plans tailored to your business size.</p>
+      </details>
+
+      <details>
+        <summary>Does BizBoost work on mobile devices?</summary>
+        <p>Yes! BizBoost is optimized for both desktop and mobile, so you can manage your business on the go.</p>
+      </details>
+
+      <details>
+        <summary>Can I integrate BizBoost with other tools?</summary>
+        <p>BizBoost integrates with popular payment gateways and third-party apps to make your workflow seamless.</p>
+      </details>
+
+      <details>
+        <summary>Is customer support available?</summary>
+        <p>Absolutely. Our support team is available 24/7 through chat, email, and phone to help with any issues.</p>
+      </details>
+    </div>
+  </section>
+
+
+<!-- Call To Action Section -->
+<section class="cta-section" aria-labelledby="cta-heading">
+  <div class="cta-container">
+    <h2 id="cta-heading">Your business deserves better tools — let’s get started</h2>
+    <p>
+      Join thousands of Nigerian traders already using <strong>BizBoost</strong> to track sales,
+      manage stock, and grow profits. It’s free to start, works offline, and is built for the way you do business.
+    </p>
+    <div class="cta-buttons">
+      <a href="sign up.html" class="btn-brand">Get Started</a>
+      <a href="#watch-demo" class="btn-outline">Watch Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer Section -->
+<footer class="footer">
+  <img src="Assets/LOGO-11 1.svg" alt="Logo" class="footer-logo">
+  <div class="footer-container">
+    
+    <!-- Contact Column -->
+    <div class="footer-column">
+      <h3>Contact</h3>
+      <p><i class="fas fa-envelope"></i> customercare<br>@bizboost.com</p>
+      <p><i class="fas fa-phone"></i> +2348101234567</p>
+      <p><i class="fas fa-map-marker-alt"></i> Nexora HQ, 45 Unity Crescent, Lagos, Nigeria</p>
+      <p><i class="fas fa-briefcase"></i> Monday – Friday: 9:00 AM – 5:00 PM (WAT)</p>
+
+      <div class="social-icons">
+        <a href=" " title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href=" " title="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href=" " title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        <a href=" " title="Instagram"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+
+    <!-- Solutions Column -->
+    <div class="footer-column">
+      <h3>Solutions</h3>
+      <a href=" ">Sales Management</a>
+      <a href=" ">Inventory Management</a>
+      <a href=" ">Customer and IOU Management</a>
+    </div>
+
+    <!-- Pricing Column -->
+    <div class="footer-column">
+      <h3>Pricing</h3>
+      <a href=" ">Free Starter</a>
+      <a href=" ">Pro</a>
+      <a href=" ">Enterprise</a>
+    </div>
+
+    <!-- Company Column -->
+    <div class="footer-column">
+      <h3>Our Company</h3>
+      <a href="aboutus.html">About Us</a>
+      <a href="contactus.html">Contact Us</a>
+      <a href=" ">Meet The Team</a>
+      <a href=" ">Privacy Policy</a>
+      <a href=" ">Terms of Use</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <hr>
+    <p>&copy; 2025 BizBoost. All rights reserved.</p>
+  </div>
+</footer>
+
+
+
+
+</body>
+</html>

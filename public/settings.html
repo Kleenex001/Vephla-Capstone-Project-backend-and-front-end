@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings | BizBoost</title>
+  <link rel="stylesheet" href="settings.css" />
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+ <!-- Sidebar -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="Assets/LOGO-TRANS 1.png" alt="BizBoost Logo" width="120"/>
+  </div>
+  <nav>
+    <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
+      <i class="fa fa-chart-line"></i> Dashboard
+    </button>
+    <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+      <i class="fa fa-shopping-cart"></i> Sales And Order
+    </button>
+    <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+      <i class="fa fa-box"></i> Inventory
+    </button>
+    <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+      <i class="fa fa-users"></i> Customer Management
+    </button>
+    <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+      <i class="fa fa-truck"></i> Delivery Management
+    </button>
+    <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+      <i class="fa fa-industry"></i> Supplier Management
+    </button>
+    <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+      <i class="fa fa-gear"></i> Settings
+    </button>
+  </nav>
+</aside>
+
+  <!-- Main -->
+  <main class="content">
+    <!-- Topbar -->
+    <header class="topbar">
+        <div>
+          <strong>Settings</strong><br>
+        </div>
+        <span class="spacer"></span>
+        <img src="Assets/logo.png" alt="bizboost logo" width="70px;" />
+    </header>
+
+    <!-- SETTINGS PAGE -->
+    <section id="settings" class="page visible">
+      <h1></h1>
+
+      <!-- Account and Profile -->
+      <div class="card settings-card">
+        <h3>Account And Profile</h3>
+        <div class="form-grid">
+          <input type="text" placeholder="Business Name">
+          <input type="text" placeholder="Contact Person">
+          <input type="email" placeholder="Email Address">
+          <input type="text" placeholder="Phone Number">
+          <input type="text" placeholder="Business Category">
+          <select>
+            <option>Language</option>
+            <option>English</option>
+            <option>Spanish</option>
+            <option>French</option>
+            <option>German</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Subscription and Billing + Data and Backup -->
+      <div class="grid-two">
+        <div class="card settings-card">
+          <h3>Subscription And Billing</h3>
+          <p>Current Plan</p>
+          <h4>Pro Plan</h4>
+          <div class="btn-group">
+            <button class="btn primary" onclick="openModal('upgradeModal')">Upgrade Plan</button>
+            <button class="btn secondary" onclick="openModal('receiptModal')">Download Receipt</button>
+          </div>
+        </div>
+
+        <div class="card settings-card">
+          <h3>Data And Backup</h3>
+          <p>Sync Status <strong id="syncStatus">Online</strong></p>
+          <br>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="exportCheck"> Export Data</label>
+            <label><input type="checkbox"> Cloud Backup</label>
+          </div>
+          <button class="btn small" onclick="openModal('exportModal')">Manual Sync</button>
+        </div>
+      </div>
+
+      <!-- App Preferences + Supports and Help -->
+      <div class="grid-two">
+        <div class="card settings-card">
+          <h3>App Preferences</h3>
+          <select>
+            <option>Currency</option>
+            <option>USD</option>
+            <option>EUR</option>
+            <option>GBP</option>
+            <option>JPY</option>
+          </select>
+          <select>
+            <option>Date Format</option>
+            <option>MM/DD/YYYY</option>
+            <option>DD/MM/YYYY</option>
+            <option>YYYY/MM/DD</option>
+          </select>
+          <br>
+          <label><input type="checkbox"> Notifications</label>
+          <select>
+            <option>Default Report Range</option>
+            <option>Last 7 Days</option>
+            <option>Last 30 Days</option>
+            <option>This Month</option>
+            <option>Last Month</option>
+          </select>
+        </div>
+
+        <div class="card settings-card">
+          <h3>Supports And Help</h3>
+          <ul class="support-links">
+            <li>❓ FAQs</li>
+            <li>📞 Contact Support</li>
+            <li>⚠ Report a problem</li>
+            <li>📑 Terms and Conditions</li>
+            <li>🔒 Privacy Policy</li>
+            <li>⬆ Version</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Save + Logout -->
+      <div class="btn-row">
+        <button class="btn primary">Save Changes</button>
+        <button class="btn secondary">Logout</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODALS -->
+  <div class="modal" id="upgradeModal">
+    <div class="modal-content">
+      <h2>Upgrade Plan</h2>
+      <p>Choose a plan that best fits your business growth.</p>
+      <div class="btn-row">
+        <button class="btn primary">Upgrade</button>
+        <button class="btn secondary" onclick="closeModal('upgradeModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="receiptModal">
+    <div class="modal-content">
+      <h2>Download Receipt</h2>
+      <p>Your latest subscription receipt is ready.</p>
+      <div class="btn-row">
+        <button class="btn primary">Download</button>
+        <button class="btn secondary" onclick="closeModal('receiptModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <h2>Manual Sync</h2>
+      <p>Your data will now be exported and synced to the cloud.</p>
+      <div class="btn-row">
+        <button class="btn primary">Start Sync</button>
+        <button class="btn secondary" onclick="closeModal('exportModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar navigation
+    function setActivePage(page) {
+      document.querySelectorAll('.nav-link').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`.nav-link[data-target="${page}"]`).classList.add('active');
+    }
+
+    // Go Back button
+    document.getElementById('goBackBtn').addEventListener('click', () => {
+      window.history.back();
+    });
+
+    // Modal functions
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Close modal when clicking outside
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', e => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+  </script>
+    <script src="settings.js" defer></script>
+
+      <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const path = window.location.pathname;
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+      const target = link.getAttribute("data-target");
+
+      if (
+        (target === "dashboard" && path.includes("dashboard.html")) ||
+        (target === "sales" && path.includes("sales.html")) ||
+        (target === "inventory" && path.includes("inventory.html")) ||
+        (target === "customers" && path.includes("customer.html")) ||
+        (target === "delivery" && path.includes("delivery.html")) ||
+        (target === "suppliers" && path.includes("suppliers.html")) ||
+        (target === "settings" && path.includes("settings.html"))
+      ) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  });
+</script>
+    <script>
+        // Go Back button
+        document.getElementById('goBackBtn').addEventListener('click', () => {
+        window.history.back();
+        });
+    
+        // Modal functionality
+        const modal = document.getElementById('purchaseModal');
+        const addPurchaseBtn = document.getElementById('addPurchaseBtn');
+        const closeModalBtn = document.getElementById('closeModal');
+    
+        addPurchaseBtn.onclick = () => {
+        modal.classList.add('active');
+        };
+        closeModalBtn.onclick = () => {
+        modal.classList.remove('active');
+        };
+        window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.classList.remove('active');
+        }
+        };
+    </script>
+    <footer>
+    <nav class="bottom-nav">
+      <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
+        <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
+      </button>
+      <button class="nav-bttm active" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
+        <i class="fa fa-shopping-cart"><br><p>Sales</p></i>
+      </button>
+      <button class="nav-bttm" data-target="inventory" onclick="location.href='inventory.html'" title="Inventory">
+        <i class="fa fa-box"><br><p>Inventory</p></i>
+      </button>
+      <button class="nav-bttm" data-target="customers" onclick="location.href='customer.html'" title="Customer Management">
+        <i class="fa fa-users"><br><p>Customers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
+        <i class="fa fa-truck"><br><p>Delivery</p></i>
+      </button>
+      <button class="nav-bttm" data-target="suppliers" onclick="location.href='suppliers.html'" title="Supplier Management">
+        <i class="fa fa-industry"><br><p>Suppliers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="settings" onclick="location.href='settings.html'" title="Settings">
+        <i class="fa fa-gear"><br><p>Settings</p></i>
+      </button>
+    </nav>
+</footer>
+</body>
+</html>

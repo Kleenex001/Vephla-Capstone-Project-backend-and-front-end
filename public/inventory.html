@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Inventory Management | BizBoost</title>
+  <link rel="stylesheet" href="inventory.css">
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  
+  <style>
+    /* ====== Modal Styling with Blur Background ====== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .modal.show {
+      display: block;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      position: relative;
+      top:20%;
+      left: 40%;
+      background: #fff;
+      padding: 30px;
+      border-radius: 14px;
+      width: 500px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+      transform: translateY(-30px) scale(0.95);
+      transition: transform 0.3s ease;
+    }
+
+    .modal.show .modal-content {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .modal-actions .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .modal-actions .btn.danger {
+      background: #e74c3c;
+      color: #fff;
+    }
+
+    .modal-actions .btn.danger:hover {
+      background: #c0392b;
+    }
+
+    .modal-actions .btn:hover {
+      background: #f0f0f0;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      gap: 10px;
+      font-size: 1rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-buttons a.active { background-color: #009879; color: #fff; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <!-- Sidebar -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="Assets/LOGO-TRANS 1.png" alt="BizBoost Logo" width="120"/>
+  </div>
+  <nav>
+    <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
+      <i class="fa fa-chart-line"></i> Dashboard
+    </button>
+    <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+      <i class="fa fa-shopping-cart"></i> Sales And Order
+    </button>
+    <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+      <i class="fa fa-box"></i> Inventory
+    </button>
+    <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+      <i class="fa fa-users"></i> Customer Management
+    </button>
+    <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+      <i class="fa fa-truck"></i> Delivery Management
+    </button>
+    <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+      <i class="fa fa-industry"></i> Supplier Management
+    </button>
+    <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+      <i class="fa fa-gear"></i> Settings
+    </button>
+  </nav>
+</aside>
+
+  <!-- Main -->
+  <main class="content">
+    <!-- Topbar -->
+    <header class="topbar">
+        <div>
+          <strong>Inventory Management</strong><br>
+        </div>
+      <span class="spacer"></span>
+        <img src="Assets/logo.png" alt="bizboost logo" width="70px;" />
+    </header>
+
+    <!-- Inventory Management Section -->
+    <section class="page visible" id="inventory">
+      <h2></h2>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="filters">
+          <select id="categoryFilter">
+            <option value="all">All</option>
+            <option value="Category A">Category A</option>
+            <option value="Category B">Category B</option>
+          </select>
+          <input type="text" id="searchInput" placeholder="Search products...">
+        </div>
+        <div class="tab-buttons">
+          <a href="#" data-tab="main" class="active">All Products</a>
+          <a href="#" data-tab="low">Low Stock</a>
+          <a href="#" data-tab="expired">Expired</a>
+          <button class="btn-primary" id="addProductBtn">Add New Product</button>
+        </div>
+      </div>
+
+      <!-- All Products -->
+      <div id="main" class="tab-content active">
+        <table id="allProductsTable">
+          <thead>
+            <tr>
+              <th>C/N</th>
+              <th>Item Img</th>
+              <th>Product Name</th>
+              <th>Stock Level</th>
+              <th>Reorder Level</th>
+              <th>Expiry Date</th>
+              <th>Category</th>
+              <th>Unit Price</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Low Stock -->
+      <div id="low" class="tab-content">
+        <h3>Low Stock Products</h3>
+        <table id="lowStockTable">
+          <thead>
+            <tr>
+              <th>S/N</th>
+              <th>Item Img</th>
+              <th>Product Name</th>
+              <th>Stock Level</th>
+              <th>Reorder Level</th>
+              <th>Category</th>
+              <th>Unit Price</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Expired -->
+      <div id="expired" class="tab-content">
+        <h3>Expired Products</h3>
+        <table id="expiredTable">
+          <thead>
+            <tr>
+              <th>C/N</th>
+              <th>Item Img</th>
+              <th>Product Name</th>
+              <th>Expiry Date</th>
+              <th>Stock Level</th>
+              <th>Category</th>
+              <th>Unit Price</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add Product Modal -->
+  <div id="addProductModal" class="modal">
+    <div class="modal-content">
+      <h3>Add New Product</h3>
+      <form id="addProductForm">
+        <label>Product Name</label>
+        <input type="text" id="productName" required>
+
+        <label>Stock Level</label>
+        <input type="number" id="stockLevel" required>
+
+        <label>Reorder Level</label>
+        <input type="number" id="reorderLevel" required>
+
+        <label>Expiry Date</label>
+        <input type="date" id="expiryDate">
+
+        <label>Category</label>
+        <select id="productCategory" required>
+          <option value="Category A">Category A</option>
+          <option value="Category B">Category B</option>
+        </select>
+
+        <label>Unit Price (₦)</label>
+        <input type="number" id="unitPrice" required>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" id="cancelAdd">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <h3>Confirm Delete</h3>
+      <p>Are you sure you want to delete this product?</p>
+      <div class="modal-actions">
+        <button class="btn" id="cancelDelete">Cancel</button>
+        <button class="btn danger" id="confirmDelete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === Tabs ===
+    const tabs = document.querySelectorAll('.tab-buttons a');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', e => {
+        e.preventDefault();
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // === Product Data ===
+    let products = [];
+    let deleteIndex = null;
+
+    const allProductsTable = document.querySelector('#allProductsTable tbody');
+    const lowStockTable = document.querySelector('#lowStockTable tbody');
+    const expiredTable = document.querySelector('#expiredTable tbody');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const searchInput = document.getElementById('searchInput');
+
+    // Render function with filters
+    function renderTables() {
+      allProductsTable.innerHTML = '';
+      lowStockTable.innerHTML = '';
+      expiredTable.innerHTML = '';
+      const today = new Date().toISOString().split('T')[0];
+
+      const searchValue = searchInput.value.toLowerCase();
+      const selectedCategory = categoryFilter.value;
+
+      products.forEach((p, i) => {
+        // Apply search & category filters
+        if (
+          (selectedCategory === 'all' || p.category === selectedCategory) &&
+          (p.name.toLowerCase().includes(searchValue))
+        ) {
+          const tr = `<tr>
+            <td>${i+1}</td>
+            <td><img src="Assets/tomato.png" width="32"></td>
+            <td>${p.name}</td>
+            <td>${p.stock}</td>
+            <td>${p.reorder}</td>
+            <td>${p.expiry || '-'}</td>
+            <td>${p.category}</td>
+            <td>₦${p.price}</td>
+            <td><button onclick="openDelete(${i})">Delete</button></td>
+          </tr>`;
+          allProductsTable.insertAdjacentHTML('beforeend', tr);
+
+          if(p.stock <= p.reorder){
+            const low = `<tr>
+              <td>${i+1}</td>
+              <td><img src="Assets/tomato.png" width="32"></td>
+              <td>${p.name}</td>
+              <td>${p.stock}</td>
+              <td>${p.reorder}</td>
+              <td>${p.category}</td>
+              <td>₦${p.price}</td>
+            </tr>`;
+            lowStockTable.insertAdjacentHTML('beforeend', low);
+          }
+
+          if(p.expiry && p.expiry < today){
+            const exp = `<tr>
+              <td>${i+1}</td>
+              <td><img src="Assets/tomato.png" width="32"></td>
+              <td>${p.name}</td>
+              <td>${p.expiry}</td>
+              <td>${p.stock}</td>
+              <td>${p.category}</td>
+              <td>₦${p.price}</td>
+            </tr>`;
+            expiredTable.insertAdjacentHTML('beforeend', exp);
+          }
+        }
+      });
+    }
+
+    // === Add Product Modal Logic ===
+    const addProductModal = document.getElementById('addProductModal');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const cancelAdd = document.getElementById('cancelAdd');
+    const addProductForm = document.getElementById('addProductForm');
+
+    addProductBtn.onclick = () => addProductModal.classList.add('show');
+    cancelAdd.onclick = () => addProductModal.classList.remove('show');
+
+    addProductForm.onsubmit = e => {
+      e.preventDefault();
+      const newProduct = {
+        name: document.getElementById('productName').value,
+        stock: parseInt(document.getElementById('stockLevel').value),
+        reorder: parseInt(document.getElementById('reorderLevel').value),
+        expiry: document.getElementById('expiryDate').value,
+        category: document.getElementById('productCategory').value,
+        price: parseFloat(document.getElementById('unitPrice').value),
+      };
+      products.push(newProduct);
+      renderTables();
+      addProductModal.classList.remove('show');
+      addProductForm.reset();
+    };
+
+    // === Delete Modal Logic ===
+    const deleteModal = document.getElementById('deleteModal');
+    const cancelDelete = document.getElementById('cancelDelete');
+    const confirmDelete = document.getElementById('confirmDelete');
+
+    function openDelete(index){
+      deleteIndex = index;
+      deleteModal.classList.add('show');
+    }
+
+    cancelDelete.onclick = () => deleteModal.classList.remove('show');
+    confirmDelete.onclick = () => {
+      if(deleteIndex !== null){
+        products.splice(deleteIndex,1);
+        renderTables();
+      }
+      deleteModal.classList.remove('show');
+    };
+
+    // === Filters events ===
+    searchInput.addEventListener('input', renderTables);
+    categoryFilter.addEventListener('change', renderTables);
+
+    // Initial dummy data
+    products = [
+      {name:"Tomato Rice", stock:100, reorder:15, expiry:"2025-09-01", category:"Category A", price:65000},
+      {name:"Milk Pack", stock:5, reorder:10, expiry:"2025-08-30", category:"Category B", price:12000},
+      {name:"Expired Juice", stock:20, reorder:5, expiry:"2023-12-01", category:"Category A", price:8000},
+    ];
+    renderTables();
+  </script>
+    <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const path = window.location.pathname;
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+      const target = link.getAttribute("data-target");
+
+      if (
+        (target === "dashboard" && path.includes("dashboard.html")) ||
+        (target === "sales" && path.includes("sales.html")) ||
+        (target === "inventory" && path.includes("inventory.html")) ||
+        (target === "customers" && path.includes("customer.html")) ||
+        (target === "delivery" && path.includes("delivery.html")) ||
+        (target === "suppliers" && path.includes("suppliers.html")) ||
+        (target === "settings" && path.includes("settings.html"))
+      ) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  });
+</script>
+    <script>
+        // Go Back button
+        document.getElementById('goBackBtn').addEventListener('click', () => {
+        window.history.back();
+        });
+    
+        // Modal functionality
+        const modal = document.getElementById('purchaseModal');
+        const addPurchaseBtn = document.getElementById('addPurchaseBtn');
+        const closeModalBtn = document.getElementById('closeModal');
+    
+        addPurchaseBtn.onclick = () => {
+        modal.classList.add('active');
+        };
+        closeModalBtn.onclick = () => {
+        modal.classList.remove('active');
+        };
+        window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.classList.remove('active');
+        }
+        };
+    </script>
+    <footer>
+    <nav class="bottom-nav">
+      <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
+        <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
+      </button>
+      <button class="nav-bttm active" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
+        <i class="fa fa-shopping-cart"><br><p>Sales</p></i>
+      </button>
+      <button class="nav-bttm" data-target="inventory" onclick="location.href='inventory.html'" title="Inventory">
+        <i class="fa fa-box"><br><p>Inventory</p></i>
+      </button>
+      <button class="nav-bttm" data-target="customers" onclick="location.href='customer.html'" title="Customer Management">
+        <i class="fa fa-users"><br><p>Customers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
+        <i class="fa fa-truck"><br><p>Delivery</p></i>
+      </button>
+      <button class="nav-bttm" data-target="suppliers" onclick="location.href='suppliers.html'" title="Supplier Management">
+        <i class="fa fa-industry"><br><p>Suppliers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="settings" onclick="location.href='settings.html'" title="Settings">
+        <i class="fa fa-gear"><br><p>Settings</p></i>
+      </button>
+    </nav>
+</footer>
+</body>
+</html>

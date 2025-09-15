@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BizBoost Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css"/>
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="Assets/LOGO-TRANS 1.png" alt="BizBoost Logo" width="50%"/>
+    </div>
+    <nav>
+      <button class="nav-link active" data-target="dashboard" onclick="location.href='dashboard.html'">
+        <i class="fa fa-chart-line"></i> Dashboard
+      </button>
+      <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+        <i class="fa fa-shopping-cart"></i> Sales And Order
+      </button>
+      <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+        <i class="fa fa-box"></i> Inventory
+      </button>
+      <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+        <i class="fa fa-users"></i> Customer Management
+      </button>
+      <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+        <i class="fa fa-truck"></i> Delivery Management
+      </button>
+      <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+        <i class="fa fa-industry"></i> Supplier Management
+      </button>
+      <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+        <i class="fa fa-gear"></i> Settings
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="content">
+    <!-- Topbar -->
+    <header class="topbar">
+       <div>
+        <br><br>
+        <br><br>
+        </div>
+        <span class="spacer"></span>
+        <a href="index.html"><img src="Assets/logo.png" alt="bizboost logo" width="70px;" /></a>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="page">
+      <!-- KPIs -->
+      <div class="kpis">
+  <div class="card kpi">
+    <i class="fa fa-coins"></i>
+    <div>
+      <p>Total Sales</p>
+      <h2 id="totalSales"></h2>
+      <canvas id="sparkSales" height="30"></canvas>
+    </div>
+  </div>
+  <div class="card kpi">
+    <i class="fa fa-file-invoice-dollar"></i>
+    <div>
+      <p>Total Owed</p>
+      <h2 id="totalOwed"></h2>
+      <canvas id="sparkOwed" height="30"></canvas>
+    </div>
+  </div>
+  <div class="card kpi">
+    <i class="fa fa-sack-dollar"></i>
+    <div>
+      <p>Total Delivery</p>
+      <h2 id="totalDelivery"></h2>
+      <canvas id="sparkDelivery" height="30"></canvas>
+    </div>
+  </div>
+</div>
+
+
+      <!-- Charts + Stats -->
+      <div class="grid-two">
+        <!-- Charts -->
+        <div class="analytics">
+          <!-- Sales Chart -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>Sales Analytics</h3>
+              <div class="tabs" id="salesTabs">
+                <button class="active" data-view="monthly">Monthly</button>
+                <button data-view="yearly">Yearly</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="salesChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Overdue Payment Chart -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>Overdue Payment Analytics</h3>
+              <div class="tabs" id="paymentTabs">
+                <button class="active" data-view="monthly">Monthly</button>
+                <button data-view="yearly">Yearly</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="paymentChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Stats -->
+        <aside class="stats">
+          <div class="card">
+            <h4>Quick Stats</h4>
+            <ol id="quickStats"></ol>
+          </div>
+          <div class="card">
+            <h4>Pending Orders</h4>
+            <ol id="pendingOrdersList"></ol>
+          </div>
+          <div class="card">
+            <h4>Low Stock Products</h4>
+            <ol id="lowStockList"></ol>
+          </div>
+          <div class="card">
+            <h4>Top Customers</h4>
+            <ul id="topCustomers"></ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="dashboard.js" defer></script>
+
+  <script>
+    // Highlight active nav link
+    document.addEventListener("DOMContentLoaded", () => {
+      const path = window.location.pathname;
+      document.querySelectorAll(".nav-link").forEach(link => {
+        const target = link.getAttribute("data-target");
+        if (
+          (target === "dashboard" && path.includes("dashboard.html")) ||
+          (target === "sales" && path.includes("sales.html")) ||
+          (target === "inventory" && path.includes("inventory.html")) ||
+          (target === "customers" && path.includes("customer.html")) ||
+          (target === "delivery" && path.includes("delivery.html")) ||
+          (target === "suppliers" && path.includes("suppliers.html")) ||
+          (target === "settings" && path.includes("settings.html"))
+        ) {
+          link.classList.add("active");
+        } else {
+          link.classList.remove("active");
+        }
+      });
+    });
+
+    // Go Back button
+    document.getElementById('goBackBtn').addEventListener('click', () => {
+      window.history.back();
+    });
+  </script>
+  <script src="" defer></script>
+  <script>
+    //go back button
+    document.getElementById('goBackBtn').addEventListener('click', () => {
+      window.history.back();
+    });
+  </script>
+  <footer>
+    <nav class="bottom-nav">
+      <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
+        <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
+      </button>
+      <button class="nav-bttm active" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
+        <i class="fa fa-shopping-cart"><br><p>Sales</p></i>
+      </button>
+      <button class="nav-bttm" data-target="inventory" onclick="location.href='inventory.html'" title="Inventory">
+        <i class="fa fa-box"><br><p>Inventory</p></i>
+      </button>
+      <button class="nav-bttm" data-target="customers" onclick="location.href='customer.html'" title="Customer Management">
+        <i class="fa fa-users"><br><p>Customers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
+        <i class="fa fa-truck"><br><p>Delivery</p></i>
+      </button>
+      <button class="nav-bttm" data-target="suppliers" onclick="location.href='suppliers.html'" title="Supplier Management">
+        <i class="fa fa-industry"><br><p>Suppliers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="settings" onclick="location.href='settings.html'" title="Settings">
+        <i class="fa fa-gear"><br><p>Settings</p></i>
+      </button>
+    </nav>
+</footer>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delivery Management | BizBoost</title>
+  <link rel="stylesheet" href="delivery.css" />
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <!-- Sidebar -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="Assets/LOGO-TRANS 1.png" alt="BizBoost Logo" width="120"/>
+  </div>
+  <nav>
+    <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
+      <i class="fa fa-chart-line"></i> Dashboard
+    </button>
+    <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+      <i class="fa fa-shopping-cart"></i> Sales And Order
+    </button>
+    <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+      <i class="fa fa-box"></i> Inventory
+    </button>
+    <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+      <i class="fa fa-users"></i> Customer Management
+    </button>
+    <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+      <i class="fa fa-truck"></i> Delivery Management
+    </button>
+    <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+      <i class="fa fa-industry"></i> Supplier Management
+    </button>
+    <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+      <i class="fa fa-gear"></i> Settings
+    </button>
+  </nav>
+</aside>
+
+  <!-- Main -->
+  <main class="content">
+    <!-- Topbar -->
+    <header class="topbar">
+        <div>
+          <strong>Delivery Management</strong><br>
+        </div>
+        <span class="spacer"></span>
+        <img src="Assets/logo.png" alt="bizboost logo" width="70px;" />
+    </header>
+
+    <!-- Delivery Management Section -->
+    <section id="delivery" class="page visible">
+      <h1></h1>
+
+      <!-- KPI Cards -->
+      <div class="kpis">
+        <div class="card kpi">
+          <i class="fa fa-truck"></i>
+          <div>
+            <p>Total Deliveries</p>
+            <h2 id="kpiTotal">0</h2>
+          </div>
+        </div>
+        <div class="card kpi">
+          <i class="fa fa-check-circle"></i>
+          <div>
+            <p>Completed Deliveries</p>
+            <h2 id="kpiCompleted">0</h2>
+          </div>
+        </div>
+        <div class="card kpi">
+          <i class="fa fa-clock"></i>
+          <div>
+            <p>Pending Deliveries</p>
+            <h2 id="kpiPending">0</h2>
+          </div>
+        </div>
+        <div class="card kpi">
+          <i class="fa fa-times-circle"></i>
+          <div>
+            <p>Cancelled Deliveries</p>
+            <h2 id="kpiCancelled">0</h2>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="left-tools">
+          <select id="filterDeliveries">
+            <option value="all">Filter: All</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <input type="search" id="searchDeliveries" placeholder="Search Deliveries" />
+        </div>
+        <button class="btn primary" id="addDeliveryBtn">Add New Delivery</button>
+      </div>
+
+      <!-- Grid: Table + Right Stats -->
+      <div class="grid-two">
+        <!-- Delivery Table -->
+        <div class="card table-card">
+          <div class="table-header">
+            <h3>Delivery Orders</h3>
+          </div>
+          <table id="deliveryTable">
+            <thead>
+              <tr>
+                <th>S/N</th>
+                <th>Customer Name</th>
+                <th>Package</th>
+                <th>Status</th>
+                <th>Delivery Date</th>
+                <th>Agent</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Right Sidebar -->
+        <aside class="stats">
+          <!-- Delivery Overview -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Delivery Overview</h3>
+              <div class="tabs">
+                <button id="delMonthlyTab" class="active">Monthly</button>
+                <button id="delYearlyTab">Yearly</button>
+              </div>
+            </div>
+            <canvas id="deliveryOverviewChart" height="120"></canvas>
+          </div>
+
+          <!-- Top Delivery Agents -->
+          <div class="card">
+            <h3>Top Delivery Agents</h3>
+            <ul id="topAgentsList"></ul>
+            <button class="btn primary" id="addAgentBtn">Add Delivery Agent</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- Delivery Modal -->
+  <div id="deliveryModal" class="modal">
+    <div class="modal-content">
+      <h2>Add New Delivery</h2>
+      <label>Customer Name</label>
+      <input type="text" id="customerName" placeholder="Enter customer name">
+
+      <label>Package</label>
+      <input type="text" id="packageDetails" placeholder="Package details">
+
+      <label>Delivery Date</label>
+      <input type="date" id="deliveryDate">
+
+      <label>Assign Agent</label>
+      <select id="deliveryAgent"></select>
+
+      <div class="modal-actions">
+        <button class="btn primary" id="saveDeliveryBtn">Save</button>
+        <button class="btn cancel" id="closeModalBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Modal -->
+  <div id="agentModal" class="modal">
+    <div class="modal-content">
+      <h2>Add Delivery Agent</h2>
+      <label>Agent Name</label>
+      <input type="text" id="agentName" placeholder="Enter agent name">
+      <div class="modal-actions">
+        <button class="btn primary" id="saveAgentBtn">Save</button>
+        <button class="btn cancel" id="closeAgentModalBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="delivery.js"></script>
+
+    <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const path = window.location.pathname;
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+      const target = link.getAttribute("data-target");
+
+      if (
+        (target === "dashboard" && path.includes("dashboard.html")) ||
+        (target === "sales" && path.includes("sales.html")) ||
+        (target === "inventory" && path.includes("inventory.html")) ||
+        (target === "customers" && path.includes("customer.html")) ||
+        (target === "delivery" && path.includes("delivery.html")) ||
+        (target === "suppliers" && path.includes("suppliers.html")) ||
+        (target === "settings" && path.includes("settings.html"))
+      ) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  });
+</script>
+    <script>
+        // Go Back button
+        document.getElementById('goBackBtn').addEventListener('click', () => {
+        window.history.back();
+        });
+    
+        // Modal functionality
+        const modal = document.getElementById('purchaseModal');
+        const addPurchaseBtn = document.getElementById('addPurchaseBtn');
+        const closeModalBtn = document.getElementById('closeModal');
+    
+        addPurchaseBtn.onclick = () => {
+        modal.classList.add('active');
+        };
+        closeModalBtn.onclick = () => {
+        modal.classList.remove('active');
+        };
+        window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.classList.remove('active');
+        }
+        };
+    </script>
+    <footer>
+    <nav class="bottom-nav">
+      <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
+        <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
+      </button>
+      <button class="nav-bttm active" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
+        <i class="fa fa-shopping-cart"><br><p>Sales</p></i>
+      </button>
+      <button class="nav-bttm" data-target="inventory" onclick="location.href='inventory.html'" title="Inventory">
+        <i class="fa fa-box"><br><p>Inventory</p></i>
+      </button>
+      <button class="nav-bttm" data-target="customers" onclick="location.href='customer.html'" title="Customer Management">
+        <i class="fa fa-users"><br><p>Customers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
+        <i class="fa fa-truck"><br><p>Delivery</p></i>
+      </button>
+      <button class="nav-bttm" data-target="suppliers" onclick="location.href='suppliers.html'" title="Supplier Management">
+        <i class="fa fa-industry"><br><p>Suppliers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="settings" onclick="location.href='settings.html'" title="Settings">
+        <i class="fa fa-gear"><br><p>Settings</p></i>
+      </button>
+    </nav>
+</footer>
+</body>
+</html>

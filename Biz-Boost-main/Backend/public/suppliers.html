@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supplier Management | BizBoost</title>
+  <link rel="stylesheet" href="suppliers.css" />
+   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <!-- Sidebar -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="Assets/logo.png" alt="BizBoost Logo" width="120"/>
+  </div>
+  <nav>
+    <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
+      <i class="fa fa-chart-line"></i> Dashboard
+    </button>
+    <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+      <i class="fa fa-shopping-cart"></i> Sales And Order
+    </button>
+    <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+      <i class="fa fa-box"></i> Inventory
+    </button>
+    <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+      <i class="fa fa-users"></i> Customer Management
+    </button>
+    <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+      <i class="fa fa-truck"></i> Delivery Management
+    </button>
+    <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+      <i class="fa fa-industry"></i> Supplier Management
+    </button>
+    <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+      <i class="fa fa-gear"></i> Settings
+    </button>
+  </nav>
+</aside>
+
+
+  <!-- Main -->
+  <main class="content">
+    <!-- Topbar -->
+    <header class="topbar">
+        <div>
+          <strong>Supplier Management</strong><br>
+        </div>
+        <span class="spacer"></span>
+        <img src="Assets/logo.png" alt="bizboost logo" width="70px;" />
+    </header>
+
+    <!-- KPIs -->
+    <section class="kpis">
+      <div class="card kpi"><i class="fa fa-box"></i><div><p>Total Purchases</p><h2 id="totalPurchases">0</h2></div></div>
+      <div class="card kpi"><i class="fa fa-clock"></i><div><p>Pending Delivery</p><h2 id="pendingDelivery">0</h2></div></div>
+      <div class="card kpi"><i class="fa fa-check"></i><div><p>Completed Purchased</p><h2 id="purchased">0</h2></div></div>
+      <div class="card kpi"><i class="fa fa-times"></i><div><p>Cancelled Purchase</p><h2 id="cancelled">0</h2></div></div>
+    </section>
+
+    <!-- Supplier Management Page -->
+    <section id="suppliers" class="page visible">
+      <h1></h1>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="left-tools">
+          <select id="filterCategory">
+            <option value="All">All</option>
+            <option value="Household Items">Household Items</option>
+            <option value="Electronics">Electronics</option>
+          </select>
+          <input type="search" id="searchInput" placeholder="Search Supplier" />
+        </div>
+        <div class="right-tools">
+          <button class="btn secondary" id="exportBtn">Export</button>
+          <button class="btn primary" id="addPurchaseBtn">Add New Purchase</button>
+        </div>
+      </div>
+
+      <!-- Grid Layout -->
+      <div class="grid-two">
+        <!-- Supplier Table -->
+        <div class="table-card card">
+          <table id="supplierTable">
+            <thead>
+              <tr>
+                <th>S/N</th>
+                <th>Supplier’s Name</th>
+                <th>Category</th>
+                <th>Lead Time</th>
+                <th>Rating</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="supplierBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Sidebar Stats -->
+        <div class="stats">
+          <div class="card">
+            <h4>Top Rated Suppliers</h4>
+            <ol id="topSuppliers"></ol>
+          </div>
+          <div class="card">
+            <h4>Recent Purchases</h4>
+            <ol id="recentPurchases"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="purchaseModal">
+    <div class="modal-content">
+      <h3>Add New Purchase</h3>
+      <form id="purchaseForm">
+        <label>Supplier Name</label>
+        <input type="text" id="supplierName" placeholder="Enter supplier name" required />
+        
+        <label>Category</label>
+        <select id="supplierCategory">
+          <option>Household Items</option>
+          <option>Electronics</option>
+        </select>
+
+        <label>Lead Time</label>
+        <input type="text" id="leadTime" placeholder="e.g. 3 days" required />
+
+        <label>Rating (1-5)</label>
+        <input type="number" id="rating" min="1" max="5" required />
+
+        <button type="submit" class="btn primary">Add Purchase</button>
+        <button type="button" class="btn secondary" id="closeModal">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="suppliers.js" defer></script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const path = window.location.pathname;
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+      const target = link.getAttribute("data-target");
+
+      if (
+        (target === "dashboard" && path.includes("dashboard.html")) ||
+        (target === "sales" && path.includes("sales.html")) ||
+        (target === "inventory" && path.includes("inventory.html")) ||
+        (target === "customers" && path.includes("customer.html")) ||
+        (target === "delivery" && path.includes("delivery.html")) ||
+        (target === "suppliers" && path.includes("suppliers.html")) ||
+        (target === "settings" && path.includes("settings.html"))
+      ) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  });
+</script>
+<footer>
+    <nav class="bottom-nav">
+      <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
+        <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
+      </button>
+      <button class="nav-bttm active" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
+        <i class="fa fa-shopping-cart"><br><p>Sales</p></i>
+      </button>
+      <button class="nav-bttm" data-target="inventory" onclick="location.href='inventory.html'" title="Inventory">
+        <i class="fa fa-box"><br><p>Inventory</p></i>
+      </button>
+      <button class="nav-bttm" data-target="customers" onclick="location.href='customer.html'" title="Customer Management">
+        <i class="fa fa-users"><br><p>Customers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
+        <i class="fa fa-truck"><br><p>Delivery</p></i>
+      </button>
+      <button class="nav-bttm" data-target="suppliers" onclick="location.href='suppliers.html'" title="Supplier Management">
+        <i class="fa fa-industry"><br><p>Suppliers</p></i>
+      </button>
+      <button class="nav-bttm" data-target="settings" onclick="location.href='settings.html'" title="Settings">
+        <i class="fa fa-gear"><br><p>Settings</p></i>
+      </button>
+    </nav>
+</footer>
+    </body>
+</html>

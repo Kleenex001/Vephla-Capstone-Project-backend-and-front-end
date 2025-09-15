@@ -1,0 +1,492 @@
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f5f6f9;
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  background: #009879; /* teal green */
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+}
+
+.sidebar .brand {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1rem;
+  color: #e0f7f3;
+  font-size: 14px;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background: #007c63;
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+    min-height: 100vh;
+}
+
+.topbar {
+  background: #fff;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.topbar .spacer {
+  flex: 1;
+}
+
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-meta img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.topbar img {
+ display: none;
+}
+.page {
+  padding: 1.5rem;
+}
+
+h1 {
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+/* KPI Cards */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.kpi i {
+  font-size: 1.8rem;
+  color: #10b981;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.toolbar .left-tools {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.toolbar input[type="search"],
+.toolbar select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+/* Two Column Layout */
+.page-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Left Panel */
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Cards */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tabs button {
+  border: none;
+  background: #f3f4f6;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: #10b981;
+  color: #fff;
+}
+
+/* Stats Sidebar */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stats .card h4 {
+  margin-bottom: 0.75rem;
+}
+
+.stats table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats th, .stats td {
+  padding: 0.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stats ol,
+.stats ul {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.stats li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Product Table */
+.table-card table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-card th, 
+.table-card td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-card img {
+  border-radius: 6px;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 50;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+    position: relative;
+    top: 5%;
+    left: 40%;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 95%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-content input,
+.modal-content select {
+  padding: 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.modal-content .btn.primary {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  padding: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-content .btn.primary:hover {
+  background: #0ea373;
+}
+
+.close {
+  float: right;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.modal.display {
+  display: flex;
+}
+.modal-content {
+  animation: fadeInScale 0.3s ease;
+}
+
+/* Style for Add Sale button */
+    .btn.primary {
+      background:#0ea373;
+      color: #fff;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.3s ease;
+    }
+    .btn.primary:hover {
+      background:#0ea373;
+    }
+
+    /* Delete button inside table */
+    .btn.delete {
+      background: #dc3545;
+      color: #fff;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.3s ease;
+    }
+    .btn.delete:hover {
+      background: #b02a37;
+    }
+
+    .btn.delete i {
+      font-size: 13px;
+    }
+
+    /* Modal button style */
+    .modal button {
+      margin-top: 12px;
+      width: 100%;
+    }
+footer {
+    position: fixed;
+    z-index: 1000;
+    bottom: 0;
+    left: 0;
+    top: 575px;
+    color: #fff;
+    text-align: center;
+    background: #0ea373;
+}
+.nav-bttm {
+  margin: 0 auto;
+    padding: 0.5rem 0.5rem;
+     background: none; border: none; color: #777; cursor: pointer;
+    justify-content: space-around; align-items: center;
+
+}
+.nav-bttm:hover {
+  background: #0ea373;
+}
+.bottom-nav {
+    display: none;
+    
+}
+.bottom-nav button.active { color: #1abc9c; }
+.nav-bttm i {
+    font-size: 15px;
+    color: #fff;
+}
+.nav-bttm p {
+    font-size: 7px;
+    margin-top: 4px;
+    color: #fff;
+    font-weight: bolder;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .page-layout {
+    grid-template-columns: 1fr;
+  }
+  .left-panel, .stats {
+    width: 100%;
+  }
+  * {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+@media (max-width: 767px) {
+  .sidebar { display: none; }
+  body { margin-left: 0; padding-bottom: 70px; flex-direction: column; display: flex; }
+  .bottom-nav {
+    display: flex;
+    position: fixed; bottom: -10px; left: 0; right: 0;
+    height: 70px; background: #0ea373; border-top: 1px solid #eee;
+     align-items: center;
+  }
+  .page-layout {
+    display: flex;
+    flex-direction: column;
+  }
+ 
+ .table-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+
+
+}
+
+ .btn.primary {
+      background:#0ea373;
+      color: #fff;
+      padding: 5px 3px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      align-items: center; 
+      width: 90px;
+      transition: background 0.3s ease;
+    }
+    .btn.primary:hover {
+      background:#0ea373;
+    }
+
+    /* Delete button inside table */
+    .btn.delete {
+      background: #dc3545;
+      color: #fff;
+      padding: 4px 7px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      width: 70px;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.3s ease;
+    }
+    .btn.delete:hover {
+      background: #b02a37;
+    }
+    .toolbar input[type="search"],
+.toolbar select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+    font-size: 0.7rem;
+    width: 100px;
+}
+.modal-content {
+    position: relative;
+    top: 5%;
+    left: 17%;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  max-width:50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 2fr));
+    padding: 0.5rem;
+    font-size: 10px;
+}
+.kpi i {
+  font-size: 1rem;
+  color: #10b981;
+}
+.topbar img {
+ display: block;
+}
+}
