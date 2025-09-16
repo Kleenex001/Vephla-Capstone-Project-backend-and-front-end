@@ -51,26 +51,32 @@ signinForm.addEventListener('submit', async (e) => {
       password: password.value.trim(),
     };
 
+    // ✅ Call backend API
     const response = await apiRequest(`${endpoints.auth}/signin`, 'POST', payload);
 
     console.log('Signin response:', response);
 
-    // Store token in localStorage
-    if (response.token) {
+    if (response && response.token) {
+      // ✅ Save token for future API calls
       localStorage.setItem('token', response.token);
+
+      // ✅ Show success message
+      emailError.textContent = '✅ Login successful! Redirecting to dashboard...';
+      emailError.style.display = 'block';
+      emailError.classList.remove('input-error');
+
+      signinForm.reset();
+
+      // ✅ Redirect
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1500);
+    } else {
+      // ❌ Backend returned no token
+      emailError.textContent = `❌ Login failed: ${response?.message || 'Invalid credentials'}`;
+      emailError.style.display = 'block';
+      emailError.classList.add('input-error');
     }
-
-    // Success message in emailError block (can be moved to a global message div)
-    emailError.textContent = '✅ Login successful! Redirecting to dashboard...';
-    emailError.style.display = 'block';
-    emailError.classList.remove('input-error');
-
-    signinForm.reset();
-
-    setTimeout(() => {
-      window.location.href = 'dashboard.html';
-    }, 1500);
-
   } catch (error) {
     console.error('Signin error:', error);
     emailError.textContent = `❌ Login failed: ${error.message}`;
