@@ -31,6 +31,7 @@ const app = express();
 // ✅ CORS setup
 const allowedOrigins = [
   "https://vephla-capstone-project-frontend.onrender.com", // frontend on Render
+    "https://vephla-capstone-project-backend-and.onrender.com",
   process.env.FRONTEND_URL, // fallback from .env
   "http://localhost:3000",  // React dev
   "http://localhost:5000"   // alternative local
