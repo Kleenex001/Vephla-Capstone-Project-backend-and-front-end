@@ -1,7 +1,41 @@
 // signup.js
 
-
 const signupForm = document.getElementById('signupForm');
+
+// === Backend API base URL (Render deployment) ===
+const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com";
+
+const endpoints = {
+  auth: `${BASE_URL}/api/auth`,
+};
+
+// === Universal API Request Helper ===
+async function apiRequest(url, method = "GET", data = null) {
+  const options = {
+    method,
+    headers: { "Content-Type": "application/json" },
+  };
+
+  if (data) options.body = JSON.stringify(data);
+
+  try {
+    const res = await fetch(url, options);
+
+    if (!res.ok) {
+      let errorMsg = res.statusText;
+      try {
+        const err = await res.json();
+        errorMsg = err.message || err.error || errorMsg;
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("API request failed:", err);
+    throw err;
+  }
+}
 
 // === Validation Helpers ===
 const showError = (input, errorElement, message) => {
@@ -104,11 +138,9 @@ signupForm.addEventListener('submit', async (e) => {
       password: fields.password.value.trim(),
     };
 
-    // Debug: log payload
     console.log("Payload being sent:", payload);
 
-    const response = await apiRequest(`${endpoints.auth}/signup`, 'POST', payload);
-
+    const response = await apiRequest(`${endpoints.auth}/signup`, "POST", payload);
     console.log('Signup response:', response);
 
     // Success message
