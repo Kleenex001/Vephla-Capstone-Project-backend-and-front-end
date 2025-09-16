@@ -1,5 +1,5 @@
 // signup.js
-import { endpoints, apiRequest } from './api.js';
+import { signupUser } from './api.js';
 
 const signupForm = document.getElementById('signupForm');
 
@@ -25,7 +25,7 @@ signupForm.addEventListener('submit', async (e) => {
     firstName: document.getElementById('firstName'),
     lastName: document.getElementById('lastName'),
     businessName: document.getElementById('bName'),
-    username: document.getElementById('username'), // ✅ new
+    username: document.getElementById('username'),
     email: document.getElementById('email'),
     phoneNumber: document.getElementById('phoneNumber'),
     password: document.getElementById('pWord'),
@@ -98,39 +98,37 @@ signupForm.addEventListener('submit', async (e) => {
     valid = false;
   } else clearError(fields.terms, errors.terms);
 
-  // === Submit if valid ===
   if (!valid) return;
 
+  // === Build Payload for Backend ===
+  const payload = {
+    firstName: fields.firstName.value.trim(),
+    lastName: fields.lastName.value.trim(),
+    businessName: fields.businessName.value.trim(),
+    username: fields.username.value.trim(),
+    email: fields.email.value.trim(),
+    phoneNumber: fields.phoneNumber.value.trim(),
+    password: fields.password.value.trim(),
+  };
+
   try {
-    const payload = {
-      firstName: fields.firstName.value.trim(),
-      lastName: fields.lastName.value.trim(),
-      businessName: fields.businessName.value.trim(),
-      username: fields.username.value.trim(),   // ✅
-      userName: fields.username.value.trim(),  // ✅ backend-safe (camelCase)
-      email: fields.email.value.trim(),
-      phoneNumber: fields.phoneNumber.value.trim(),
-      password: fields.password.value.trim(),
-    };
+    const response = await signupUser(payload); // ✅ use api.js
 
-    // Debug: log payload
-    console.log("Payload being sent:", payload);
+    if (response && response.token) {
+      errors.successMsg.textContent = '✅ Signup successful! Redirecting to login...';
+      errors.successMsg.style.display = 'block';
+      errors.successMsg.classList.remove('input-error');
 
-    const response = await apiRequest(`${endpoints.auth}/signup`, 'POST', payload);
+      signupForm.reset();
 
-    console.log('Signup response:', response);
-
-    // Success message
-    errors.successMsg.textContent = '✅ Signup successful! Redirecting to login...';
-    errors.successMsg.style.display = 'block';
-    errors.successMsg.classList.remove('input-error');
-
-    signupForm.reset();
-
-    setTimeout(() => {
-      window.location.href = 'signin.html';
-    }, 2000);
-
+      setTimeout(() => {
+        window.location.href = 'signin.html';
+      }, 2000);
+    } else {
+      errors.successMsg.textContent = `❌ Signup failed: ${response?.message || 'Unknown error'}`;
+      errors.successMsg.style.display = 'block';
+      errors.successMsg.classList.add('input-error');
+    }
   } catch (error) {
     console.error('Signup error:', error);
     errors.successMsg.textContent = `❌ Signup failed: ${error.message}`;

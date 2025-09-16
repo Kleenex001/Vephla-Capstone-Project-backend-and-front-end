@@ -2,7 +2,7 @@
 const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
 // -------------------- AUTH --------------------
-async function loginUser(email, password) {
+export async function loginUser(email, password) {
   try {
     const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/auth/signin`, {
       method: "POST",
@@ -21,7 +21,7 @@ async function loginUser(email, password) {
   }
 }
 
-async function signupUser(userData) {
+export async function signupUser(userData) {
   try {
     const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/auth/signup`, {
       method: "POST",
@@ -42,7 +42,7 @@ function logoutUser() {
 }
 
 // -------------------- DASHBOARD --------------------
-async function getDashboardSummary() {
+export async function getDashboardSummary() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/dashboard/summary`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -51,7 +51,7 @@ async function getDashboardSummary() {
 }
 
 // -------------------- CUSTOMERS --------------------
-async function getCustomers() {
+export async function getCustomers() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/customers`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -59,7 +59,7 @@ async function getCustomers() {
   return res.json();
 }
 
-async function addCustomer(customer) {
+export async function addCustomer(customer) {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/customers`, {
     method: "POST",
@@ -73,7 +73,7 @@ async function addCustomer(customer) {
 }
 
 // -------------------- INVENTORY --------------------
-async function getProducts() {
+export async function getProducts() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/inventory/products`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -81,7 +81,7 @@ async function getProducts() {
   return res.json();
 }
 
-async function addProduct(product) {
+export async function addProduct(product) {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/inventory/products`, {
     method: "POST",
@@ -95,7 +95,7 @@ async function addProduct(product) {
 }
 
 // -------------------- DELIVERIES --------------------
-async function getDeliveries() {
+export async function getDeliveries() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/deliveries`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -103,7 +103,7 @@ async function getDeliveries() {
   return res.json();
 }
 
-async function addDelivery(delivery) {
+export async function addDelivery(delivery) {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/deliveries`, {
     method: "POST",
@@ -117,7 +117,7 @@ async function addDelivery(delivery) {
 }
 
 // -------------------- SUPPLIERS --------------------
-async function getSuppliers() {
+export async function getSuppliers() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/suppliers`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -125,7 +125,7 @@ async function getSuppliers() {
   return res.json();
 }
 
-async function addSupplier(supplier) {
+export async function addSupplier(supplier) {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/suppliers`, {
     method: "POST",
@@ -139,7 +139,7 @@ async function addSupplier(supplier) {
 }
 
 // -------------------- SALES --------------------
-async function getSales() {
+export async function getSales() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/sales`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -147,7 +147,7 @@ async function getSales() {
   return res.json();
 }
 
-async function addSale(sale) {
+export async function addSale(sale) {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/sales`, {
     method: "POST",
@@ -161,7 +161,7 @@ async function addSale(sale) {
 }
 
 // -------------------- SETTINGS --------------------
-async function getSettings() {
+export async function getSettings() {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/settings`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -169,7 +169,7 @@ async function getSettings() {
   return res.json();
 }
 
-async function saveSettings(settings) {
+export async function saveSettings(settings) {
   const token = localStorage.getItem("token");
   const res = await fetch(`$https://vephla-capstone-project-backend-and.onrender.com/api/settings`, {
     method: "POST",
