@@ -128,7 +128,7 @@ signupForm.addEventListener('submit', async (e) => {
     signupForm.reset();
 
     setTimeout(() => {
-      window.location.href = 'sign in.html';
+      window.location.href = 'signin.html';
     }, 2000);
 
   } catch (error) {
