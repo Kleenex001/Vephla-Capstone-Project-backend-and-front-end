@@ -21,7 +21,7 @@ function getAuthToken() {
 // -------------------- AUTH --------------------
 export async function loginUser(email, password) {
   try {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
+    const res = await fetch(`${BASE_URL}/auth/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
