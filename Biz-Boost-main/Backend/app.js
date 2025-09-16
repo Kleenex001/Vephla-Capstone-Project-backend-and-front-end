@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 /*const helmet = require('helmet');*/
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
+const path = require('path');
 
 // Load environment variables as early as possible
 dotenv.config();
