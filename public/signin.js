@@ -1,5 +1,5 @@
 // signin.js
-import { endpoints, apiRequest } from './api.js';
+import { loginUser } from './api.js';
 
 const signinForm = document.getElementById('signinForm');
 
@@ -27,6 +27,7 @@ signinForm.addEventListener('submit', async (e) => {
   // Errors
   const emailError = document.getElementById('emailError');
   const passwordError = document.getElementById('passwordError');
+  const successMsg = document.getElementById('successMsg'); 
 
   let valid = true;
 
@@ -46,41 +47,27 @@ signinForm.addEventListener('submit', async (e) => {
   if (!valid) return;
 
   try {
-    const payload = {
-      email: email.value.trim(),
-      password: password.value.trim(),
-    };
-
-    // ✅ Call backend API
-    const response = await apiRequest(`${endpoints.auth}/signin`, 'POST', payload);
-
-    console.log('Signin response:', response);
+    const response = await loginUser(email.value.trim(), password.value.trim());
 
     if (response && response.token) {
-      // ✅ Save token for future API calls
-      localStorage.setItem('token', response.token);
-
-      // ✅ Show success message
-      emailError.textContent = '✅ Login successful! Redirecting to dashboard...';
-      emailError.style.display = 'block';
-      emailError.classList.remove('input-error');
+      successMsg.textContent = 'Login successful! Redirecting to dashboard...';
+      successMsg.style.display = 'block';
+      successMsg.classList.remove('input-error');
 
       signinForm.reset();
 
-      // ✅ Redirect
       setTimeout(() => {
         window.location.href = 'dashboard.html';
       }, 1500);
     } else {
-      // ❌ Backend returned no token
-      emailError.textContent = `❌ Login failed: ${response?.message || 'Invalid credentials'}`;
-      emailError.style.display = 'block';
-      emailError.classList.add('input-error');
+      successMsg.textContent = `Login failed: ${response?.message || 'Invalid credentials'}`;
+      successMsg.style.display = 'block';
+      successMsg.classList.add('input-error');
     }
   } catch (error) {
     console.error('Signin error:', error);
-    emailError.textContent = `❌ Login failed: ${error.message}`;
-    emailError.style.display = 'block';
-    emailError.classList.add('input-error');
+    successMsg.textContent = `Login failed: ${error.message}`;
+    successMsg.style.display = 'block';
+    successMsg.classList.add('input-error');
   }
 });
