@@ -1,43 +1,39 @@
 const Customer = require('../models/Customer');
 
-// @desc    Get all customers
-// @route   GET /api/customers
+// Get all customers
 exports.getAllCustomers = async (req, res) => {
   try {
     const customers = await Customer.find();
-    res.status(200).json(customers);
+    res.status(200).json({ success: true, data: customers });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Get a single customer by ID
-// @route   GET /api/customers/:id
+// Get a single customer by ID
 exports.getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
+      return res.status(404).json({ success: false, error: 'Customer not found' });
     }
-    res.status(200).json(customer);
+    res.status(200).json({ success: true, data: customer });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Add a new customer
-// @route   POST /api/customers
+// Add a new customer
 exports.addNewCustomer = async (req, res) => {
   try {
     const newCustomer = await Customer.create(req.body);
-    res.status(201).json(newCustomer);
+    res.status(201).json({ success: true, data: newCustomer });
   } catch (err) {
-    res.status(400).json({ error: 'Invalid data' });
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Update a customer by ID
-// @route   PUT /api/customers/:id
+// Update a customer
 exports.updateCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, {
@@ -45,35 +41,33 @@ exports.updateCustomer = async (req, res) => {
       runValidators: true,
     });
     if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
+      return res.status(404).json({ success: false, error: 'Customer not found' });
     }
-    res.status(200).json(customer);
+    res.status(200).json({ success: true, data: customer });
   } catch (err) {
-    res.status(400).json({ error: 'Invalid data' });
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Delete a customer by ID
-// @route   DELETE /api/customers/:id
+// Delete a customer
 exports.deleteCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByIdAndDelete(req.params.id);
     if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
+      return res.status(404).json({ success: false, error: 'Customer not found' });
     }
-    res.status(200).json({ message: 'Customer deleted successfully' });
+    res.status(200).json({ success: true, message: 'Customer deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Get overdue payments
-// @route   GET /api/customers/overdue
+// Get customers with overdue payments
 exports.getOverduePayments = async (req, res) => {
   try {
     const overdueCustomers = await Customer.find({ status: 'Overdue' });
-    res.status(200).json(overdueCustomers);
+    res.status(200).json({ success: true, data: overdueCustomers });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ success: false, error: err.message });
   }
 };

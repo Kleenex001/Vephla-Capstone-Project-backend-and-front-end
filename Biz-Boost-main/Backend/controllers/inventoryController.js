@@ -1,3 +1,4 @@
+// controllers/inventoryController.js
 const Product = require('../models/Inventory');
 
 // @desc    Get all products
@@ -5,9 +6,13 @@ const Product = require('../models/Inventory');
 const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find({});
-    res.status(200).json(products);
+    res.status(200).json({
+      status: 'success',
+      count: products.length,
+      data: products
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
   }
 };
 
@@ -16,9 +21,13 @@ const getAllProducts = async (req, res) => {
 const getLowStockProducts = async (req, res) => {
   try {
     const products = await Product.find({ $expr: { $lt: ['$stockLevel', '$reorderLevel'] } });
-    res.status(200).json(products);
+    res.status(200).json({
+      status: 'success',
+      count: products.length,
+      data: products
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
   }
 };
 
@@ -28,9 +37,13 @@ const getExpiredProducts = async (req, res) => {
   try {
     const today = new Date();
     const products = await Product.find({ expiryDate: { $lt: today } });
-    res.status(200).json(products);
+    res.status(200).json({
+      status: 'success',
+      count: products.length,
+      data: products
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
   }
 };
 
@@ -39,12 +52,10 @@ const getExpiredProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-    res.status(200).json(product);
+    if (!product) return res.status(404).json({ status: 'fail', message: 'Product not found' });
+    res.status(200).json({ status: 'success', data: product });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
   }
 };
 
@@ -54,30 +65,27 @@ const addNewProduct = async (req, res) => {
   const { productName, stockLevel, reorderLevel, expiryDate, category, unitPrice } = req.body;
 
   if (!productName || stockLevel == null || reorderLevel == null || !category || unitPrice == null) {
-    return res.status(400).json({ message: 'Please fill in all required fields.' });
+    return res.status(400).json({ status: 'fail', message: 'Please fill in all required fields.' });
   }
 
   try {
     const newProduct = new Product({ productName, stockLevel, reorderLevel, expiryDate, category, unitPrice });
     const savedProduct = await newProduct.save();
-    res.status(201).json(savedProduct);
+    res.status(201).json({ status: 'success', data: savedProduct });
   } catch (error) {
-    res.status(400).json({ message: 'Error adding new product', error });
+    res.status(400).json({ status: 'error', message: 'Error adding new product', error: error.message });
   }
 };
-
 
 // @desc    Update a product
 // @route   PUT /api/inventory/products/:id
 const updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-    res.status(200).json(product);
+    if (!product) return res.status(404).json({ status: 'fail', message: 'Product not found' });
+    res.status(200).json({ status: 'success', data: product });
   } catch (error) {
-    res.status(400).json({ message: 'Error updating product', error });
+    res.status(400).json({ status: 'error', message: 'Error updating product', error: error.message });
   }
 };
 
@@ -86,12 +94,10 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-    res.status(200).json({ message: 'Product deleted successfully' });
+    if (!product) return res.status(404).json({ status: 'fail', message: 'Product not found' });
+    res.status(200).json({ status: 'success', message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
   }
 };
 

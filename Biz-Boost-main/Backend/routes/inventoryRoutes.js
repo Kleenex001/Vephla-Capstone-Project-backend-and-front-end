@@ -1,6 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { getProductById, getAllProducts, addNewProduct, updateProduct, deleteProduct, getLowStockProducts, getExpiredProducts } = require('../controllers/inventoryController');
+const {
+  getProductById,
+  getAllProducts,
+  addNewProduct,
+  updateProduct,
+  deleteProduct,
+  getLowStockProducts,
+  getExpiredProducts
+} = require('../controllers/inventoryController');
+
+// Routes for filtered views first to avoid conflicts with /products/:id
+router.get('/low-stock', getLowStockProducts);
+router.get('/expired', getExpiredProducts);
 
 // Route for getting all products and adding a new product
 router.route('/products')
@@ -12,9 +24,5 @@ router.route('/products/:id')
   .get(getProductById)
   .put(updateProduct)
   .delete(deleteProduct);
-
-// Routes for filtered views
-router.get('/low-stock', getLowStockProducts);
-router.get('/expired', getExpiredProducts);
 
 module.exports = router;

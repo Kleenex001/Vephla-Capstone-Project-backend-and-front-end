@@ -1,8 +1,11 @@
+// routes/settingsRoutes.js
 const express = require('express');
 const router = express.Router();
 const { getSettings, saveSettings } = require('../controllers/settingsController');
 
-router.get('/', getSettings);
-router.post('/', saveSettings);
+// Route to get or save settings
+router.route('/')
+  .get(getSettings)
+  .post(saveSettings);
 
 module.exports = router;

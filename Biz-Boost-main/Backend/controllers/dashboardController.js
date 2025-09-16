@@ -1,69 +1,68 @@
-const axios = require('axios');
-const BASE_URL = 'http://localhost:5000';
+const Sale = require('../models/Sales');
+const Expense = require('../models/Expense');
+const Product = require('../models/Inventory');
+const Customer = require('../models/Customer');
 
 // GET /api/dashboard/summary
 exports.getSummary = async (req, res) => {
-    try {
-        const [salesRes, expensesRes] = await Promise.all([
-            axios.get(`${BASE_URL}/api/sales/total`),
-            axios.get(`${BASE_URL}/api/expenses/total`)
-        ]);
+  try {
+    const totalSales = await Sale.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]);
+    const totalExpenses = await Expense.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]);
+    const sales = totalSales[0]?.total || 0;
+    const expenses = totalExpenses[0]?.total || 0;
+    const profit = sales - expenses;
 
-        const totalSales = salesRes.data.total || 0;
-        const expenses = expensesRes.data.total || 0;
-        const profit = totalSales - expenses;
-
-        res.json({
-            totalSales,
-            expenses,
-            profit
-        });
-    } catch (error) {
-        console.error("Error fetching summary:", error.message);
-        res.status(500).json({ error: 'Failed to load summary data' });
-    }
+    res.status(200).json({ success: true, data: { totalSales: sales, expenses, profit } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
 };
 
 // GET /api/dashboard/sales-analytics
 exports.getSalesAnalytics = async (req, res) => {
-    try {
-        const response = await axios.get(`${BASE_URL}/api/sales/analytics`);
-        res.json(response.data);
-    } catch (error) {
-        console.error("Error fetching sales analytics:", error.message);
-        res.status(500).json({ error: 'Failed to load sales analytics' });
-    }
+  try {
+    const analytics = await Sale.aggregate([
+      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, totalSales: { $sum: "$amount" } } },
+      { $sort: { _id: 1 } }
+    ]);
+    res.status(200).json({ success: true, data: analytics });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
 };
 
 // GET /api/dashboard/overdue-payments
 exports.getOverduePayments = async (req, res) => {
-    try {
-        const response = await axios.get(`${BASE_URL}/api/payments/overdue`);
-        res.json(response.data);
-    } catch (error) {
-        console.error("Error fetching overdue payments:", error.message);
-        res.status(500).json({ error: 'Failed to load overdue payments' });
-    }
+  try {
+    const overdue = await Customer.find({ paymentDue: { $lt: new Date() } });
+    res.status(200).json({ success: true, data: overdue });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
 };
 
 // GET /api/dashboard/quick-stats
 exports.getQuickStats = async (req, res) => {
-    try {
-        const response = await axios.get(`${BASE_URL}/api/products/quick-stats`);
-        res.json(response.data);
-    } catch (error) {
-        console.error("Error fetching quick stats:", error.message);
-        res.status(500).json({ error: 'Failed to load quick stats' });
-    }
+  try {
+    const salesToday = await Sale.countDocuments({ createdAt: { $gte: new Date().setHours(0,0,0,0) } });
+    const lowStockProducts = await Product.countDocuments({ $expr: { $lt: ["$stockLevel", "$reorderLevel"] } });
+    res.status(200).json({ success: true, data: { salesToday, lowStockProducts } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
 };
 
 // GET /api/dashboard/top-customers
 exports.getTopCustomers = async (req, res) => {
-    try {
-        const response = await axios.get(`${BASE_URL}/api/customers/top`);
-        res.json(response.data);
-    } catch (error) {
-        console.error("Error fetching top customers:", error.message);
-        res.status(500).json({ error: 'Failed to load top customers' });
-    }
+  try {
+    const topCustomers = await Customer.find().sort({ totalPurchases: -1 }).limit(5);
+    res.status(200).json({ success: true, data: topCustomers });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
 };
