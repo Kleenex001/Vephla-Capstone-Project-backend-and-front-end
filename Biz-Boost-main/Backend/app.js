@@ -30,22 +30,25 @@ const app = express();
 
 // ✅ CORS setup
 const allowedOrigins = [
-  'https://biz-boost.onrender.com',
-    process.env.FRONTEND_URL,
-    'http://localhost:3000',
-    'http://localhost:5000'
+  "https://vephla-capstone-project-frontend.onrender.com", // frontend on Render
+  process.env.FRONTEND_URL, // fallback from .env
+  "http://localhost:3000",  // React dev
+  "http://localhost:5000"   // alternative local
 ];
 
-app.use(cors({
+app.use(
+  cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.error("❌ Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
     },
     credentials: true,
-}));
+  })
+);
 
 // ✅ Security middleware
 /*app.use(helmet());*/
