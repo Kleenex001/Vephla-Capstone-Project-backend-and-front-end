@@ -104,9 +104,10 @@ signupForm.addEventListener('submit', async (e) => {
   };
 
   try {
-    const response = await signupUser(payload); // ✅ use api.js
+    const response = await signupUser(payload);
 
-    if (response && response.token) {
+    // Check if backend returned a success message
+    if (response && (response.message || response.token)) {
       errors.successMsg.textContent = '✅ Signup successful! Redirecting to login...';
       errors.successMsg.style.display = 'block';
       errors.successMsg.classList.remove('input-error');
