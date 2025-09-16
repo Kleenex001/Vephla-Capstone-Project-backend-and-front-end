@@ -51,7 +51,7 @@ form.addEventListener('submit', async function(event) {
       message.style.color = 'green';
       message.textContent = ' Password reset successful!';
       setTimeout(() => {
-        window.location.href = 'sign in.html';
+        window.location.href = 'signin.html';
       }, 2000);
     } else {
       message.style.color = 'red';

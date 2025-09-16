@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="reset password.css">
-    <title>Reset Password</title>
+    <title>Sign In</title>
+    <link rel="stylesheet" href="signin.css">
     <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    </head>
 </head>
 <body>
-    <header>
+      <header>
             <nav class="navbar ">
-               <ul class="nav-menu">
+                <ul class="nav-menu">
                     
                     <li><a href="index.html"><img src="Assets/LOGO-TRANS 1.png" alt="Logo" class="logo"></a></li>
                     <li class="nav-item"><a href="index.html" class="spacer">Home</a></li>
@@ -19,8 +20,8 @@
                     <li class="nav-item"><a href="pricing.html" class="spacer">Pricing</a></li>
                     <li class="nav-item"><a href="aboutus.html" class="spacer">About Us</a></li>
                     <li class="nav-item"><a href="contactus.html" class="spacer">Contact Us</a></li>
-                    <li class="nav-item"><a href="sign in.html" id="sign-in">Sign In</a></li>
-                    <li class="nav-item"><a href="sign up.html" id="sign-up" >Sign Up</a></li>
+                    <li class="nav-item"><a href="signin.html" id="sign-in">Sign In</a></li>
+                    <li class="nav-item"><a href="signup.html" id="sign-up" >Sign Up</a></li>
                     <li onclick="toggleSidebar()" class="fa-solid"><a href="#" title="Open menu"><i class="fa-solid fa-bars"></i></a></li>
                 </ul>
                 <!-- Sidebar for small screens -->
@@ -42,52 +43,41 @@
                      <li><a href="pricing.html">Pricing</a></li>
                      <li><a href="aboutus.html">About Us</a></li>
                      <li><a href="contactus.html">Contact Us</a></li>
-                     <li><a href="sign in.html">Sign In</a></li>
-                     <li><a href="sign up.html">Sign Up</a></li>
+                     <li><a href="signin.html">Sign In</a></li>
+                     <li><a href="signup.html">Sign up</a></li>
                     </ul>
                 </div>
             </nav>
         </header>
-        <ul class="form-image-container">
-        <li id="image">
+    <ul class="form-image-container">
+        <li class="image">
            <img src="Assets/signup and sign in.jpg" alt="Sign Up Image" class="signup-image">
         </li>
     <li>
-    <div class="container">
-        <h2>Reset Password</h2>
-        <form id="resetForm">
-            <div class="form-group">
-                <label for="email">Email:</label><br>
-                <input type="email" id="email" name="email" placeholder="Enter your email">
-                <div id="emailError" class="error"></div>
-            </div>
+        <div class="form-container">
+            <h1>Sign In</h1>
             <br>
-            <div class="form-group">
-            <label for="otp">Enter OTP:</label><br>
-            <input type="text" id="otp" name="otp" placeholder="Enter verification code">
-            <div id="otpError" class="error"></div>
-            </div>
+    <form id="signinForm">
+        <div class="form-group">
+        <label for="email">Email:</label><br>
+        <input type="email" type="tel" id="email" name="email" placeholder="Enter Email">
+        <div id="emailError" class="error"></div>
+        </div>
+        <div class="form-group">
             <br>
-            <div class="form-group">
-                <label for="newPassword">New Password:</label><br>
-                <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
-                <div id="newPasswordError" class="error"></div>
-            </div>
-            <br>
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password:</label><br>
-                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
-                <div id="confirmPasswordError" class="error"></div>
-            </div>
-            <br>
-            <button type="submit" class="submit-btn">Reset Password</button>
-             <p id="message" style="color: green; margin-top: 10px;"></p>
-            <br>
-        </form>
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password" placeholder="Enter Password">
+        <div id="passwordError" class="error"></div>
+        </div>
+        <br><br>
+        <button type="submit" class="submit-btn">Sign In</button><br>
+        <br>
+        <p>Don't have an account? <a href="signup.html">Sign Up</a> or Forgotten password? <a href="requestpasswordreset.html">Request Password Reset</a></p>
+    </form>
     </div>
     </li>
-        </ul>
-    <script src="reset password.js"></script>
+    </ul>
+    <script type="module" src="signin.js" defer></script>
     <footer>
     </footer>
 </body>
