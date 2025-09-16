@@ -13,18 +13,10 @@ const app = express();
 app.use(express.json()); // parse JSON bodies
 app.use(morgan('dev')); // logging
 
-// Enable CORS for your frontend
-const allowedOrigins = [
-  'https://bizboostcom.vercel.app',
-  'http://localhost:5000',
-  'http://127.0.0.1:5000'
-];
-
+// Configure CORS to allow requests from your frontend origin
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
+  origin: 'https://bizboostcom.vercel.app'
 }));
-
 
 // -------------------- ROUTES --------------------
 const authRoutes = require('./routes/authRoutes');
