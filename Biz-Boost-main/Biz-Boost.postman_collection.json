@@ -1,0 +1,208 @@
+{
+  "info": {
+    "name": "Biz-Boost API - Full Collection",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+    "description": "Complete Postman collection for Biz-Boost API. Includes Signup, Login, Dashboard, Sales, Inventory, Customers, Deliveries, Suppliers, and Settings endpoints with example responses for cybersecurity testing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Signup",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"businessName\": \"Acme Corp\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+2341234567890\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/auth/signup",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","auth","signup"]
+        }
+      },
+      "response": [
+        {
+          "name": "Successful Signup",
+          "status": "201 Created",
+          "body": "{\n  \"message\": \"User registered successfully\",\n  \"userId\": \"<user_id>\"\n}"
+        },
+        {
+          "name": "Error - Email Exists",
+          "status": "400 Bad Request",
+          "body": "{\n  \"error\": \"Email already exists\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/auth/login",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","auth","login"]
+        }
+      },
+      "response": [
+        {
+          "name": "Successful Login",
+          "status": "200 OK",
+          "body": "{\n  \"token\": \"<JWT_TOKEN>\",\n  \"user\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\"\n  }\n}"
+        },
+        {
+          "name": "Error - Invalid Credentials",
+          "status": "401 Unauthorized",
+          "body": "{\n  \"error\": \"Invalid email or password\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/dashboard",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","dashboard"]
+        }
+      },
+      "response": [
+        {
+          "name": "Dashboard Data",
+          "status": "200 OK",
+          "body": "{\n  \"name\": \"John Doe\",\n  \"stats\": {\n    \"salesToday\": 15,\n    \"inventoryCount\": 120\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/sales",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","sales"]
+        }
+      },
+      "response": [
+        {
+          "name": "Sales List",
+          "status": "200 OK",
+          "body": "[\n  {\"id\": 1, \"item\": \"Product A\", \"quantity\": 10, \"amount\": 5000},\n  {\"id\": 2, \"item\": \"Product B\", \"quantity\": 5, \"amount\": 3000}\n]"
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/inventory",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","inventory"]
+        }
+      },
+      "response": [
+        {
+          "name": "Inventory List",
+          "status": "200 OK",
+          "body": "[\n  {\"id\": 1, \"name\": \"Product A\", \"stock\": 100},\n  {\"id\": 2, \"name\": \"Product B\", \"stock\": 50}\n]"
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/customers",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","customers"]
+        }
+      },
+      "response": [
+        {
+          "name": "Customer List",
+          "status": "200 OK",
+          "body": "[\n  {\"id\": 1, \"name\": \"Alice\", \"email\": \"alice@example.com\"},\n  {\"id\": 2, \"name\": \"Bob\", \"email\": \"bob@example.com\"}\n]"
+        }
+      ]
+    },
+    {
+      "name": "Deliveries",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/deliveries",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","deliveries"]
+        }
+      },
+      "response": [
+        {
+          "name": "Delivery List",
+          "status": "200 OK",
+          "body": "[\n  {\"id\": 1, \"customer\": \"Alice\", \"status\": \"pending\"},\n  {\"id\": 2, \"customer\": \"Bob\", \"status\": \"delivered\"}\n]"
+        }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/suppliers",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","suppliers"]
+        }
+      },
+      "response": [
+        {
+          "name": "Supplier List",
+          "status": "200 OK",
+          "body": "[\n  {\"id\": 1, \"name\": \"Supplier A\", \"email\": \"supA@example.com\"},\n  {\"id\": 2, \"name\": \"Supplier B\", \"email\": \"supB@example.com\"}\n]"
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer <JWT_TOKEN>" }],
+        "url": {
+          "raw": "https://vephla-capstone-project-backend-and.onrender.com/api/settings",
+          "protocol": "https",
+          "host": ["vephla-capstone-project-backend-and","onrender","com"],
+          "path": ["api","settings"]
+        }
+      },
+      "response": [
+        {
+          "name": "User Settings",
+          "status": "200 OK",
+          "body": "{\n  \"theme\": \"light\",\n  \"notifications\": true,\n  \"language\": \"en\"\n}"
+        }
+      ]
+    }
+  ]
+}
