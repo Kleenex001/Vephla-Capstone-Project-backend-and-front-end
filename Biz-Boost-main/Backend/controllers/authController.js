@@ -102,7 +102,7 @@ exports.requestPasswordReset = async (req, res) => {
   }
 };
 
-// @desc   Verify OTP and reset password
+// @desc  Verify OTP and reset password
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
