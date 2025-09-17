@@ -59,7 +59,7 @@ export function logoutUser() {
 
 // -------------------- PASSWORD RESET --------------------
 
-// Step 1: Request password reset (send OTP to email)
+// Request password reset (send OTP to email)
 export async function requestPasswordReset(email) {
   try {
     const res = await fetch(`${BASE_URL}/auth/request-password-reset`, {
@@ -74,7 +74,7 @@ export async function requestPasswordReset(email) {
   }
 }
 
-// Step 2: Reset password (with OTP + new password)
+// Reset password (with OTP + new password)
 export async function resetPassword(email, otp, newPassword,) {
   try {
     const res = await fetch(`${BASE_URL}/auth/reset-password`, {
