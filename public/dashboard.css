@@ -360,6 +360,22 @@ body::-webkit-scrollbar {
 .support-links li:hover {
   background: #f9f9f9;
 }
+.logout-btn {
+  background: #007c63;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-right: 1.5rem;
+}
+
+.logout-btn:hover {
+  background: #e0f7f3;
+  color: #007c63;
+}
 
 .toolbar {
   display: flex;

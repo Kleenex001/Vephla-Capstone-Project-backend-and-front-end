@@ -94,10 +94,76 @@ export async function getDashboardSummary() {
     });
     return handleFetch(res);
   } catch (err) {
-    console.error(err);
+    console.error("Dashboard Summary Error:", err);
     throw err;
   }
 }
+
+export async function getQuickStats() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/dashboard/quick-stats`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("Quick Stats Error:", err);
+    throw err;
+  }
+}
+
+export async function getPendingOrders() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/dashboard/pending-orders`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("Pending Orders Error:", err);
+    throw err;
+  }
+}
+
+export async function getLowStockProducts() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/dashboard/low-stock`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("Low Stock Products Error:", err);
+    throw err;
+  }
+}
+
+export async function getTopCustomers() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("Top Customers Error:", err);
+    throw err;
+  }
+}
+
+export async function getUserInfo() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/dashboard/user-info`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("User Info Error:", err);
+    throw err;
+  }
+}
+
 
 // -------------------- CUSTOMERS --------------------
 export async function getCustomers() {

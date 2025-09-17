@@ -1,65 +1,14 @@
-// Fetch Data from Backend API (with dummy fallback)
-async function fetchDataFromAPI() {
-  try {
-    const res = await fetch("/api/dashboard"); // replace with your endpoint
-    if (!res.ok) throw new Error("Failed to fetch dashboard data");
-    return await res.json();
-  } catch (err) {
-    console.warn("Dashboard fetch error, using dummy data:", err);
+import {
+  getDashboardSummary,
+  getQuickStats,
+  getPendingOrders,
+  getLowStockProducts,
+  getTopCustomers,
+  getUserInfo,
+  getSalesAnalytics,
+} from "./api.js";
 
-    // Dummy data for simulation (Sales Analytics + Overdue Payments)
-    return {
-      kpis: {
-        totalSales:"3000",
-        totalOwed: "40000",
-        totalDelivery:"3000",
-        salesTrend: {
-          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-          data: [1200, 1500, 1800, 1700, 2200, 2500, 2000],
-        },
-        owedTrend: {
-          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-          data: [400, 350, 500, 450, 600, 550, 300],
-        },
-        deliveryTrend: {
-          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-          data: [20, 25, 18, 22, 28, 30, 24],
-        },
-      },
-      sales: {
-        monthly: {
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-          data: [1200, 2300, 1800, 2500, 3100, 4000],
-        },
-        yearly: {
-          labels: ["2019", "2020", "2021", "2022", "2023", "2024"],
-          data: [12000, 15000, 18000, 22000, 30000, 40000],
-        },
-      },
-      payments: {
-        monthly: {
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-          data: [400, 600, 300, 800, 500, 700],
-        },
-        yearly: {
-          labels: ["2019", "2020", "2021", "2022", "2023", "2024"],
-          data: [3000, 4500, 5000, 7000, 8500, 10000],
-        },
-      },
-      quickStats: ["Pending delivery:", "Pending purchases: ", "Recent purchases:"],
-      pendingOrders: ["", ""],
-      lowStock: ["", ""],
-      topCustomers: [
-        { name: "", amount: "" },
-        { name: "", amount: "" },
-        { name: "", amount: "" },
-      ],
-    };
-  }
-}
-
-
-// Chart.js Helpers
+// ---------------- Helpers ---------------- //
 function createLineChart(ctx, labels, data, color) {
   return new Chart(ctx, {
     type: "line",
@@ -80,80 +29,152 @@ function createLineChart(ctx, labels, data, color) {
     options: {
       responsive: true,
       plugins: { legend: { display: false } },
-      scales: { x: { display: true }, y: { display: true } }, // keep axes visible
+      scales: { x: { display: true }, y: { display: true } },
     },
   });
 }
 
-let salesChart, paymentChart, sparkSales, sparkOwed, sparkDelivery;
+let salesChart;
 
+// ---------------- API Integration ---------------- //
+async function fetchDataFromAPI() {
+  try {
+    const [
+      summary,
+      quickStats,
+      pendingOrders,
+      lowStock,
+      topCustomers,
+      user,
+      salesAnalytics,
+    ] = await Promise.all([
+      getDashboardSummary(),
+      getQuickStats(),
+      getPendingOrders(),
+      getLowStockProducts(),
+      getTopCustomers(),
+      getUserInfo(),
+      getSalesAnalytics(),
+    ]);
 
-// Render Functions
-function updateKPIs(kpis) {
-  document.getElementById("totalSales").textContent = kpis.totalSales.toLocaleString();
-  document.getElementById("totalOwed").textContent = kpis.totalOwed.toLocaleString();
-  document.getElementById("totalDelivery").textContent = kpis.totalDelivery.toLocaleString();
+    return {
+      kpis: {
+        totalSales: summary.data.totalSales || 0,
+        totalOwed: summary.data.totalOwed || 0,
+        totalDelivery: summary.data.totalDelivery || 0,
+      },
+      quickStats: [
+        `Total Purchase: ${quickStats.data.totalPurchase}`,
+        `Pending Delivery: ${quickStats.data.pendingDelivery}`,
+        `Expired Products: ${quickStats.data.expiredProducts}`,
+      ],
+      pendingOrders: pendingOrders.data.map(
+        (o) => `${o.productName} - ${o.status}`
+      ),
+      lowStock: lowStock.data.map(
+        (p) => `${p.name} (Stock: ${p.stockLevel})`
+      ),
+      topCustomers: topCustomers.data.map((c) => ({
+        name: c.name,
+        amount: c.totalPurchases,
+      })),
+      salesAnalytics: salesAnalytics.data,
+      user: user.data,
+    };
+  } catch (err) {
+    console.error("❌ Dashboard fetch error:", err);
 
-  
+    // If unauthorized, force logout + redirect
+    if (err.message.includes("401") || err.message.includes("403")) {
+      localStorage.removeItem("token");
+      window.location.href = "signin.html";
+    }
+
+    return null;
+  }
 }
 
-function updateCharts(sales, payments) {
+// ---------------- Renderers ---------------- //
+function updateGreeting(user) {
+  const greetingEl = document.getElementById("greetingHeader");
+  if (!greetingEl) return;
+
+  const now = new Date();
+  const hours = now.getHours();
+  let greeting = "Hello";
+
+  if (hours < 12) greeting = "Good morning";
+  else if (hours < 18) greeting = "Good afternoon";
+  else greeting = "Good evening";
+
+  greetingEl.textContent = `${greeting}, ${user?.fullName || "User"} ${
+    user?.businessName ? "(" + user.businessName + ")" : ""
+  }`;
+}
+
+function updateKPIs(kpis) {
+  document.getElementById("totalSales").textContent =
+    kpis.totalSales.toLocaleString();
+  document.getElementById("totalOwed").textContent =
+    kpis.totalOwed.toLocaleString();
+  document.getElementById("totalDelivery").textContent =
+    kpis.totalDelivery.toLocaleString();
+}
+
+function updateCharts(salesAnalytics) {
   const salesCtx = document.getElementById("salesChart").getContext("2d");
-  const paymentCtx = document.getElementById("paymentChart").getContext("2d");
 
   if (salesChart) salesChart.destroy();
-  if (paymentChart) paymentChart.destroy();
 
-  // Default view = monthly
-  salesChart = createLineChart(salesCtx, sales.monthly.labels, sales.monthly.data, "#009879");
-  paymentChart = createLineChart(paymentCtx, payments.monthly.labels, payments.monthly.data, "#ff9800");
+  const labels = salesAnalytics.map((s) => s._id);
+  const data = salesAnalytics.map((s) => s.totalSales);
 
-  // Tabs
-  document.querySelectorAll("#salesTabs button").forEach((btn) => {
-    btn.onclick = () => {
-      document.querySelectorAll("#salesTabs button").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const view = btn.dataset.view;
-      updateChart(salesChart, sales[view].labels, sales[view].data);
-    };
-  });
-
-  document.querySelectorAll("#paymentTabs button").forEach((btn) => {
-    btn.onclick = () => {
-      document.querySelectorAll("#paymentTabs button").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const view = btn.dataset.view;
-      updateChart(paymentChart, payments[view].labels, payments[view].data);
-    };
-  });
-}
-
-function updateChart(chart, labels, data) {
-  chart.data.labels = labels;
-  chart.data.datasets[0].data = data;
-  chart.update();
+  salesChart = createLineChart(salesCtx, labels, data, "#009879");
 }
 
 function updateSidebar(data) {
-  document.getElementById("quickStats").innerHTML = data.quickStats.map((s) => `<li>${s}</li>`).join("");
-  document.getElementById("pendingOrdersList").innerHTML = data.pendingOrders.map((o) => `<li>${o}</li>`).join("");
-  document.getElementById("lowStockList").innerHTML = data.lowStock.map((l) => `<li>${l}</li>`).join("");
+  document.getElementById("quickStats").innerHTML = data.quickStats
+    .map((s) => `<li>${s}</li>`)
+    .join("");
+  document.getElementById("pendingOrdersList").innerHTML = data.pendingOrders
+    .map((o) => `<li>${o}</li>`)
+    .join("");
+  document.getElementById("lowStockList").innerHTML = data.lowStock
+    .map((l) => `<li>${l}</li>`)
+    .join("");
   document.getElementById("topCustomers").innerHTML = data.topCustomers
     .map((c) => `<li>${c.name} <span>${c.amount}</span></li>`)
     .join("");
 }
 
-
-// Main Renderer
+// ---------------- Init ---------------- //
 async function renderDashboard() {
+  // 🔒 Redirect if no token at all
+  if (!localStorage.getItem("token")) {
+    window.location.href = "signin.html";
+    return;
+  }
+
   const data = await fetchDataFromAPI();
   if (!data) return;
 
+  updateGreeting(data.user);
   updateKPIs(data.kpis);
-  updateCharts(data.sales, data.payments);
+  updateCharts(data.salesAnalytics);
   updateSidebar(data);
 }
 
-
-// Init
 document.addEventListener("DOMContentLoaded", renderDashboard);
+// Logout Functionality
+document.addEventListener("DOMContentLoaded", () => {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("token");
+      window.location.href = "signin.html";
+    });
+  }
+
+  renderDashboard();
+});
+
