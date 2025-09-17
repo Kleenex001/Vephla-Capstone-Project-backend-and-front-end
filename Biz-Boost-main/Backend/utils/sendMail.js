@@ -39,7 +39,7 @@ const sendEmail = async (to, subject, text, otp) => {
         
         <!-- Body -->
         <div style="padding: 20px; color: #333;">
-          <p style="font-size: 16px;">Hello 👋,</p>
+          <p style="font-size: 16px;">Hello,</p>
           <p style="font-size: 15px;">
             You requested to reset your password. Use the OTP code below to continue:
           </p>
@@ -51,7 +51,7 @@ const sendEmail = async (to, subject, text, otp) => {
           </div>
           
           <p style="font-size: 14px; color: #555;">
-            ⚠️ This code will expire in <strong>10 minutes</strong>.  
+            This code will expire in <strong>10 minutes</strong>.  
             If you didn’t request this, please ignore this email.
           </p>
           
