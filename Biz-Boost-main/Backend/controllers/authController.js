@@ -85,17 +85,18 @@ exports.requestPasswordReset = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Email not found' });
+    if (!user) return res.status(404).json({ message: "Email not found" });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    user.otp = crypto.createHash("sha256").update(otp).digest("hex");
     user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     await user.save({ validateBeforeSave: false });
 
-    await sendMail(user.email, 'OTP for Password Reset', `Your OTP is: ${otp}`);
+    await sendMail(user.email, "OTP for Password Reset", `Your OTP is: ${otp}`);
 
-    res.json({ message: 'OTP sent to email' });
+    res.json({ message: "OTP sent to email" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -106,16 +107,16 @@ exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
 
-    const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
 
     const user = await User.findOne({
       email,
       otp: hashedOtp,
-      otpExpires: { $gt: Date.now() }
+      otpExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
     user.password = newPassword;
@@ -124,12 +125,11 @@ exports.resetPassword = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ message: 'Password reset successful.' });
+    res.status(200).json({ message: "Password reset successful." });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 // @desc   Logout user
 exports.logout = (req, res) => {
   res.clearCookie('token');

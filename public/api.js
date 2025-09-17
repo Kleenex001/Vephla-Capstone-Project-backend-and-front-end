@@ -56,7 +56,6 @@ export function logoutUser() {
   localStorage.removeItem("token");
   alert("Logged out successfully");
 }
-
 // -------------------- PASSWORD RESET --------------------
 
 // Request password reset (send OTP to email)
@@ -67,28 +66,27 @@ export async function requestPasswordReset(email) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
     });
-    return handleFetch(res);
+    return await handleFetch(res);
   } catch (err) {
-    console.error("Request password reset failed:", err);
+    console.error("Request Password Reset Error:", err);
     throw err;
   }
 }
 
-// Reset password (with OTP + new password)
-export async function resetPassword(email, otp, newPassword,) {
+// Verify OTP & reset password
+export async function resetPassword(email, otp, newPassword) {
   try {
     const res = await fetch(`${BASE_URL}/auth/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, otp, newPassword,})
+      body: JSON.stringify({ email, otp, newPassword })
     });
-    return handleFetch(res);
+    return await handleFetch(res);
   } catch (err) {
-    console.error("Reset password failed:", err);
+    console.error("Reset Password Error:", err);
     throw err;
   }
 }
-
 
 // -------------------- DASHBOARD --------------------
 export async function getDashboardSummary() {
