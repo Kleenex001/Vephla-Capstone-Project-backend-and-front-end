@@ -94,8 +94,7 @@ exports.requestPasswordReset = async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    await sendMail(user.email, "OTP for Password Reset", `Your OTP is: ${otp}`);
-
+    await sendMail(user.email, 'OTP for Password Reset', `Your OTP is: ${otp}`,otp);
     res.json({ message: "OTP sent to email" });
   } catch (err) {
     res.status(500).json({ message: err.message });
