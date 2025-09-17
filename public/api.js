@@ -28,6 +28,7 @@ export async function loginUser(email, password) {
     });
     const data = await handleFetch(res);
     localStorage.setItem("token", data.token);
+    return data;
   } catch (err) {
     console.error(err);
     throw err;
@@ -42,6 +43,7 @@ export async function signupUser(userData) {
       body: JSON.stringify(userData)
     });
     const data = await handleFetch(res);
+    return data;
   } catch (err) {
     console.error(err);
     throw err;
