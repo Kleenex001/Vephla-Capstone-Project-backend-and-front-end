@@ -28,8 +28,6 @@ export async function loginUser(email, password) {
     });
     const data = await handleFetch(res);
     localStorage.setItem("token", data.token);
-    alert("Login successful!");
-    return data;
   } catch (err) {
     console.error(err);
     throw err;
@@ -44,8 +42,6 @@ export async function signupUser(userData) {
       body: JSON.stringify(userData)
     });
     const data = await handleFetch(res);
-    alert("Signup successful!");
-    return data;
   } catch (err) {
     console.error(err);
     throw err;
@@ -54,7 +50,6 @@ export async function signupUser(userData) {
 
 export function logoutUser() {
   localStorage.removeItem("token");
-  alert("Logged out successfully");
 }
 // -------------------- PASSWORD RESET --------------------
 
