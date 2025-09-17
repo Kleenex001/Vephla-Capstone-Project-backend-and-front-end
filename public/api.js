@@ -32,7 +32,7 @@ export async function loginUser(email, password) {
     return data;
   } catch (err) {
     console.error(err);
-    alert("Login failed: " + err.message);
+    throw err;
   }
 }
 
@@ -48,7 +48,7 @@ export async function signupUser(userData) {
     return data;
   } catch (err) {
     console.error(err);
-    alert("Signup failed: " + err.message);
+    throw err;
   }
 }
 
@@ -56,6 +56,39 @@ export function logoutUser() {
   localStorage.removeItem("token");
   alert("Logged out successfully");
 }
+
+// -------------------- PASSWORD RESET --------------------
+
+// Step 1: Request password reset (send OTP to email)
+export async function requestPasswordReset(email) {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/request-password-reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("Request password reset failed:", err);
+    throw err;
+  }
+}
+
+// Step 2: Reset password (with OTP + new password)
+export async function resetPassword(email, otp, newPassword,) {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp, newPassword,})
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("Reset password failed:", err);
+    throw err;
+  }
+}
+
 
 // -------------------- DASHBOARD --------------------
 export async function getDashboardSummary() {
