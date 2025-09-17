@@ -2,7 +2,6 @@ const Sale = require('../models/Sales');
 const Delivery = require('../models/Delivery');
 const Product = require('../models/Inventory');
 const Customer = require('../models/Customer');
-const Order = require('../models/Order'); // if you have a separate orders model
 
 // ===================== DASHBOARD CONTROLLERS ===================== //
 
