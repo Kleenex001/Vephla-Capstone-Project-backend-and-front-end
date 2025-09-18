@@ -8,7 +8,7 @@ import {
   getSalesAnalytics,
   getTopCustomers as fetchTopCustomers,
   getTopProducts as fetchTopProducts,
-  getPendingOrders as fetchPendingOrders,
+  getPendingOrdersSales as fetchPendingOrders,
 } from "./api.js";
 
 // ================= Helpers =================
