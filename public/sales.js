@@ -5,7 +5,6 @@ import {
   updateSale as updateSaleAPI,
   deleteSale as deleteSaleAPI,
   getSalesSummary,
-  getSalesAnalytics,
   getTopCustomers,
   getTopProducts,
 } from "./api.js";
@@ -295,12 +294,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (searchInput.value.trim() !== "") {
       filtered = filtered.filter(
         (s) =>
-          s.productName
-            .toLowerCase()
-            .includes(searchInput.value.toLowerCase()) ||
-          s.customerName
-            .toLowerCase()
-            .includes(searchInput.value.toLowerCase())
+          s.productName.toLowerCase().includes(searchInput.value.toLowerCase()) ||
+          s.customerName.toLowerCase().includes(searchInput.value.toLowerCase())
       );
     }
     return filtered;
