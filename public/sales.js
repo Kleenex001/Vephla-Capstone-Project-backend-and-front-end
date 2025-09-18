@@ -34,33 +34,36 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
-// Animate numeric values
-function animateValue(element, start, end, duration = 1000) {
-  const range = end - start;
-  const startTime = performance.now();
 
-  function step(currentTime) {
-    const progress = Math.min((currentTime - startTime) / duration, 1);
-    const value = Math.floor(progress * range + start);
-    element.textContent = `₦${value}`;
-    if (progress < 1) requestAnimationFrame(step);
-  }
-
-  requestAnimationFrame(step);
+// Animate numbers from start to end
+function animateValue(el, start, end, duration = 800) {
+  if (!el) return;
+  let startTimestamp = null;
+  const step = timestamp => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    el.textContent = `₦${Math.floor(progress * (end - start) + start)}`;
+    if (progress < 1) window.requestAnimationFrame(step);
+  };
+  window.requestAnimationFrame(step);
 }
 
 // ================= Load Data =================
-
-// Load KPI summary
 async function loadSummary() {
   const data = await safeCall(getSalesSummary);
   if (!data) return;
 
-  animateValue(document.getElementById("totalSales"), 0, data.totalSales || 0);
-  animateValue(document.getElementById("cashSales"), 0, data.cashSales || 0);
-  animateValue(document.getElementById("mobileSales"), 0, data.mobileSales || 0);
-  animateValue(document.getElementById("completedOrders"), 0, data.completedOrders || 0);
+  animateValue(document.getElementById("totalSales"), 0, Number(data.totalSales) || 0);
+  animateValue(document.getElementById("cashSales"), 0, Number(data.cashSales) || 0);
+  animateValue(document.getElementById("mobileSales"), 0, Number(data.mobileSales) || 0);
+
+  // Completed orders doesn't need currency symbol
+  const completedEl = document.getElementById("completedOrders");
+  if (completedEl) {
+    completedEl.textContent = Number(data.completedOrders) || 0;
+  }
 }
+
 
 // Load analytics chart
 let analyticsChart;

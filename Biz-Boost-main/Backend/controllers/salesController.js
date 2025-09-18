@@ -1,23 +1,28 @@
 const Sale = require("../models/Sales");
 
 // ----------------- DASHBOARD ENDPOINTS -----------------
-
 // KPI summary
 exports.getSalesSummary = async (req, res) => {
   try {
     const sales = await Sale.find();
 
-    const totalSales = sales.reduce((sum, s) => sum + s.amount, 0);
-    const cashSales = sales.filter(s => s.paymentType === "cash").reduce((sum, s) => sum + s.amount, 0);
-    const mobileSales = sales.filter(s => s.paymentType === "mobile").reduce((sum, s) => sum + s.amount, 0);
+    const totalSales = sales.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+    const cashSales = sales
+      .filter(s => s.paymentType === "cash")
+      .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+    const mobileSales = sales
+      .filter(s => s.paymentType === "mobile")
+      .reduce((sum, s) => sum + Number(s.amount || 0), 0);
     const completedOrders = sales.filter(s => s.status === "completed").length;
     const pendingOrders = sales.filter(s => s.status === "pending").length;
 
+    // Send flat object
     res.status(200).json({ totalSales, cashSales, mobileSales, completedOrders, pendingOrders });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch KPIs", details: error.message });
   }
 };
+
 
 // Sales analytics
 exports.getSalesAnalytics = async (req, res) => {
