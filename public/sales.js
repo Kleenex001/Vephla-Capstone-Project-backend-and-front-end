@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
       amount: parseFloat(document.getElementById("amount").value),
       paymentType: document.getElementById("paymentType").value,
       customer: document.getElementById("customerName").value.trim(),
-      status: document.getElementById("status").value,
+      status: document.getElementById("Status").value,
     });
 
     try {
