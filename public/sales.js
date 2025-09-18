@@ -91,20 +91,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function addSale(newSale) {
-    try {
-      // Ensure correct backend enum values
-      newSale.paymentType = newSale.paymentType.charAt(0).toUpperCase + newSale.paymentType.slice(1).toLowerCase(); // e.g., CASH or MOBILE
-      newSale.status = newSale.status.charAt(0).toUpperCase() + newSale.status.slice(1).toLowerCase(); // e.g., Pending or Completed
-
-      await addSaleAPI(newSale);
-      await loadSales();
-      showToast("✅ Sale added successfully!");
-    } catch (err) {
-      console.error("Failed to add sale:", err);
-      showToast("⚠️ Failed to add sale", "error");
-    }
+  async function addSale(saleData) {
+  try {
+    // ... other code ...
+    const response = await fetch(`${API_BASE_URL}/sales`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...saleData,
+        // Ensure paymentType is a string and not the function reference
+        paymentType: saleData.paymentType, // Make sure saleData.paymentType is a string like 'cash', 'credit', etc.
+      }),
+    });
+    // ... other code ...
+  } catch (err) {
+    console.error("Failed to add sale:", err);
+    showToast("⚠️ Failed to add sale", "error");
   }
+}
 
   async function deleteSale(id) {
     try {
