@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const monthlyTab = document.getElementById("monthlyTab");
   const yearlyTab = document.getElementById("yearlyTab");
 
+  // Tabs
   monthlyTab.addEventListener("click", () => {
     currentView = "monthly";
     monthlyTab.classList.add("active");
@@ -68,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateChart();
   });
 
+  // Toast messages
   function showToast(message, type = "success") {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
@@ -76,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => toast.remove(), 3000);
   }
 
+  // Modal handling
   addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
   closeModal.addEventListener("click", () => (modal.style.display = "none"));
   window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
@@ -83,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- API Integration ---
   async function loadSales() {
     try {
-      salesData = await getSales() || [];
+      salesData = (await getSales()) || [];
       updateDashboard();
     } catch (err) {
       console.error("Failed to load sales:", err);
@@ -92,25 +95,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function addSale(saleData) {
-  try {
-    // ... other code ...
-    const response = await fetch(`${BASE_URL}/sales`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      // Ensure lowercase values for backend enums
+      const payload = {
         ...saleData,
-        // Ensure paymentType is a string and not the function reference
-        paymentType: saleData.paymentType, // Make sure saleData.paymentType is a string like 'cash', 'credit', etc.
-      }),
-    });
-    // ... other code ...
-  } catch (err) {
-    console.error("Failed to add sale:", err);
-    showToast("⚠️ Failed to add sale", "error");
+        paymentType: saleData.paymentType.toLowerCase(), // 'cash' or 'mobile'
+        status: saleData.status.toLowerCase(),           // 'pending' or 'completed'
+      };
+
+      await addSaleAPI(payload);
+      await loadSales();
+      showToast("✅ Sale added successfully!");
+    } catch (err) {
+      console.error("Failed to add sale:", err);
+      showToast("⚠️ Failed to add sale", "error");
+    }
   }
-}
 
   async function deleteSale(id) {
     try {
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function markAsCompleted(id) {
     try {
-      await updateSaleAPI(id, { status: "completed" }); // lowercase
+      await updateSaleAPI(id, { status: "completed" });
       await loadSales();
       showToast("✅ Sale marked as completed!");
     } catch (err) {
@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Form submission
   addSaleForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const newSale = {
@@ -149,9 +150,10 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.style.display = "none";
   });
 
+  // KPIs
   async function updateKPIs() {
     try {
-      const summary = await getSalesSummary() || {};
+      const summary = (await getSalesSummary()) || {};
       totalSalesEl.textContent = `₦${summary.total?.toLocaleString() ?? 0}`;
       cashSalesEl.textContent = `₦${summary.cash?.toLocaleString() ?? 0}`;
       mobileSalesEl.textContent = `₦${summary.mobile?.toLocaleString() ?? 0}`;
@@ -161,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Product table
   function updateProductTable(filteredData) {
     productTableBody.innerHTML = "";
     filteredData.forEach((sale, index) => {
@@ -184,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".btn.complete").forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
+  // Pending orders
   function updatePendingOrders(filteredData) {
     pendingOrdersList.innerHTML = "";
     filteredData.filter((s) => s.status === "pending").forEach((sale) => {
@@ -196,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Top customers
   async function updateTopCustomers() {
     try {
       const customers = Array.isArray(await getTopCustomersSales()) ? await getTopCustomersSales() : [];
@@ -213,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Top products
   async function updateTopProducts() {
     try {
       const products = Array.isArray(await getTopProducts()) ? await getTopProducts() : [];
@@ -231,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Chart
   function updateChart(filteredData = salesData) {
     if (currentView === "monthly") {
       const monthlyTotals = new Array(12).fill(0);
@@ -250,6 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
     salesChart.update();
   }
 
+  // Filter & search
   function applyFilter() {
     let filtered = [...salesData];
     if (currentFilter !== "all") {
@@ -269,6 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
   filterSelect.addEventListener("change", () => { currentFilter = filterSelect.value; updateDashboard(); });
   searchInput.addEventListener("input", () => updateDashboard());
 
+  // Dashboard update
   function updateDashboard() {
     const filteredData = applyFilter();
     updateKPIs();
