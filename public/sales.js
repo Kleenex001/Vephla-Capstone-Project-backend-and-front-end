@@ -10,12 +10,21 @@ import {
 } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // -------------------- MODAL --------------------
   const modal = document.getElementById("addSaleModal");
   const addSaleBtn = document.getElementById("addSaleBtn");
   const closeModal = modal?.querySelector(".close");
   const addSaleForm = document.getElementById("addSaleForm");
 
-  // ---------------- TOAST ----------------
+  if (addSaleBtn && modal) {
+    addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
+  }
+  if (closeModal) closeModal.addEventListener("click", () => (modal.style.display = "none"));
+  window.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  });
+
+  // -------------------- TOAST --------------------
   const toastContainer = document.createElement("div");
   toastContainer.id = "toastContainer";
   toastContainer.style.position = "fixed";
@@ -40,12 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.style.transform = "translateX(100%)";
     toast.style.transition = "all 0.3s ease";
 
-    switch (type) {
-      case "success": toast.style.backgroundColor = "#28a745"; break;
-      case "error": toast.style.backgroundColor = "#dc3545"; break;
-      case "info": toast.style.backgroundColor = "#17a2b8"; break;
-      default: toast.style.backgroundColor = "#333"; break;
-    }
+    toast.style.backgroundColor = type === "success" ? "#28a745" :
+                                  type === "error" ? "#dc3545" :
+                                  type === "info" ? "#17a2b8" : "#333";
 
     toastContainer.appendChild(toast);
     requestAnimationFrame(() => {
@@ -59,20 +65,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }, duration);
   }
 
-  // ---------------- ELEMENTS ----------------
+  // -------------------- ELEMENTS --------------------
   const totalSalesEl = document.getElementById("totalSales");
   const cashSalesEl = document.getElementById("cashSales");
   const mobileSalesEl = document.getElementById("mobileSales");
   const completedOrdersEl = document.getElementById("completedOrders");
-
   const productTableBody = document.getElementById("productTableBody");
   const pendingOrdersList = document.getElementById("pendingOrdersList");
   const topCustomersList = document.getElementById("topCustomers");
   const topSellingProductsBody = document.getElementById("topSellingProducts");
-
   const filterSelect = document.getElementById("filterSelect");
   const searchInput = document.getElementById("searchInput");
 
+  // -------------------- SALES CHART --------------------
   const ctx = document.getElementById("salesAnalyticsChart")?.getContext("2d");
   let salesChart = ctx ? new Chart(ctx, {
     type: "line",
@@ -80,41 +85,67 @@ document.addEventListener("DOMContentLoaded", () => {
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   }) : null;
 
+  let currentView = "monthly";
+  const monthlyTab = document.getElementById("monthlyTab");
+  const yearlyTab = document.getElementById("yearlyTab");
+
+  monthlyTab?.addEventListener("click", () => {
+    currentView = "monthly";
+    monthlyTab.classList.add("active");
+    yearlyTab.classList.remove("active");
+    updateDashboard();
+  });
+  yearlyTab?.addEventListener("click", () => {
+    currentView = "yearly";
+    yearlyTab.classList.add("active");
+    monthlyTab.classList.remove("active");
+    updateDashboard();
+  });
+
+  // -------------------- HELPERS --------------------
   let salesData = [];
 
-  // ---------------- HELPERS ----------------
   function normalizeSaleData(sale) {
     return {
       ...sale,
       paymentType: sale.paymentType?.toLowerCase() === "cash" ? "Cash" : "Mobile",
       status: sale.status?.toLowerCase() === "completed" ? "Completed" : "Pending",
-      date: sale.date ? new Date(sale.date) : new Date()
     };
   }
 
-  // ---------------- FETCH ----------------
-  async function fetchSales() {
-    try {
-      salesData = (await getSales()).map(normalizeSaleData);
-      await updateDashboard();
-    } catch (err) {
-      console.error(err);
-      showToast("❌ Failed to load sales", "error");
+  function applyFilter() {
+    let filtered = [...salesData];
+    const currentFilter = filterSelect?.value || "all";
+
+    if (currentFilter !== "all") {
+      filtered = filtered.filter(s => currentFilter === "pending" ? s.status === "Pending" :
+                                       currentFilter === "cash" ? s.paymentType === "Cash" :
+                                       s.paymentType === "Mobile");
     }
+
+    const searchTerm = searchInput?.value.trim().toLowerCase() || "";
+    if (searchTerm) {
+      filtered = filtered.filter(s =>
+        s.productName.toLowerCase().includes(searchTerm) ||
+        s.customer.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return filtered;
   }
 
-  // ---------------- CRUD ----------------
-  async function addNewSale(sale) {
-    const newSale = normalizeSaleData({ ...sale, date: new Date().toISOString() });
+  // -------------------- CRUD --------------------
+  async function markAsCompleted(id) {
+    const sale = salesData.find(s => s._id === id);
+    if (!sale || sale.status === "Completed") return;
+
     try {
-      const created = await addSale(newSale);
-      salesData.push(normalizeSaleData(created));
-      showToast("✅ Sale added successfully!");
-      if (addSaleForm) addSaleForm.reset();
-      if (modal) modal.style.display = "none";
-      await updateDashboard();
+      await updateSale(id, { ...sale, status: "Completed" });
+      sale.status = "Completed";
+      updateDashboard();
+      showToast("✅ Sale marked as completed!");
     } catch (err) {
-      showToast(`❌ ${err.details || err.message}`, "error");
+      showToast("❌ Failed to complete sale", "error");
       console.error(err);
     }
   }
@@ -123,36 +154,45 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await deleteSaleAPI(id);
       salesData = salesData.filter(s => s._id !== id);
-      await updateDashboard();
-      showToast("🗑️ Sale deleted successfully", "info");
+      updateDashboard();
+      showToast("🗑️ Sale deleted", "info");
     } catch (err) {
-      showToast(`❌ ${err.details || err.message}`, "error");
+      showToast("❌ Failed to delete sale", "error");
       console.error(err);
     }
   }
 
-  async function markAsCompleted(id) {
-    const sale = salesData.find(s => s._id === id);
-    if (!sale || sale.status === "Completed") return;
-    sale.status = "Completed";
+  // -------------------- FORM --------------------
+  addSaleForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newSale = normalizeSaleData({
+      productName: document.getElementById("productName")?.value || "",
+      amount: parseFloat(document.getElementById("amount")?.value || 0),
+      paymentType: document.getElementById("paymentType")?.value || "Cash",
+      customer: document.getElementById("customerName")?.value || "",
+      status: document.getElementById("status")?.value || "Pending",
+    });
+
     try {
-      await updateSale(id, sale);
-      await updateDashboard();
-      showToast("✅ Sale marked as completed!");
+      const createdSale = await addSale(newSale);
+      salesData.push(createdSale);
+      showToast("✅ Sale added successfully!");
+      addSaleForm.reset();
+      if (modal) modal.style.display = "none";
+      updateDashboard();
     } catch (err) {
-      showToast(`❌ ${err.details || err.message}`, "error");
+      showToast("❌ Failed to add sale", "error");
       console.error(err);
     }
-  }
+  });
 
-  // ---------------- UPDATE DASHBOARD ----------------
-  function updateKPIs(filteredData) {
-    if (!totalSalesEl || !cashSalesEl || !mobileSalesEl || !completedOrdersEl) return;
-
-    const total = filteredData.reduce((sum, s) => sum + s.amount, 0);
-    const cash = filteredData.filter(s => s.paymentType === "Cash").reduce((sum, s) => sum + s.amount, 0);
-    const mobile = filteredData.filter(s => s.paymentType === "Mobile").reduce((sum, s) => sum + s.amount, 0);
-    const completed = filteredData.filter(s => s.status === "Completed").length;
+  // -------------------- UPDATES --------------------
+  function updateKPIs(filtered) {
+    if (!totalSalesEl) return;
+    const total = filtered.reduce((sum, s) => sum + s.amount, 0);
+    const cash = filtered.filter(s => s.paymentType === "Cash").reduce((sum, s) => sum + s.amount, 0);
+    const mobile = filtered.filter(s => s.paymentType === "Mobile").reduce((sum, s) => sum + s.amount, 0);
+    const completed = filtered.filter(s => s.status === "Completed").length;
 
     totalSalesEl.textContent = `₦${total.toLocaleString()}`;
     cashSalesEl.textContent = `₦${cash.toLocaleString()}`;
@@ -160,27 +200,11 @@ document.addEventListener("DOMContentLoaded", () => {
     completedOrdersEl.textContent = completed;
   }
 
-  function updatePendingOrders() {
-    if (!pendingOrdersList) return;
-    pendingOrdersList.innerHTML = "";
-    salesData.filter(s => s.status === "Pending").forEach(sale => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        ${sale.productName} - ₦${sale.amount.toLocaleString()} (${sale.customer})
-        <button class="complete-btn" data-id="${sale._id}" style="margin-left:10px;">✔</button>
-      `;
-      pendingOrdersList.appendChild(li);
-    });
-
-    document.querySelectorAll(".complete-btn").forEach(btn => {
-      btn.onclick = () => markAsCompleted(btn.dataset.id);
-    });
-  }
-
-  function updateProductTable(filteredData) {
+  function updateProductTable(filtered) {
     if (!productTableBody) return;
     productTableBody.innerHTML = "";
-    filteredData.forEach((sale, index) => {
+
+    filtered.forEach((sale, index) => {
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${index + 1}</td>
@@ -190,15 +214,33 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${sale.customer}</td>
         <td>${sale.status}</td>
         <td>
-          ${sale.status === "Pending" ? `<button class="complete-btn" data-id="${sale._id}">✔</button>` : ""}
-          <button class="delete-btn" data-id="${sale._id}">🗑</button>
+          <button class="btn delete" data-id="${sale._id}" style="background:red;color:white;">
+            <i class="fa fa-trash"></i>
+          </button>
         </td>
       `;
       productTableBody.appendChild(row);
     });
 
-    document.querySelectorAll(".complete-btn").forEach(btn => btn.onclick = () => markAsCompleted(btn.dataset.id));
-    document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteSale(btn.dataset.id));
+    document.querySelectorAll(".btn.delete").forEach(btn => btn.addEventListener("click", () => deleteSale(btn.dataset.id)));
+  }
+
+  function updatePendingOrders() {
+    if (!pendingOrdersList) return;
+    pendingOrdersList.innerHTML = "";
+
+    salesData.filter(s => s.status === "Pending").forEach(sale => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        ${sale.productName} - ₦${sale.amount.toLocaleString()} (${sale.customer})
+        <button class="btn complete-small" data-id="${sale._id}" style="background: darkgreen; color: white; margin-left:10px;">
+          <i class="fa fa-check"></i>
+        </button>
+      `;
+      pendingOrdersList.appendChild(li);
+    });
+
+    document.querySelectorAll(".btn.complete-small").forEach(btn => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
   async function updateTopCustomers() {
@@ -208,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
       topCustomersList.innerHTML = "";
       data.topCustomers.forEach(([name, total]) => {
         const li = document.createElement("li");
-        li.textContent = `${name} - ₦${total.toLocaleString()}`;
+        li.textContent = `${name || "Unknown"} - ₦${total.toLocaleString()}`;
         topCustomersList.appendChild(li);
       });
     } catch (err) { console.error(err); }
@@ -221,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
       topSellingProductsBody.innerHTML = "";
       data.topProducts.forEach(([name, total], index) => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${index + 1}</td><td>${name}</td><td>₦${total.toLocaleString()}</td>`;
+        row.innerHTML = `<td>${index+1}</td><td>${name}</td><td>₦${total.toLocaleString()}</td>`;
         topSellingProductsBody.appendChild(row);
       });
     } catch (err) { console.error(err); }
@@ -230,15 +272,23 @@ document.addEventListener("DOMContentLoaded", () => {
   async function updateSalesChart() {
     if (!salesChart) return;
     try {
-      const data = await getSalesAnalytics("monthly"); // or "yearly" if needed
-      salesChart.data.labels = Object.keys(data.analytics);
-      salesChart.data.datasets[0].data = Object.values(data.analytics);
+      const data = await getSalesAnalytics(currentView);
+      let labels = [], chartData = [];
+      if (currentView === "monthly") {
+        labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        chartData = data.analytics || [];
+      } else {
+        labels = Object.keys(data.analytics || {});
+        chartData = Object.values(data.analytics || {});
+      }
+      salesChart.data.labels = labels;
+      salesChart.data.datasets[0].data = chartData;
       salesChart.update();
     } catch (err) { console.error(err); }
   }
 
   async function updateDashboard() {
-    const filtered = [...salesData]; // or apply filter/search if needed
+    const filtered = applyFilter();
     updateKPIs(filtered);
     updateProductTable(filtered);
     updatePendingOrders();
@@ -247,24 +297,19 @@ document.addEventListener("DOMContentLoaded", () => {
     await updateSalesChart();
   }
 
-  // ---------------- EVENTS ----------------
-  if (addSaleBtn && modal) addSaleBtn.onclick = () => modal.style.display = "block";
-  if (closeModal) closeModal.onclick = () => modal.style.display = "none";
-  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+  filterSelect?.addEventListener("change", updateDashboard);
+  searchInput?.addEventListener("input", updateDashboard);
 
-  if (addSaleForm) {
-    addSaleForm.onsubmit = e => {
-      e.preventDefault();
-      addNewSale({
-        productName: document.getElementById("productName")?.value.trim() || "",
-        amount: parseFloat(document.getElementById("amount")?.value || 0),
-        paymentType: document.getElementById("paymentType")?.value || "Cash",
-        customer: document.getElementById("customerName")?.value.trim() || "",
-        status: document.getElementById("status")?.value || "Pending",
-      });
-    };
+  // -------------------- INITIAL LOAD --------------------
+  async function fetchSales() {
+    try {
+      salesData = await getSales();
+      updateDashboard();
+    } catch (err) {
+      showToast("❌ Failed to load sales", "error");
+      console.error(err);
+    }
   }
 
-  // Initial load
   fetchSales();
 });
