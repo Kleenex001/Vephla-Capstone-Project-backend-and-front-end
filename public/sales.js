@@ -35,18 +35,47 @@ document.addEventListener("DOMContentLoaded", () => {
   const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
   let salesChart = new Chart(ctx, {
     type: "line",
-    data: { labels: [], datasets: [{ label: "Sales", data: [], borderColor: "#007bff", backgroundColor: "rgba(0,123,255,0.2)", tension: 0.4, fill: true }] },
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: "Sales",
+          data: [],
+          borderColor: "#007bff",
+          backgroundColor: "rgba(0, 123, 255, 0.2)",
+          tension: 0.4,
+          fill: true,
+        },
+      ],
+    },
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
   });
 
-  // -------------------- UI HANDLERS --------------------
-  monthlyTab.addEventListener("click", () => { currentView = "monthly"; monthlyTab.classList.add("active"); yearlyTab.classList.remove("active"); updateChart(); });
-  yearlyTab.addEventListener("click", () => { currentView = "yearly"; yearlyTab.classList.add("active"); monthlyTab.classList.remove("active"); updateChart(); });
+  const monthlyTab = document.getElementById("monthlyTab");
+  const yearlyTab = document.getElementById("yearlyTab");
 
-  addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
-  closeModal.addEventListener("click", () => (modal.style.display = "none"));
-  window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+  // Capitalize helper
+  function capitalize(str) {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
 
+  // Tabs
+  monthlyTab.addEventListener("click", () => {
+    currentView = "monthly";
+    monthlyTab.classList.add("active");
+    yearlyTab.classList.remove("active");
+    updateChart();
+  });
+
+  yearlyTab.addEventListener("click", () => {
+    currentView = "yearly";
+    yearlyTab.classList.add("active");
+    monthlyTab.classList.remove("active");
+    updateChart();
+  });
+
+  // Toast messages
   function showToast(message, type = "success") {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
@@ -55,7 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => toast.remove(), 3000);
   }
 
-  // -------------------- API FUNCTIONS --------------------
+  // Modal handling
+  addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
+  closeModal.addEventListener("click", () => (modal.style.display = "none"));
+  window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+
+  // --- API Integration ---
   async function loadSales() {
     try {
       salesData = (await getSales()) || [];
@@ -70,9 +104,10 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const payload = {
         ...saleData,
-        paymentType: saleData.paymentType.toLowerCase(),
-        status: saleData.status.toLowerCase(),
+        paymentType: capitalize(saleData.paymentType), // Cash / Mobile
+        status: capitalize(saleData.status),           // Pending / Completed
       };
+
       await addSaleAPI(payload);
       await loadSales();
       showToast("✅ Sale added successfully!");
@@ -95,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function markAsCompleted(id) {
     try {
-      await updateSaleAPI(id, { status: "completed" });
+      await updateSaleAPI(id, { status: "Completed" });
       await loadSales();
       showToast("✅ Sale marked as completed!");
     } catch (err) {
@@ -104,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // -------------------- FORM HANDLER --------------------
+  // Form submission
   addSaleForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const newSale = {
@@ -120,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.style.display = "none";
   });
 
-  // -------------------- DASHBOARD --------------------
+  // KPIs
   async function updateKPIs() {
     try {
       const summary = (await getSalesSummary()) || {};
@@ -133,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Product table
   function updateProductTable(filteredData) {
     productTableBody.innerHTML = "";
     filteredData.forEach((sale, index) => {
@@ -140,13 +176,13 @@ document.addEventListener("DOMContentLoaded", () => {
       row.innerHTML = `
         <td>${index + 1}</td>
         <td>${sale.productName}</td>
-        <td>₦${sale.amount?.toLocaleString() ?? 0}</td>
+        <td>₦${sale.amount.toLocaleString()}</td>
         <td>${sale.paymentType}</td>
         <td>${sale.customerName}</td>
         <td>${sale.status}</td>
         <td>
-          ${sale.status === "pending" ? `<button class="btn complete" data-id="${sale._id}">Complete</button>` : ""}
-          <button class="btn delete" data-id="${sale._id}">Delete</button>
+          ${sale.status === "Pending" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
+          <button class="btn delete" data-id="${sale._id}"><i class="fa fa-trash"></i> Delete</button>
         </td>
       `;
       productTableBody.appendChild(row);
@@ -156,18 +192,20 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".btn.complete").forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
+  // Pending orders
   function updatePendingOrders(filteredData) {
     pendingOrdersList.innerHTML = "";
-    filteredData.filter((s) => s.status === "pending").forEach((sale) => {
+    filteredData.filter((s) => s.status === "Pending").forEach((sale) => {
       const li = document.createElement("li");
       li.textContent = `${sale.productName} `;
       const span = document.createElement("span");
-      span.textContent = `₦${sale.amount?.toLocaleString() ?? 0}`;
+      span.textContent = `₦${sale.amount.toLocaleString()}`;
       li.appendChild(span);
       pendingOrdersList.appendChild(li);
     });
   }
 
+  // Top customers
   async function updateTopCustomers() {
     try {
       const customers = Array.isArray(await getTopCustomersSales()) ? await getTopCustomersSales() : [];
@@ -176,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const li = document.createElement("li");
         li.textContent = `${c.customerName} `;
         const span = document.createElement("span");
-        span.textContent = `₦${c.totalSpent?.toLocaleString() ?? 0}`;
+        span.textContent = `₦${c.totalSpent.toLocaleString()}`;
         li.appendChild(span);
         topCustomersList.appendChild(li);
       });
@@ -185,6 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Top products
   async function updateTopProducts() {
     try {
       const products = Array.isArray(await getTopProducts()) ? await getTopProducts() : [];
@@ -194,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
         row.innerHTML = `
           <td>${index + 1}</td>
           <td>${p.productName}</td>
-          <td>₦${p.totalSold?.toLocaleString() ?? 0}</td>
+          <td>₦${p.totalSold.toLocaleString()}</td>
         `;
         topSellingProductsBody.appendChild(row);
       });
@@ -203,17 +242,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Chart
   function updateChart(filteredData = salesData) {
     if (currentView === "monthly") {
       const monthlyTotals = new Array(12).fill(0);
-      filteredData.forEach((s) => { monthlyTotals[new Date(s.date).getMonth()] += s.amount || 0; });
+      filteredData.forEach((sale) => { monthlyTotals[new Date(sale.date).getMonth()] += sale.amount; });
       salesChart.data.labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       salesChart.data.datasets[0].data = monthlyTotals;
     } else {
       const yearlyTotals = {};
-      filteredData.forEach((s) => {
-        const year = new Date(s.date).getFullYear();
-        yearlyTotals[year] = (yearlyTotals[year] || 0) + (s.amount || 0);
+      filteredData.forEach((sale) => {
+        const year = new Date(sale.date).getFullYear();
+        yearlyTotals[year] = (yearlyTotals[year] || 0) + sale.amount;
       });
       const years = Object.keys(yearlyTotals).sort();
       salesChart.data.labels = years;
@@ -222,15 +262,15 @@ document.addEventListener("DOMContentLoaded", () => {
     salesChart.update();
   }
 
-  // -------------------- FILTER & SEARCH --------------------
+  // Filter & search
   function applyFilter() {
     let filtered = [...salesData];
     if (currentFilter !== "all") {
-      filtered = currentFilter === "pending"
-        ? filtered.filter((s) => s.status === "pending")
-        : filtered.filter((s) => s.paymentType === currentFilter.toLowerCase());
+      filtered = currentFilter === "Pending"
+        ? filtered.filter((s) => s.status === "Pending")
+        : filtered.filter((s) => s.paymentType === currentFilter);
     }
-    if (searchInput.value.trim()) {
+    if (searchInput.value.trim() !== "") {
       filtered = filtered.filter((s) =>
         s.productName.toLowerCase().includes(searchInput.value.toLowerCase()) ||
         s.customerName.toLowerCase().includes(searchInput.value.toLowerCase())
@@ -239,18 +279,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return filtered;
   }
 
-  filterSelect.addEventListener("change", () => { currentFilter = filterSelect.value; updateDashboard(); });
+  filterSelect.addEventListener("change", () => { currentFilter = capitalize(filterSelect.value); updateDashboard(); });
   searchInput.addEventListener("input", () => updateDashboard());
 
-  // -------------------- DASHBOARD REFRESH --------------------
+  // Dashboard update
   function updateDashboard() {
-    const filtered = applyFilter();
+    const filteredData = applyFilter();
     updateKPIs();
-    updateProductTable(filtered);
-    updatePendingOrders(filtered);
+    updateProductTable(filteredData);
+    updatePendingOrders(filteredData);
     updateTopCustomers();
     updateTopProducts();
-    updateChart(filtered);
+    updateChart(filteredData);
   }
 
   loadSales();
