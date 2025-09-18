@@ -1,83 +1,97 @@
 // controllers/salesController.js
-const Sale = require('../models/Sales');
+const Sale = require("../models/Sales");
 
-// CREATE a new sale
-exports.createSale = async (req, res) => {
+// ----------------- EXTRA ENDPOINTS FOR DASHBOARD -----------------
+
+// Summary stats (with optional date range, default last 30 days)
+exports.getSalesSummary = async (req, res) => {
   try {
-    const sale = new Sale(req.body);
-    await sale.save();
+    let { start, end } = req.query;
 
-    res.status(201).json({
-      message: 'Sale created successfully',
-      data: sale
-    });
-  } catch (error) {
-    res.status(400).json({
-      error: 'Failed to create sale',
-      details: error.message
-    });
-  }
-};
+    // Default to last 30 days if no range provided
+    if (!start && !end) {
+      end = new Date();
+      start = new Date();
+      start.setDate(end.getDate() - 30);
+    }
 
-// READ all sales
-exports.getAllSales = async (req, res) => {
-  try {
-    const sales = await Sale.find();
+    // Build filter
+    let filter = {};
+    if (start || end) {
+      filter.date = {};
+      if (start) filter.date.$gte = new Date(start);
+      if (end) filter.date.$lte = new Date(end);
+    }
+
+    const sales = await Sale.find(filter);
+
+    const totalSales = sales.reduce((sum, s) => sum + s.amount, 0);
+    const cashSales = sales
+      .filter((s) => s.paymentType === "cash")
+      .reduce((sum, s) => sum + s.amount, 0);
+    const mobileSales = sales
+      .filter((s) => s.paymentType === "mobile")
+      .reduce((sum, s) => sum + s.amount, 0);
+    const pendingOrders = sales.filter((s) => s.status === "pending").length;
 
     res.status(200).json({
-      message: 'Sales retrieved successfully',
-      data: sales
+      totalSales,
+      cashSales,
+      mobileSales,
+      pendingOrders,
+      range: { start, end },
     });
   } catch (error) {
     res.status(500).json({
-      error: 'Failed to retrieve sales',
-      details: error.message
+      error: "Failed to fetch sales summary",
+      details: error.message,
     });
   }
 };
 
-// UPDATE a sale by ID
-exports.updateSale = async (req, res) => {
+// Sales analytics (monthly or yearly, with default last 30 days)
+exports.getSalesAnalytics = async (req, res) => {
   try {
-    const sale = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!sale) {
-      return res.status(404).json({
-        error: 'Sale not found',
-        id: req.params.id
+    const { view = "monthly" } = req.query;
+    let { start, end } = req.query;
+
+    // Default to last 30 days if no range provided
+    if (!start && !end) {
+      end = new Date();
+      start = new Date();
+      start.setDate(end.getDate() - 30);
+    }
+
+    // Build filter
+    let filter = {};
+    if (start || end) {
+      filter.date = {};
+      if (start) filter.date.$gte = new Date(start);
+      if (end) filter.date.$lte = new Date(end);
+    }
+
+    const sales = await Sale.find(filter);
+
+    let analytics;
+    if (view === "monthly") {
+      analytics = new Array(12).fill(0);
+      sales.forEach((s) => {
+        const month = new Date(s.date).getMonth();
+        analytics[month] += s.amount;
+      });
+    } else {
+      analytics = {};
+      sales.forEach((s) => {
+        const year = new Date(s.date).getFullYear();
+        analytics[year] = (analytics[year] || 0) + s.amount;
       });
     }
 
-    res.status(200).json({
-      message: 'Sale updated successfully',
-      data: sale
-    });
-  } catch (error) {
-    res.status(400).json({
-      error: 'Failed to update sale',
-      details: error.message
-    });
-  }
-};
-
-// DELETE a sale by ID
-exports.deleteSale = async (req, res) => {
-  try {
-    const sale = await Sale.findByIdAndDelete(req.params.id);
-    if (!sale) {
-      return res.status(404).json({
-        error: 'Sale not found',
-        id: req.params.id
-      });
-    }
-
-    res.status(200).json({
-      message: 'Sale deleted successfully',
-      data: sale
-    });
+    res.status(200).json({ view, analytics, range: { start, end } });
   } catch (error) {
     res.status(500).json({
-      error: 'Failed to delete sale',
-      details: error.message
+      error: "Failed to fetch sales analytics",
+      details: error.message,
     });
   }
 };

@@ -292,35 +292,95 @@ export async function addSupplier(supplier) {
     throw err;
   }
 }
+// -------------------- SALES API --------------------
 
-// -------------------- SALES --------------------
+// Get all sales
 export async function getSales() {
   try {
     const token = getAuthToken();
     const res = await fetch(`${BASE_URL}/sales`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
     return handleFetch(res);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error fetching sales:", err);
     throw err;
   }
 }
 
+// Add a new sale
 export async function addSale(sale) {
   try {
     const token = getAuthToken();
     const res = await fetch(`${BASE_URL}/sales`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(sale)
+      body: JSON.stringify(sale),
     });
     return handleFetch(res);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error adding sale:", err);
+    throw err;
+  }
+}
+
+// -------- Dashboard Helpers --------
+
+// Get KPI summary (total sales, cash, mobile, pending orders)
+export async function getSalesSummary() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/sales/summary/kpis`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("❌ Error fetching sales summary:", err);
+    throw err;
+  }
+}
+
+// Get sales analytics (monthly or yearly)
+export async function getSalesAnalytics(view = "monthly") {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/sales/analytics?view=${view}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("❌ Error fetching sales analytics:", err);
+    throw err;
+  }
+}
+
+// Get top customers
+export async function getTopCustomers() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/sales/top-customers`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("❌ Error fetching top customers:", err);
+    throw err;
+  }
+}
+
+// Get top products
+export async function getTopProducts() {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${BASE_URL}/sales/top-products`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return handleFetch(res);
+  } catch (err) {
+    console.error("❌ Error fetching top products:", err);
     throw err;
   }
 }
