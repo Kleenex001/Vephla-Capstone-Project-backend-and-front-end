@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
 
       const paymentEl = document.getElementById("paymentType");
-      const statusEl = document.getElementById("status");
+      const statusEl = document.getElementById("Status");
       if (!paymentEl || !statusEl) {
         showToast("❌ Form elements missing!", "error");
         return;
