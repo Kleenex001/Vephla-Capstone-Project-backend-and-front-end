@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const totalSalesEl = document.getElementById("totalSales");
   const cashSalesEl = document.getElementById("cashSales");
   const mobileSalesEl = document.getElementById("mobileSales");
-  const pendingOrdersEl = document.getElementById("pendingOrders");
+  const completedOrdersEl = document.getElementById("completedOrders");
 
   // -------------------- TABLE & DASHBOARD ELEMENTS --------------------
   const productTableBody = document.getElementById("productTableBody");
@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     totalSalesEl.textContent = `₦${total.toLocaleString()}`;
     cashSalesEl.textContent = `₦${cash.toLocaleString()}`;
     mobileSalesEl.textContent = `₦${mobile.toLocaleString()}`;
-    pendingOrdersEl.textContent = completed; // now shows completed orders
+    completedOrdersEl.textContent = completed;
   }
 
   function updateProductTable(filteredData) {
@@ -212,9 +212,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".btn.complete").forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
-  function updatePendingOrders(filteredData) {
+  function updatePendingOrders() {
     pendingOrdersList.innerHTML = "";
-    filteredData.filter((s) => s.status === "Completed").forEach((sale) => { // now completed
+    salesData.filter((s) => s.status === "Pending").forEach((sale) => {
       const li = document.createElement("li");
       li.textContent = `${sale.productName} - ₦${sale.amount.toLocaleString()} (${sale.customer})`;
       pendingOrdersList.appendChild(li);
@@ -261,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const filtered = applyFilter();
     updateKPIs(filtered);
     updateProductTable(filtered);
-    updatePendingOrders(filtered);
+    updatePendingOrders();
     await updateTopCustomers();
     await updateTopProducts();
     await updateSalesChart();
