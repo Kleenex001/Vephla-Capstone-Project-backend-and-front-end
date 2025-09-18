@@ -1,14 +1,15 @@
 // api.js
-// -------------------- CONFIG --------------------
+// =================================================
+// CONFIG
+// =================================================
 const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
-// -------------------- HELPERS --------------------
-// -------------------- HELPERS --------------------
+// =================================================
+// HELPERS
+// =================================================
 async function handleFetch(res) {
-  // Read response text
   const text = await res.text();
 
-  // Try to parse JSON, fallback to raw text if not JSON
   let data;
   try {
     data = text ? JSON.parse(text) : {};
@@ -16,14 +17,11 @@ async function handleFetch(res) {
     data = { message: text || "Invalid JSON response" };
   }
 
-  // If response not OK, throw the parsed object
   if (!res.ok) {
     throw data;
   }
-
   return data;
 }
-
 
 function getAuthToken() {
   const token = localStorage.getItem("token");
@@ -31,7 +29,9 @@ function getAuthToken() {
   return token;
 }
 
-// -------------------- AUTH --------------------
+// =================================================
+// AUTH
+// =================================================
 export async function loginUser(email, password) {
   const res = await fetch(`${BASE_URL}/auth/signin`, {
     method: "POST",
@@ -56,7 +56,9 @@ export function logoutUser() {
   localStorage.removeItem("token");
 }
 
-// -------------------- PASSWORD RESET --------------------
+// =================================================
+// PASSWORD RESET
+// =================================================
 export async function requestPasswordReset(email) {
   const res = await fetch(`${BASE_URL}/auth/request-password-reset`, {
     method: "POST",
@@ -75,7 +77,9 @@ export async function resetPassword(email, otp, newPassword) {
   return handleFetch(res);
 }
 
-// -------------------- DASHBOARD --------------------
+// =================================================
+// DASHBOARD
+// =================================================
 export async function getDashboardSummary() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/summary`, {
@@ -92,7 +96,8 @@ export async function getQuickStats() {
   return handleFetch(res);
 }
 
-export async function getPendingOrders() {
+// dashboard pending orders
+export async function getPendingOrdersDashboard() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/pending-orders`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -124,7 +129,9 @@ export async function getUserInfo() {
   return handleFetch(res);
 }
 
-// -------------------- CUSTOMERS --------------------
+// =================================================
+// CUSTOMERS
+// =================================================
 export async function getCustomers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/customers`, {
@@ -146,7 +153,9 @@ export async function addCustomer(customer) {
   return handleFetch(res);
 }
 
-// -------------------- INVENTORY --------------------
+// =================================================
+// INVENTORY
+// =================================================
 export async function getProducts() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/inventory/products`, {
@@ -168,7 +177,9 @@ export async function addProduct(product) {
   return handleFetch(res);
 }
 
-// -------------------- DELIVERIES --------------------
+// =================================================
+// DELIVERIES
+// =================================================
 export async function getDeliveries() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/deliveries`, {
@@ -190,7 +201,9 @@ export async function addDelivery(delivery) {
   return handleFetch(res);
 }
 
-// -------------------- SUPPLIERS --------------------
+// =================================================
+// SUPPLIERS
+// =================================================
 export async function getSuppliers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/suppliers`, {
@@ -211,9 +224,12 @@ export async function addSupplier(supplier) {
   });
   return handleFetch(res);
 }
-// -------------------- SALES --------------------
 
-// Normalize enum values (must match backend lowercase)
+// =================================================
+// SALES
+// =================================================
+
+// normalize enums (must match backend lowercase)
 function normalizeEnum(value, type) {
   if (!value) return value;
   const enums = {
@@ -224,7 +240,7 @@ function normalizeEnum(value, type) {
   return valid || value.toLowerCase();
 }
 
-// Get all sales
+// get all sales
 export async function getSales() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales`, {
@@ -233,7 +249,7 @@ export async function getSales() {
   return handleFetch(res);
 }
 
-// Add a new sale
+// add new sale
 export async function addSale(sale) {
   const token = getAuthToken();
 
@@ -251,7 +267,7 @@ export async function addSale(sale) {
   return handleFetch(res);
 }
 
-// Update sale by ID
+// update sale
 export async function updateSale(id, data) {
   const token = getAuthToken();
 
@@ -262,13 +278,14 @@ export async function updateSale(id, data) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(data),
   });
   return handleFetch(res);
 }
 
-// Delete sale by ID
+// delete sale
 export async function deleteSale(id) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/${id}`, {
@@ -278,7 +295,7 @@ export async function deleteSale(id) {
   return handleFetch(res);
 }
 
-// Mark sale as completed
+// complete sale
 export async function completeSale(id) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/${id}/complete`, {
@@ -288,9 +305,7 @@ export async function completeSale(id) {
   return handleFetch(res);
 }
 
-// -------------------- DASHBOARD ENDPOINTS --------------------
-
-// Summary KPIs
+// sales summary
 export async function getSalesSummary() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/summary/kpis`, {
@@ -299,7 +314,7 @@ export async function getSalesSummary() {
   return handleFetch(res);
 }
 
-// Analytics (monthly/weekly/etc)
+// sales analytics
 export async function getSalesAnalytics(view = "monthly") {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/analytics?view=${view}`, {
@@ -308,8 +323,8 @@ export async function getSalesAnalytics(view = "monthly") {
   return handleFetch(res);
 }
 
-// Top customers
-export async function getTopCustomers() {
+// sales top customers
+export async function getTopCustomersSales() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/top-customers`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -317,8 +332,8 @@ export async function getTopCustomers() {
   return handleFetch(res);
 }
 
-// Top products
-export async function getTopProducts() {
+// sales top products
+export async function getTopProductsSales() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/top-products`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -326,8 +341,8 @@ export async function getTopProducts() {
   return handleFetch(res);
 }
 
-// Pending orders
-export async function Orders() {
+// sales pending orders
+export async function getPendingOrdersSales() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -335,7 +350,9 @@ export async function Orders() {
   return handleFetch(res);
 }
 
-// -------------------- SETTINGS --------------------
+// =================================================
+// SETTINGS
+// =================================================
 export async function getSettings() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/settings`, {
