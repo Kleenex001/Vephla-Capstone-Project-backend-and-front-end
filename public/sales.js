@@ -48,10 +48,17 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.style.transition = "all 0.3s ease";
 
     switch (type) {
-      case "success": toast.style.backgroundColor = "#28a745"; break;
-      case "error": toast.style.backgroundColor = "#dc3545"; break;
-      case "info": toast.style.backgroundColor = "#17a2b8"; break;
-      default: toast.style.backgroundColor = "#333"; break;
+      case "success":
+        toast.style.backgroundColor = "#28a745";
+        break;
+      case "error":
+        toast.style.backgroundColor = "#dc3545";
+        break;
+      case "info":
+        toast.style.backgroundColor = "#17a2b8";
+        break;
+      default:
+        toast.style.backgroundColor = "#333";
     }
 
     toastContainer.appendChild(toast);
@@ -124,18 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDashboard();
   });
 
-  // -------------------- HELPERS --------------------
-  function normalizeSaleData(sale) {
-    const normalized = { ...sale };
-    if (normalized.paymentType)
-      normalized.paymentType =
-        normalized.paymentType.toLowerCase() === "cash" ? "Cash" : "Mobile";
-    if (normalized.status)
-      normalized.status =
-        normalized.status.toLowerCase() === "pending" ? "Pending" : "Completed";
-    return normalized;
-  }
-
   // -------------------- CRUD --------------------
   let salesData = [];
 
@@ -151,13 +146,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   addSaleForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const newSale = normalizeSaleData({
-      productName: document.getElementById("productName")?.value.trim() || "",
-      amount: parseFloat(document.getElementById("amount")?.value) || 0,
-      paymentType: document.getElementById("paymentType")?.value || "Cash",
-      customer: document.getElementById("customerName")?.value.trim() || "",
-      status: document.getElementById("Status")?.value || "Pending",
-    });
+
+    const newSale = {
+      productName: document.getElementById("productName").value.trim(),
+      amount: parseFloat(document.getElementById("amount").value),
+      paymentType:
+        document.getElementById("paymentType").value === "Cash"
+          ? "Cash"
+          : "Mobile",
+      customer: document.getElementById("customerName").value.trim(),
+      status:
+        document.getElementById("Status").value === "Pending"
+          ? "Pending"
+          : "Completed",
+    };
 
     try {
       const createdSale = await addSale(newSale);
@@ -194,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sale = salesData.find((s) => s._id === id);
     if (!sale || sale.status === "Completed") return;
 
-    const updatedSale = normalizeSaleData({ ...sale, status: "Completed" });
+    const updatedSale = { ...sale, status: "Completed" };
     try {
       await updateSale(id, updatedSale);
       sale.status = "Completed";
@@ -271,21 +273,29 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${sale.customer}</td>
         <td>${sale.status}</td>
         <td>
-          ${sale.status === "Pending" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i></button>` : ""}
+          ${
+            sale.status === "Pending"
+              ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i></button>`
+              : ""
+          }
           <button class="btn delete" data-id="${sale._id}"><i class="fa fa-trash"></i></button>
         </td>
       `;
       productTableBody.appendChild(row);
     });
 
-    document.querySelectorAll(".btn.delete").forEach((btn) => btn.addEventListener("click", () => deleteSale(btn.dataset.id)));
-    document.querySelectorAll(".btn.complete").forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
+    document
+      .querySelectorAll(".btn.delete")
+      .forEach((btn) => btn.addEventListener("click", () => deleteSale(btn.dataset.id)));
+    document
+      .querySelectorAll(".btn.complete")
+      .forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
-  function updatePendingOrdersList(filteredData) {
+  function updateCompletedOrdersList(filteredData) {
     pendingOrdersList.innerHTML = "";
     filteredData
-      .filter((s) => s.status === "Pending")
+      .filter((s) => s.status === "Completed")
       .forEach((s) => {
         const li = document.createElement("li");
         li.textContent = `${s.productName} - ₦${s.amount.toLocaleString()} (${s.customer})`;
@@ -349,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const filtered = applyFilter();
     updateKPIs(filtered);
     updateProductTable(filtered);
-    updatePendingOrdersList(filtered);
+    updateCompletedOrdersList(filtered);
     await updateTopCustomers();
     await updateTopProducts();
     await updateSalesChart(filtered);
