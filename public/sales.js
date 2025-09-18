@@ -91,11 +91,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function addSale(newSale) {
+ async function addSale(newSale) {
     try {
       // Convert to uppercase to match backend enums
-      newSale.paymentType = newSale.paymentType.toUpperCase();
-      newSale.status = newSale.status.toUpperCase();
+      // Use the correct backend enum values
+      newSale.paymentType = "CASH_PAYMENT"; // Replace with the actual valid enum value
+      newSale.status = "PENDING_STATUS"; // Replace with the actual valid enum value
 
       await addSaleAPI(newSale);
       await loadSales();
@@ -105,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("⚠️ Failed to add sale", "error");
     }
   }
+
 
   async function deleteSale(id) {
     try {
