@@ -11,7 +11,7 @@ const SaleSchema = new mongoose.Schema({
  },
   paymentType: { 
   type: String, 
-  enum: ['Cash', 'Mobile'], 
+  enum: ['cash', 'mobile'], 
   required: true 
 },
   customer: { 
@@ -19,7 +19,7 @@ const SaleSchema = new mongoose.Schema({
  },
   status: { 
   type: String, 
-  enum: ['Completed', 'Pending'], 
+  enum: ['completed', 'pending'], 
   default: 'Completed' },
   createdAt: { 
   type: Date, 
