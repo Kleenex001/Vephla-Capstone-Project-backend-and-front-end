@@ -147,31 +147,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  addSaleForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const newSale = normalizeSaleData({
-      productName: document.getElementById("productName").value.trim(),
-      amount: parseFloat(document.getElementById("amount").value),
-      paymentType: document.getElementById("paymentType").value,
-      customer: document.getElementById("customerName").value.trim(),
-      status: document.getElementById("Status").value,
-    });
+ addSaleForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-    try {
-      const createdSale = await addSale(newSale);
-      salesData.push(createdSale);
-      showToast("✅ Sale added successfully!");
-      addSaleForm.reset();
-      modal.style.display = "none";
-      updateDashboard();
-    } catch (err) {
-      const errorMessage = err.details
-        ? `❌ Sale validation failed: ${err.details}`
-        : `❌ ${err.message || "Unknown error"}`;
-      showToast(errorMessage, "error");
-      console.error(err);
-    }
-  });
+  // Normalize form input values
+  const rawPaymentType = document.getElementById("paymentType").value.trim().toLowerCase();
+  const rawStatus = document.getElementById("Status").value.trim().toLowerCase();
+
+  const normalizedSale = {
+    productName: document.getElementById("productName").value.trim(),
+    amount: parseFloat(document.getElementById("amount").value),
+    paymentType: rawPaymentType === "cash" ? "Cash" : "Mobile",
+    customer: document.getElementById("customerName").value.trim(),
+    status: rawStatus === "pending" ? "Pending" : "Completed",
+  };
+
+  try {
+    const createdSale = await addSale(normalizedSale);
+    salesData.push(createdSale);
+    showToast("✅ Sale added successfully!");
+    addSaleForm.reset();
+    modal.style.display = "none";
+    updateDashboard();
+  } catch (err) {
+    const errorMessage = err.details
+      ? `❌ Sale validation failed: ${err.details}`
+      : `❌ ${err.message || "Unknown error"}`;
+    showToast(errorMessage, "error");
+    console.error(err);
+  }
+});
 
   async function deleteSale(id) {
     try {
