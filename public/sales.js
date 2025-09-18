@@ -27,7 +27,7 @@ function parseServerError(err) {
       };
     }
     return { message: text };
-  } catch (e) {
+  } catch {
     return { message: err.message || String(err) };
   }
 }
@@ -57,19 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const salesChart = ctx
     ? new Chart(ctx, {
         type: "line",
-        data: {
-          labels: [],
-          datasets: [
-            {
-              label: "Sales",
-              data: [],
-              borderColor: "#28a745",
-              backgroundColor: "rgba(40,167,69,0.2)",
-              tension: 0.4,
-              fill: true,
-            },
-          ],
-        },
+        data: { labels: [], datasets: [{ label: "Sales", data: [], borderColor: "#28a745", backgroundColor: "rgba(40,167,69,0.2)", tension: 0.4, fill: true }] },
         options: { responsive: true, plugins: { legend: { display: false } } },
       })
     : null;
@@ -91,8 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function showToast(message, type = "success", duration = 3000) {
     const t = document.createElement("div");
     t.textContent = message;
-    t.style.cssText =
-      "padding:10px 14px;border-radius:6px;color:#fff;min-width:200px;box-shadow:0 2px 6px rgba(0,0,0,0.2)";
+    t.style.cssText = "padding:10px 14px;border-radius:6px;color:#fff;min-width:200px;box-shadow:0 2px 6px rgba(0,0,0,0.2)";
     if (type === "success") t.style.background = "#28a745";
     if (type === "error") t.style.background = "#dc3545";
     toastContainer.appendChild(t);
@@ -101,12 +88,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- normalize ----------
   function normalizeForServer(sale) {
-    const payment =
-      (sale.paymentType || "").toLowerCase() === "cash" ? "cash" : "mobile";
-    const status =
-      (sale.status || "").toLowerCase() === "completed"
-        ? "completed"
-        : "pending";
+    const payment = (sale.paymentType || "").toLowerCase() === "cash" ? "cash" : "mobile";
+    const status = (sale.status || "").toLowerCase() === "completed" ? "completed" : "pending";
     return { ...sale, paymentType: payment, status };
   }
 
@@ -115,28 +98,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentView = "monthly";
 
   // ---------- event wiring ----------
-  addSaleBtn?.addEventListener(
-    "click",
-    () => modal && (modal.style.display = "block")
-  );
-  closeModal?.addEventListener(
-    "click",
-    () => modal && (modal.style.display = "none")
-  );
-  window.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-  });
+  addSaleBtn?.addEventListener("click", () => (modal.style.display = "block"));
+  closeModal?.addEventListener("click", () => (modal.style.display = "none"));
+  window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
 
-  monthlyTab?.addEventListener("click", () => {
-    currentView = "monthly";
-    setActiveTab();
-    updateDashboard();
-  });
-  yearlyTab?.addEventListener("click", () => {
-    currentView = "yearly";
-    setActiveTab();
-    updateDashboard();
-  });
+  monthlyTab?.addEventListener("click", () => { currentView = "monthly"; setActiveTab(); updateDashboard(); });
+  yearlyTab?.addEventListener("click", () => { currentView = "yearly"; setActiveTab(); updateDashboard(); });
 
   function setActiveTab() {
     monthlyTab?.classList.toggle("active", currentView === "monthly");
@@ -159,8 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
         productName: document.getElementById("productName")?.value.trim(),
         amount: parseFloat(document.getElementById("amount")?.value || "0"),
         paymentType: document.getElementById("paymentType")?.value || "cash",
-        customerName:
-          document.getElementById("customerName")?.value.trim() || "Unknown",
+        customerName: document.getElementById("customerName")?.value.trim() || "Unknown",
         status: document.getElementById("status")?.value || "pending",
         date: new Date().toISOString(),
       });
@@ -174,32 +140,15 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast(`❌ Add failed: ${err.message}`, "error");
     }
   }
-  addSaleForm?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    addNewSaleFromForm();
-  });
+  addSaleForm?.addEventListener("submit", (e) => { e.preventDefault(); addNewSaleFromForm(); });
 
   // ---------- update UI sections ----------
   async function updateSalesChartUI() {
     try {
       const res = await safeCall(getSalesAnalytics, currentView);
-      const labels =
-        currentView === "monthly"
-          ? [
-              "Jan",
-              "Feb",
-              "Mar",
-              "Apr",
-              "May",
-              "Jun",
-              "Jul",
-              "Aug",
-              "Sep",
-              "Oct",
-              "Nov",
-              "Dec",
-            ]
-          : Object.keys(res.analytics || {});
+      const labels = currentView === "monthly"
+        ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        : Object.keys(res.analytics || {});
       const data = Object.values(res.analytics || {});
       if (salesChart) {
         salesChart.data.labels = labels;
@@ -268,6 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function updateSalesTableUI() {
     productTableBody.innerHTML = "";
     (salesData || []).forEach((s) => {
+      const id = s.id || s._id; // ✅ fallback for MongoDB
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${s.productName}</td>
@@ -277,15 +227,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${s.status}</td>
         <td>${new Date(s.date).toLocaleDateString()}</td>
         <td>
-          <button class="complete-btn" data-id="${s.id}" ${
-        s.status === "completed" ? "disabled" : ""
-      }>✅ Complete</button>
-          <button class="delete-btn" data-id="${s.id}">🗑 Delete</button>
+          <button class="complete-btn" data-id="${id}" ${s.status === "completed" ? "disabled" : ""}>✅ Complete</button>
+          <button class="delete-btn" data-id="${id}">🗑 Delete</button>
         </td>`;
       productTableBody.appendChild(tr);
     });
 
-    // Wire up complete + delete buttons
+    // Wire up buttons
     document.querySelectorAll(".complete-btn").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         const id = e.target.dataset.id;
