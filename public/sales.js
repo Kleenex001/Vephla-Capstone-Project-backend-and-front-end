@@ -8,11 +8,25 @@ import {
 } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // -------------------- MODAL --------------------
   const modal = document.getElementById("addSaleModal");
   const addSaleBtn = document.getElementById("addSaleBtn");
-  const closeModal = modal.querySelector(".close");
+  const closeModal = modal ? modal.querySelector(".close") : null;
   const addSaleForm = document.getElementById("addSaleForm");
 
+  if (addSaleBtn && modal) {
+    addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
+  }
+
+  if (closeModal) {
+    closeModal.addEventListener("click", () => (modal.style.display = "none"));
+  }
+
+  window.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  });
+
+  // -------------------- TOAST --------------------
   const toastContainer = document.createElement("div");
   toastContainer.id = "toastContainer";
   toastContainer.style.position = "fixed";
@@ -57,12 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, duration);
   }
 
-  addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
-  closeModal.addEventListener("click", () => (modal.style.display = "none"));
-  window.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-  });
-
+  // -------------------- SIDEBAR ELEMENTS --------------------
   const pendingOrdersList = document.getElementById("pendingOrdersList");
   const topCustomersList = document.getElementById("topCustomers");
   const topSellingProductsBody = document.getElementById("topSellingProducts");
@@ -79,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // -------------------- FETCH SALES --------------------
   async function fetchSales() {
     try {
       salesData = await getSales();
@@ -89,6 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // -------------------- CRUD --------------------
   async function markAsCompleted(id) {
     const sale = salesData.find((s) => s._id === id);
     if (!sale || sale.status === "Completed") return;
@@ -123,38 +134,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  addSaleForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const rawPaymentType = document.getElementById("paymentType").value.trim().toLowerCase();
-    const rawStatus = document.getElementById("Status").value.trim().toLowerCase();
+  if (addSaleForm) {
+    addSaleForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const normalizedSale = {
-      productName: document.getElementById("productName").value.trim(),
-      amount: parseFloat(document.getElementById("amount").value),
-      paymentType: rawPaymentType === "cash" ? "Cash" : "Mobile",
-      customer: document.getElementById("customerName").value.trim(),
-      status: rawStatus === "pending" ? "Pending" : "Completed",
-    };
+      const paymentEl = document.getElementById("paymentType");
+      const statusEl = document.getElementById("Status");
+      if (!paymentEl || !statusEl) {
+        showToast("❌ Form elements missing!", "error");
+        return;
+      }
 
-    try {
-      const createdSale = await addSale(normalizedSale);
-      salesData.push(createdSale);
-      showToast("✅ Sale added successfully!");
-      addSaleForm.reset();
-      modal.style.display = "none";
-      updateSidebar();
-    } catch (err) {
-      const errorMessage = err.details
-        ? `❌ Sale validation failed: ${err.details}`
-        : `❌ ${err.message || "Unknown error"}`;
-      showToast(errorMessage, "error");
-      console.error(err);
-    }
-  });
+      const rawPaymentType = paymentEl.value.trim().toLowerCase();
+      const rawStatus = statusEl.value.trim().toLowerCase();
 
-  // -------------------- SIDEBAR UPDATE --------------------
+      const normalizedSale = {
+        productName: document.getElementById("productName")?.value.trim() || "",
+        amount: parseFloat(document.getElementById("amount")?.value || 0),
+        paymentType: rawPaymentType === "cash" ? "Cash" : "Mobile",
+        customer: document.getElementById("customerName")?.value.trim() || "",
+        status: rawStatus === "pending" ? "Pending" : "Completed",
+      };
+
+      try {
+        const createdSale = await addSale(normalizedSale);
+        salesData.push(createdSale);
+        showToast("✅ Sale added successfully!");
+        addSaleForm.reset();
+        if (modal) modal.style.display = "none";
+        updateSidebar();
+      } catch (err) {
+        const errorMessage = err.details
+          ? `❌ Sale validation failed: ${err.details}`
+          : `❌ ${err.message || "Unknown error"}`;
+        showToast(errorMessage, "error");
+        console.error(err);
+      }
+    });
+  }
+
+  // -------------------- SIDEBAR UPDATES --------------------
   function updatePendingOrders() {
+    if (!pendingOrdersList) return;
     pendingOrdersList.innerHTML = "";
+
     salesData
       .filter((s) => normalizeSaleData(s).status === "Pending")
       .forEach((sale) => {
@@ -172,6 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function updateTopCustomers() {
+    if (!topCustomersList) return;
     try {
       const data = await getTopCustomersSales();
       topCustomersList.innerHTML = "";
@@ -186,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function updateTopProducts() {
+    if (!topSellingProductsBody) return;
     try {
       const data = await getTopProducts();
       topSellingProductsBody.innerHTML = "";
