@@ -4,12 +4,22 @@ const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
 // -------------------- HELPERS --------------------
 async function handleFetch(res) {
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `HTTP error! status: ${res.status}`);
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text }; // fallback if not JSON
   }
-  return res.json();
+
+  if (!res.ok) {
+    // throw the parsed object instead of Error
+    throw data;
+  }
+
+  return data;
 }
+
 
 function getAuthToken() {
   const token = localStorage.getItem("token");

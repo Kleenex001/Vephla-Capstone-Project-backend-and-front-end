@@ -145,20 +145,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     try {
-      const createdSale = await addSale(newSale);
-      salesData.push(createdSale);
-      showToast("✅ Sale added successfully!");
-      addSaleForm.reset();
-      modal.style.display = "none";
-      updateDashboard();
-    } catch (err) {
-      const errorMessage = err.details
-        ? `❌ Sale validation failed: ${err.details}`
-        : `❌ ${err.message}`;
-      showToast(errorMessage, "error");
-      console.error(err);
-    }
-  });
+  const createdSale = await addSale(newSale);
+  salesData.push(createdSale);
+  showToast("✅ Sale added successfully!");
+  addSaleForm.reset();
+  modal.style.display = "none";
+  updateDashboard();
+} catch (err) {
+  const errorMessage = err.details
+    ? `❌ Sale validation failed: ${err.details}`
+    : `❌ ${err.message || 'Unknown error'}`;
+  showToast(errorMessage, "error");
+  console.error(err);
+}
+
 
   async function deleteSale(id) {
     try {
