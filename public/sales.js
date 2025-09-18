@@ -94,8 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function addSale(newSale) {
     try {
       // Ensure correct backend enum values
-      newSale.paymentType = newSale.paymentType.toLowerCase(); // cash or mobile
-      newSale.status = newSale.status.toLowerCase(); // pending or completed
+       newSale.paymentType = newSale.paymentType.toUpperCase(); // e.g., CASH or MOBILE
+      newSale.status = newSale.status.charAt(0).toUpperCase() + newSale.status.slice(1).toLowerCase(); // e.g., Pending or Completed
 
       await addSaleAPI(newSale);
       await loadSales();
