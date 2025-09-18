@@ -211,10 +211,9 @@ export async function addSupplier(supplier) {
   });
   return handleFetch(res);
 }
-
 // -------------------- SALES --------------------
 
-// Helper to normalize enum values
+// Normalize enum values
 function normalizeEnum(value, type) {
   if (!value) return value;
   const enums = {
@@ -238,7 +237,6 @@ export async function getSales() {
 export async function addSale(sale) {
   const token = getAuthToken();
 
-  // Normalize enums
   sale.paymentType = normalizeEnum(sale.paymentType, "paymentType");
   sale.status = normalizeEnum(sale.status, "status");
 
@@ -253,16 +251,15 @@ export async function addSale(sale) {
   return handleFetch(res);
 }
 
-// Update a sale by ID
+// Update sale by ID
 export async function updateSale(id, data) {
   const token = getAuthToken();
 
-  // Normalize enums
   if (data.paymentType) data.paymentType = normalizeEnum(data.paymentType, "paymentType");
   if (data.status) data.status = normalizeEnum(data.status, "status");
 
   const res = await fetch(`${BASE_URL}/sales/${id}`, {
-    method: "PATCH",
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -272,7 +269,7 @@ export async function updateSale(id, data) {
   return handleFetch(res);
 }
 
-// Delete a sale by ID
+// Delete sale by ID
 export async function deleteSale(id) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/${id}`, {
@@ -282,7 +279,17 @@ export async function deleteSale(id) {
   return handleFetch(res);
 }
 
-// KPI summary
+// Mark sale as completed
+export async function completeSale(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/${id}/complete`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Dashboard endpoints
 export async function getSalesSummary() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/summary/kpis`, {
@@ -291,7 +298,6 @@ export async function getSalesSummary() {
   return handleFetch(res);
 }
 
-// Sales analytics
 export async function getSalesAnalytics(view = "monthly") {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/analytics?view=${view}`, {
@@ -300,7 +306,6 @@ export async function getSalesAnalytics(view = "monthly") {
   return handleFetch(res);
 }
 
-// Top customers sales
 export async function getTopCustomersSales() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/top-customers`, {
@@ -309,7 +314,6 @@ export async function getTopCustomersSales() {
   return handleFetch(res);
 }
 
-// Top products
 export async function getTopProducts() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/top-products`, {
@@ -318,6 +322,13 @@ export async function getTopProducts() {
   return handleFetch(res);
 }
 
+export async function getPendingOrders() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
 // -------------------- SETTINGS --------------------
 export async function getSettings() {
