@@ -7,7 +7,7 @@ import {
   completeSale,
   getSalesSummary,
   getSalesAnalytics,
-  getTopCustomersSales,
+  getTopCustomers,
   getTopProducts,
   getPendingOrders,
 } from "./api.js";
@@ -57,7 +57,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const salesChart = ctx
     ? new Chart(ctx, {
         type: "line",
-        data: { labels: [], datasets: [{ label: "Sales", data: [], borderColor: "#28a745", backgroundColor: "rgba(40,167,69,0.2)", tension: 0.4, fill: true }] },
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Sales",
+              data: [],
+              borderColor: "#28a745",
+              backgroundColor: "rgba(40,167,69,0.2)",
+              tension: 0.4,
+              fill: true,
+            },
+          ],
+        },
         options: { responsive: true, plugins: { legend: { display: false } } },
       })
     : null;
@@ -66,14 +78,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const toastContainer = document.createElement("div");
   toastContainer.id = "toastContainer";
   Object.assign(toastContainer.style, {
-    position: "fixed", top: "20px", right: "20px", zIndex: 9999, display: "flex", flexDirection: "column", gap: "10px",
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    zIndex: 9999,
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
   });
   document.body.appendChild(toastContainer);
 
   function showToast(message, type = "success", duration = 3000) {
     const t = document.createElement("div");
     t.textContent = message;
-    t.style.cssText = "padding:10px 14px;border-radius:6px;color:#fff;min-width:200px;box-shadow:0 2px 6px rgba(0,0,0,0.2)";
+    t.style.cssText =
+      "padding:10px 14px;border-radius:6px;color:#fff;min-width:200px;box-shadow:0 2px 6px rgba(0,0,0,0.2)";
     if (type === "success") t.style.background = "#28a745";
     if (type === "error") t.style.background = "#dc3545";
     toastContainer.appendChild(t);
@@ -82,8 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- normalize ----------
   function normalizeForServer(sale) {
-    const payment = (sale.paymentType || "").toLowerCase() === "cash" ? "Cash" : "Mobile";
-    const status = (sale.status || "").toLowerCase() === "completed" ? "Completed" : "Pending";
+    const payment =
+      (sale.paymentType || "").toLowerCase() === "cash" ? "cash" : "mobile";
+    const status =
+      (sale.status || "").toLowerCase() === "completed"
+        ? "completed"
+        : "pending";
     return { ...sale, paymentType: payment, status };
   }
 
@@ -92,12 +115,28 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentView = "monthly";
 
   // ---------- event wiring ----------
-  addSaleBtn?.addEventListener("click", () => modal && (modal.style.display = "block"));
-  closeModal?.addEventListener("click", () => modal && (modal.style.display = "none"));
-  window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+  addSaleBtn?.addEventListener(
+    "click",
+    () => modal && (modal.style.display = "block")
+  );
+  closeModal?.addEventListener(
+    "click",
+    () => modal && (modal.style.display = "none")
+  );
+  window.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  });
 
-  monthlyTab?.addEventListener("click", () => { currentView = "monthly"; setActiveTab(); updateDashboard(); });
-  yearlyTab?.addEventListener("click", () => { currentView = "yearly"; setActiveTab(); updateDashboard(); });
+  monthlyTab?.addEventListener("click", () => {
+    currentView = "monthly";
+    setActiveTab();
+    updateDashboard();
+  });
+  yearlyTab?.addEventListener("click", () => {
+    currentView = "yearly";
+    setActiveTab();
+    updateDashboard();
+  });
 
   function setActiveTab() {
     monthlyTab?.classList.toggle("active", currentView === "monthly");
@@ -105,7 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function safeCall(fn, ...args) {
-    try { return await fn(...args); } catch (err) { throw err; }
+    try {
+      return await fn(...args);
+    } catch (err) {
+      throw parseServerError(err);
+    }
   }
 
   // ---------- add sale ----------
@@ -115,9 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const payload = normalizeForServer({
         productName: document.getElementById("productName")?.value.trim(),
         amount: parseFloat(document.getElementById("amount")?.value || "0"),
-        paymentType: document.getElementById("paymentType")?.value || "Cash",
-        customerName: document.getElementById("customerName")?.value.trim() || "Unknown",
-        status: document.getElementById("status")?.value || "Pending",
+        paymentType: document.getElementById("paymentType")?.value || "cash",
+        customerName:
+          document.getElementById("customerName")?.value.trim() || "Unknown",
+        status: document.getElementById("status")?.value || "pending",
         date: new Date().toISOString(),
       });
 
@@ -127,22 +171,44 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.style.display = "none";
       await updateDashboard();
     } catch (err) {
-      const parsed = parseServerError(err);
-      showToast(`❌ Add failed: ${parsed.message}`, "error");
+      showToast(`❌ Add failed: ${err.message}`, "error");
     }
   }
-  addSaleForm?.addEventListener("submit", (e) => { e.preventDefault(); addNewSaleFromForm(); });
+  addSaleForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    addNewSaleFromForm();
+  });
 
   // ---------- update UI sections ----------
   async function updateSalesChartUI() {
     try {
       const res = await safeCall(getSalesAnalytics, currentView);
-      const labels = currentView === "monthly"
-        ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-        : Object.keys(res.analytics || {});
+      const labels =
+        currentView === "monthly"
+          ? [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ]
+          : Object.keys(res.analytics || {});
       const data = Object.values(res.analytics || {});
-      if (salesChart) { salesChart.data.labels = labels; salesChart.data.datasets[0].data = data; salesChart.update(); }
-    } catch (err) { console.warn("Chart update failed", err); }
+      if (salesChart) {
+        salesChart.data.labels = labels;
+        salesChart.data.datasets[0].data = data;
+        salesChart.update();
+      }
+    } catch (err) {
+      showToast(`❌ Chart update failed: ${err.message}`, "error");
+    }
   }
 
   async function updateKPIs() {
@@ -152,48 +218,56 @@ document.addEventListener("DOMContentLoaded", () => {
       cashSalesEl.textContent = `₦${(summary.cashSales || 0).toLocaleString()}`;
       mobileSalesEl.textContent = `₦${(summary.mobileSales || 0).toLocaleString()}`;
       completedOrdersEl.textContent = summary.completedOrders ?? 0;
-    } catch (err) { console.warn("KPI update failed", err); }
+    } catch (err) {
+      showToast(`❌ KPI update failed: ${err.message}`, "error");
+    }
   }
 
   async function updatePendingOrdersUI() {
     try {
       const orders = await safeCall(getPendingOrders);
       pendingOrdersList.innerHTML = "";
-      (orders || []).forEach(o => {
+      (orders || []).forEach((o) => {
         const li = document.createElement("li");
         li.textContent = `${o.productName} - ₦${o.amount} (${o.customerName})`;
         pendingOrdersList.appendChild(li);
       });
-    } catch { console.warn("Pending orders failed"); }
+    } catch (err) {
+      showToast(`❌ Pending orders failed: ${err.message}`, "error");
+    }
   }
 
   async function updateTopCustomersUI() {
     try {
-      const customers = await safeCall(getTopCustomersSales);
+      const customers = await safeCall(getTopCustomers);
       topCustomersList.innerHTML = "";
-      (customers || []).forEach(c => {
+      (customers || []).forEach((c) => {
         const li = document.createElement("li");
         li.textContent = `${c.customerName} - ₦${c.totalSpent}`;
         topCustomersList.appendChild(li);
       });
-    } catch { console.warn("Top customers failed"); }
+    } catch (err) {
+      showToast(`❌ Top customers failed: ${err.message}`, "error");
+    }
   }
 
   async function updateTopProductsUI() {
     try {
       const products = await safeCall(getTopProducts);
       topSellingProductsBody.innerHTML = "";
-      (products || []).forEach(p => {
+      (products || []).forEach((p) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${p.productName}</td><td>${p.totalSold}</td>`;
         topSellingProductsBody.appendChild(tr);
       });
-    } catch { console.warn("Top products failed"); }
+    } catch (err) {
+      showToast(`❌ Top products failed: ${err.message}`, "error");
+    }
   }
 
   async function updateSalesTableUI() {
     productTableBody.innerHTML = "";
-    (salesData || []).forEach(s => {
+    (salesData || []).forEach((s) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${s.productName}</td>
@@ -203,14 +277,16 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${s.status}</td>
         <td>${new Date(s.date).toLocaleDateString()}</td>
         <td>
-          <button class="complete-btn" data-id="${s.id}" ${s.status === "Completed" ? "disabled" : ""}>✅ Complete</button>
+          <button class="complete-btn" data-id="${s.id}" ${
+        s.status === "completed" ? "disabled" : ""
+      }>✅ Complete</button>
           <button class="delete-btn" data-id="${s.id}">🗑 Delete</button>
         </td>`;
       productTableBody.appendChild(tr);
     });
 
     // Wire up complete + delete buttons
-    document.querySelectorAll(".complete-btn").forEach(btn => {
+    document.querySelectorAll(".complete-btn").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         const id = e.target.dataset.id;
         try {
@@ -218,13 +294,12 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast("✅ Sale marked as complete");
           await updateDashboard();
         } catch (err) {
-          const parsed = parseServerError(err);
-          showToast(`❌ Complete failed: ${parsed.message}`, "error");
+          showToast(`❌ Complete failed: ${err.message}`, "error");
         }
       });
     });
 
-    document.querySelectorAll(".delete-btn").forEach(btn => {
+    document.querySelectorAll(".delete-btn").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         const id = e.target.dataset.id;
         if (!confirm("⚠️ Are you sure you want to delete this sale?")) return;
@@ -233,8 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast("🗑 Sale deleted");
           await updateDashboard();
         } catch (err) {
-          const parsed = parseServerError(err);
-          showToast(`❌ Delete failed: ${parsed.message}`, "error");
+          showToast(`❌ Delete failed: ${err.message}`, "error");
         }
       });
     });
@@ -251,8 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await updateTopProductsUI();
       await updateSalesTableUI();
     } catch (err) {
-      const parsed = parseServerError(err);
-      showToast(`❌ Dashboard update failed: ${parsed.message}`, "error");
+      showToast(`❌ Dashboard update failed: ${err.message}`, "error");
     }
   }
 

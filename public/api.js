@@ -213,15 +213,15 @@ export async function addSupplier(supplier) {
 }
 // -------------------- SALES --------------------
 
-// Normalize enum values
+// Normalize enum values (must match backend lowercase)
 function normalizeEnum(value, type) {
   if (!value) return value;
   const enums = {
-    paymentType: ["Cash", "Mobile"],
-    status: ["Pending", "Completed"],
+    paymentType: ["cash", "mobile"],
+    status: ["pending", "completed"],
   };
-  const valid = enums[type].find(e => e.toLowerCase() === value.toLowerCase());
-  return valid || value;
+  const valid = enums[type].find(e => e === value.toLowerCase());
+  return valid || value.toLowerCase();
 }
 
 // Get all sales
@@ -322,6 +322,14 @@ export async function getTopProducts() {
   return handleFetch(res);
 }
 
+// Pending orders (fixed endpoint)
+export async function getPendingOrders() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
 // -------------------- SETTINGS --------------------
 export async function getSettings() {
