@@ -1,226 +1,279 @@
 // sales.js
+import {
+  getSales,
+  addSale,
+  deleteSale as deleteSaleAPI,
+  completeSale,
+  getSalesSummary,
+  getSalesAnalytics,
+  getTopCustomersSales as fetchTopCustomers,
+  getTopProductsSales as fetchTopProducts,
+  getPendingOrdersSales as fetchPendingOrders,
+} from "./api.js";
 
-const BASE_URL = "http://localhost:5000/api"; // update if deployed
+// ================= Helpers =================
+function parseServerError(err) {
+  try {
+    if (!err) return { message: "Unknown error" };
+    if (typeof err === "string") return { message: err };
+    if (err.error) return { message: err.error };
+    if (err.message) return { message: err.message };
+    return { message: JSON.stringify(err) };
+  } catch {
+    return { message: "Unexpected server error" };
+  }
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Modal Elements
+async function safeCall(apiFn, ...args) {
+  try {
+    return await apiFn(...args);
+  } catch (err) {
+    console.error("API error:", err);
+    alert(parseServerError(err).message);
+    return null;
+  }
+}
+
+
+// Animate numbers from start to end
+function animateValue(el, start, end, duration = 800) {
+  if (!el) return;
+  let startTimestamp = null;
+  const step = timestamp => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    el.textContent = `₦${Math.floor(progress * (end - start) + start)}`;
+    if (progress < 1) window.requestAnimationFrame(step);
+  };
+  window.requestAnimationFrame(step);
+}
+
+// ================= Load Data =================
+async function loadSummary() {
+  const data = await safeCall(getSalesSummary);
+  if (!data) return;
+
+  animateValue(document.getElementById("totalSales"), 0, Number(data.totalSales) || 0);
+  animateValue(document.getElementById("cashSales"), 0, Number(data.cashSales) || 0);
+  animateValue(document.getElementById("mobileSales"), 0, Number(data.mobileSales) || 0);
+
+  // Completed orders doesn't need currency symbol
+  const completedEl = document.getElementById("completedOrders");
+  if (completedEl) {
+    completedEl.textContent = Number(data.completedOrders) || 0;
+  }
+}
+
+
+// Load analytics chart
+let analyticsChart;
+async function loadAnalytics(view = "monthly") {
+  const data = await safeCall(getSalesAnalytics, view);
+  if (!data) return;
+
+  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
+  let labels = [];
+  let values = [];
+
+  if (view === "monthly") {
+    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    values = data.analytics || Array(12).fill(0);
+  } else {
+    labels = Object.keys(data.analytics || {}).sort();
+    values = Object.values(data.analytics || {});
+  }
+
+  if (analyticsChart) {
+    analyticsChart.data.labels = labels;
+    analyticsChart.data.datasets[0].data = values;
+    analyticsChart.update();
+  } else {
+    analyticsChart = new Chart(ctx, {
+      type: "line",
+      data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 800 } },
+    });
+  }
+}
+
+
+// Load sales table
+async function loadSalesTable() {
+  const sales = await safeCall(getSales);
+  if (!sales) return;
+
+  const tbody = document.getElementById("productTableBody");
+  tbody.innerHTML = "";
+
+  sales.forEach((sale, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${sale.productName}</td>
+      <td>₦${sale.amount}</td>
+      <td>${sale.paymentType}</td>
+      <td>${sale.customerName}</td>
+      <td>${sale.status}</td>
+      <td>
+        <button class="btn small" data-action="complete" data-id="${sale._id}">✔</button>
+        <button class="btn small danger" data-action="delete" data-id="${sale._id}">🗑</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Load Top Products
+async function loadTopProducts() {
+  const products = await safeCall(fetchTopProducts);
+  if (!products) return;
+
+  const tbody = document.getElementById("topSellingProducts");
+  tbody.innerHTML = "";
+
+  products.topProducts?.forEach((p, i) => {
+    const tr = document.createElement("tr");
+    const amountTd = document.createElement("td");
+    tr.innerHTML = `<td>${i + 1}</td><td>${p[0]}</td>`; // p[0] = productName
+    tr.appendChild(amountTd);
+    tbody.appendChild(tr);
+
+    animateValue(amountTd, 0, p[1] || 0);
+  });
+}
+
+// Load Top Customers
+async function loadTopCustomers() {
+  const customers = await safeCall(fetchTopCustomers);
+  if (!customers) return;
+
+  const ul = document.getElementById("topCustomers");
+  ul.innerHTML = "";
+
+  customers.topCustomers?.forEach(c => {
+    const li = document.createElement("li");
+    ul.appendChild(li);
+
+    const name = c[0];
+    const total = c[1];
+
+    let start = 0;
+    const duration = 1000;
+
+    function step(timestamp) {
+      if (!li.startTime) li.startTime = timestamp;
+      const progress = Math.min((timestamp - li.startTime) / duration, 1);
+      const value = Math.floor(progress * total + start);
+      li.textContent = `${name} - ₦${value}`;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  });
+}
+
+// Load Pending Orders
+async function loadPendingOrders() {
+  const data = await safeCall(fetchPendingOrders);
+  if (!data) return;
+
+  const ol = document.getElementById("pendingOrdersList");
+  ol.innerHTML = "";
+
+  data.pending?.forEach(o => {
+    const li = document.createElement("li");
+    li.textContent = `${o.productName} (${o.customerName})`;
+    ol.appendChild(li);
+  });
+}
+
+// ================= Event Handlers =================
+
+// Add Sale Modal
+function setupAddSaleModal() {
   const modal = document.getElementById("addSaleModal");
-  const addSaleBtn = document.getElementById("addSaleBtn");
-  const closeModal = modal.querySelector(".close");
-  const addSaleForm = document.getElementById("addSaleForm");
+  const btn = document.getElementById("addSaleBtn");
+  const close = modal.querySelector(".close");
 
-  // KPI Elements
-  const totalSalesEl = document.getElementById("totalSales");
-  const cashSalesEl = document.getElementById("cashSales");
-  const mobileSalesEl = document.getElementById("mobileSales");
-  const pendingOrdersEl = document.getElementById("pendingOrders");
+  btn.onclick = () => (modal.style.display = "block");
+  close.onclick = () => (modal.style.display = "none");
+  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
-  // Table and Dashboard Elements
-  const productTableBody = document.getElementById("productTableBody");
-  const pendingOrdersList = document.getElementById("pendingOrdersList");
-  const topCustomersList = document.getElementById("topCustomers");
-  const topSellingProductsBody = document.getElementById("topSellingProducts");
+  const form = document.getElementById("addSaleForm");
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const sale = {
+      productName: document.getElementById("productName").value,
+      amount: parseFloat(document.getElementById("amount").value),
+      paymentType: document.getElementById("paymentType").value,
+      customerName: document.getElementById("customerName").value,
+      status: document.getElementById("status").value,
+    };
 
-  // Filter Elements
+    const newSale = await safeCall(addSale, sale);
+    if (newSale) {
+      modal.style.display = "none";
+      form.reset();
+      refreshAll();
+    }
+  };
+}
+
+// Table actions (complete/delete)
+function setupTableActions() {
+  document.getElementById("productTableBody").addEventListener("click", async e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+
+    if (action === "complete") await safeCall(completeSale, id);
+    else if (action === "delete") await safeCall(deleteSaleAPI, id);
+
+    refreshAll();
+  });
+}
+
+// Filter + Search
+function setupFilters() {
   const filterSelect = document.getElementById("filterSelect");
   const searchInput = document.getElementById("searchInput");
 
-  // Chart.js Sales Analytics
-  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
-  let salesChart = new Chart(ctx, {
-    type: "line",
-    data: { labels: [], datasets: [{ label: "Sales", data: [], borderColor: "#007bff", backgroundColor: "rgba(0,123,255,0.2)", tension: 0.4, fill: true }] },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
-  });
+  filterSelect.addEventListener("change", loadSalesTable);
+  searchInput.addEventListener("input", loadSalesTable);
+}
 
-  // View toggle (monthly/yearly)
-  let currentView = "monthly";
-  document.getElementById("monthlyTab").onclick = () => { currentView = "monthly"; updateChart(); };
-  document.getElementById("yearlyTab").onclick = () => { currentView = "yearly"; updateChart(); };
+// Analytics Tabs
+function setupAnalyticsTabs() {
+  document.getElementById("monthlyTab").onclick = () => {
+    loadAnalytics("monthly");
+    document.getElementById("monthlyTab").classList.add("active");
+    document.getElementById("yearlyTab").classList.remove("active");
+  };
+  document.getElementById("yearlyTab").onclick = () => {
+    loadAnalytics("yearly");
+    document.getElementById("yearlyTab").classList.add("active");
+    document.getElementById("monthlyTab").classList.remove("active");
+  };
+}
 
-  // Toast Function
-  function showToast(message, type = "success") {
-    const toast = document.createElement("div");
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
+// Refresh all data
+function refreshAll() {
+  loadSummary();
+  loadSalesTable();
+  loadTopProducts();
+  loadTopCustomers();
+  loadPendingOrders();
+}
 
-  // ========== API CALLS ==========
+// ================= Init =================
+document.addEventListener("DOMContentLoaded", () => {
+  refreshAll();
+  loadAnalytics("monthly");
 
-  async function apiGet(path) {
-    const res = await fetch(`${BASE_URL}${path}`);
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  async function apiPost(path, body) {
-    const res = await fetch(`${BASE_URL}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  async function apiDelete(path) {
-    const res = await fetch(`${BASE_URL}${path}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  async function apiPatch(path, body) {
-    const res = await fetch(`${BASE_URL}${path}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  // ========== Dashboard Updates ==========
-
-  async function loadKPIs() {
-    try {
-      const data = await apiGet("/sales/summary/kpis");
-      totalSalesEl.textContent = `₦${data.totalSales.toLocaleString()}`;
-      cashSalesEl.textContent = `₦${data.cashSales.toLocaleString()}`;
-      mobileSalesEl.textContent = `₦${data.mobileSales.toLocaleString()}`;
-      pendingOrdersEl.textContent = data.pendingOrders;
-    } catch (err) {
-      console.error("Failed to load KPIs", err);
-    }
-  }
-
-  async function loadSalesTable() {
-    try {
-      const sales = await apiGet("/sales");
-      productTableBody.innerHTML = "";
-      sales.forEach((sale, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${i + 1}</td>
-          <td>${sale.productName}</td>
-          <td>₦${sale.amount.toLocaleString()}</td>
-          <td>${sale.paymentType}</td>
-          <td>${sale.customerName}</td>
-          <td>${sale.status}</td>
-          <td>
-            ${sale.status === "pending" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
-            <button class="btn delete" data-id="${sale._id}"><i class="fa fa-trash"></i> Delete</button>
-          </td>
-        `;
-        productTableBody.appendChild(row);
-      });
-
-      // Delete handler
-      document.querySelectorAll(".btn.delete").forEach((btn) =>
-        btn.addEventListener("click", async () => {
-          await apiDelete(`/sales/${btn.dataset.id}`);
-          showToast("🗑️ Sale deleted");
-          updateDashboard();
-        })
-      );
-
-      // Complete handler
-      document.querySelectorAll(".btn.complete").forEach((btn) =>
-        btn.addEventListener("click", async () => {
-          await apiPatch(`/sales/${btn.dataset.id}/complete`);
-          showToast("✅ Sale completed");
-          updateDashboard();
-        })
-      );
-    } catch (err) {
-      console.error("Failed to load sales", err);
-    }
-  }
-
-  async function loadPendingOrders() {
-    try {
-      const data = await apiGet("/sales/pending-orders");
-      pendingOrdersList.innerHTML = "";
-      data.pending.forEach((sale) => {
-        const li = document.createElement("li");
-        li.textContent = `${sale.productName} (${sale.customerName}) - ₦${sale.amount}`;
-        pendingOrdersList.appendChild(li);
-      });
-    } catch (err) {
-      console.error("Failed to load pending orders", err);
-    }
-  }
-
-  async function loadTopCustomers() {
-    try {
-      const data = await apiGet("/sales/top-customers");
-      topCustomersList.innerHTML = "";
-      data.topCustomers.forEach(([name, total]) => {
-        const li = document.createElement("li");
-        li.textContent = `${name} - ₦${total}`;
-        topCustomersList.appendChild(li);
-      });
-    } catch (err) {
-      console.error("Failed to load customers", err);
-    }
-  }
-
-  async function loadTopProducts() {
-    try {
-      const data = await apiGet("/sales/top-products");
-      topSellingProductsBody.innerHTML = "";
-      data.topProducts.forEach(([name, total], i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td>${i + 1}</td><td>${name}</td><td>₦${total}</td>`;
-        topSellingProductsBody.appendChild(row);
-      });
-    } catch (err) {
-      console.error("Failed to load products", err);
-    }
-  }
-
-  async function updateChart() {
-    try {
-      const data = await apiGet(`/sales/analytics?view=${currentView}`);
-      if (currentView === "monthly") {
-        salesChart.data.labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-        salesChart.data.datasets[0].data = data.analytics;
-      } else {
-        const years = Object.keys(data.analytics).sort();
-        salesChart.data.labels = years;
-        salesChart.data.datasets[0].data = years.map(y => data.analytics[y]);
-      }
-      salesChart.update();
-    } catch (err) {
-      console.error("Failed to load chart", err);
-    }
-  }
-
-  // ========== Add Sale ==========
-
-  addSaleForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const productName = document.getElementById("productName").value.trim();
-    const amount = parseFloat(document.getElementById("amount").value);
-    const paymentType = document.getElementById("paymentType").value;
-    const customerName = document.getElementById("customerName").value.trim();
-    const status = document.getElementById("status").value;
-
-    try {
-      await apiPost("/sales", { productName, amount, paymentType, customerName, status });
-      showToast("✅ Sale added");
-      modal.style.display = "none";
-      addSaleForm.reset();
-      updateDashboard();
-    } catch (err) {
-      console.error("Failed to add sale", err);
-    }
-  });
-
-  // ========== Dashboard Refresh ==========
-
-  async function updateDashboard() {
-    await loadKPIs();
-    await loadSalesTable();
-    await loadPendingOrders();
-    await loadTopCustomers();
-    await loadTopProducts();
-    await updateChart();
-  }
-
-  // Init
-  updateDashboard();
+  setupAddSaleModal();
+  setupTableActions();
+  setupFilters();
+  setupAnalyticsTabs();
 });
