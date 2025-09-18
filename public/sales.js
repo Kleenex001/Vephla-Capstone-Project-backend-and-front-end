@@ -6,7 +6,7 @@ import {
   completeSale,
   getSalesSummary,
   getSalesAnalytics,
-  getTopCustomers as fetchTopCustomers,
+  getTopCustomersSales as fetchTopCustomers,
   getTopProducts as fetchTopProducts,
   getPendingOrdersSales as fetchPendingOrders,
 } from "./api.js";
