@@ -179,37 +179,63 @@
   </main>
 
   
-  <!-- Add Sale Modal -->
+<!-- Add Sale Modal -->
 <div id="addSaleModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>Add New Sale</h2>
     <form id="addSaleForm">
-      <label>Product Name</label>
-      <input type="text" id="productName" required placeholder="Enter product name" />
+      <!-- Product Name -->
+      <label for="productName">Product Name</label>
+      <input
+        type="text"
+        id="productName"
+        required
+        placeholder="Enter product name"
+        minlength="1"
+      />
 
-      <label>Amount (₦)</label>
-      <input type="number" id="amount" required placeholder="Enter amount" min="0" />
+      <!-- Amount -->
+      <label for="amount">Amount (₦)</label>
+      <input
+        type="number"
+        id="amount"
+        required
+        placeholder="Enter amount"
+        min="0"
+        step="0.01"
+      />
 
-      <label>Payment Type</label>
+      <!-- Payment Type -->
+      <label for="paymentType">Payment Type</label>
       <select id="paymentType" required>
         <option value="cash">Cash</option>
         <option value="mobile">Mobile</option>
       </select>
 
-      <label>Customer</label>
-      <input type="text" id="customerName" required placeholder="Enter customer name" />
+      <!-- Customer Name -->
+      <label for="customerName">Customer</label>
+      <input
+        type="text"
+        id="customerName"
+        required
+        placeholder="Enter customer name"
+        minlength="1"
+      />
 
-      <label>Status</label>
+      <!-- Status -->
+      <label for="status">Status</label>
       <select id="status" required>
         <option value="pending">Pending</option>
         <option value="completed">Completed</option>
       </select>
 
+      <!-- Submit Button -->
       <button type="submit" class="btn primary">Save Sale</button>
     </form>
   </div>
 </div>
+
 
   <script src="config.js"></script>
 <script src="app.js"></script>
