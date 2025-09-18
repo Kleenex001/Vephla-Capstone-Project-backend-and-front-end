@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function addSale(saleData) {
   try {
     // ... other code ...
-    const response = await fetch(`${API_BASE_URL}/sales`, {
+    const response = await fetch(`${BASE_URL}/sales`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
