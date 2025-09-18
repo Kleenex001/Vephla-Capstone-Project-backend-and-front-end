@@ -94,13 +94,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function addSale(saleData) {
+ async function addSale(saleData) {
     try {
-      // Ensure lowercase values for backend enums
+      // Ensure correct values for backend enums
       const payload = {
         ...saleData,
-        paymentType: saleData.paymentType.toLowerCase(), // 'cash' or 'mobile'
-        status: saleData.status.toLowerCase(),           // 'pending' or 'completed'
+        // Change these to match the backend's expected values
+        paymentType: saleData.paymentType === 'cash' ? 'CASH' : 'MOBILE', // Example: if backend expects uppercase
+        status: saleData.status === 'pending' ? 'PENDING' : 'COMPLETED', // Example: if backend expects uppercase
       };
 
       await addSaleAPI(payload);
