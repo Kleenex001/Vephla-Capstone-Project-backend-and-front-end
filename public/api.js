@@ -322,13 +322,6 @@ export async function getTopProducts() {
   return handleFetch(res);
 }
 
-export async function getPendingOrders() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
 
 // -------------------- SETTINGS --------------------
 export async function getSettings() {
