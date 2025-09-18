@@ -262,8 +262,7 @@ export async function updateSale(id, data) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
   });
   return handleFetch(res);
@@ -289,7 +288,9 @@ export async function completeSale(id) {
   return handleFetch(res);
 }
 
-// Dashboard endpoints
+// -------------------- DASHBOARD ENDPOINTS --------------------
+
+// Summary KPIs
 export async function getSalesSummary() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/summary/kpis`, {
@@ -298,6 +299,7 @@ export async function getSalesSummary() {
   return handleFetch(res);
 }
 
+// Analytics (monthly/weekly/etc)
 export async function getSalesAnalytics(view = "monthly") {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/analytics?view=${view}`, {
@@ -306,7 +308,8 @@ export async function getSalesAnalytics(view = "monthly") {
   return handleFetch(res);
 }
 
-export async function getTopCustomersSales() {
+// Top customers
+export async function getTopCustomers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/top-customers`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -314,6 +317,7 @@ export async function getTopCustomersSales() {
   return handleFetch(res);
 }
 
+// Top products
 export async function getTopProducts() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/top-products`, {
@@ -322,7 +326,7 @@ export async function getTopProducts() {
   return handleFetch(res);
 }
 
-// Pending orders (fixed endpoint)
+// Pending orders
 export async function getPendingOrders() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
