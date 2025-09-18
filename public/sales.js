@@ -5,7 +5,7 @@ import {
   updateSale as updateSaleAPI,
   deleteSale as deleteSaleAPI,
   getSalesSummary,
-  getTopCustomersSales, // updated import
+  getTopCustomersSales,
   getTopProducts,
 } from "./api.js";
 
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- API Integration ---
   async function loadSales() {
     try {
-      salesData = await getSales();
+      salesData = await getSales() || [];
       updateDashboard();
     } catch (err) {
       console.error("Failed to load sales:", err);
@@ -93,6 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function addSale(newSale) {
     try {
+      // Convert to uppercase to match backend enums
+      newSale.paymentType = newSale.paymentType.toUpperCase();
+      newSale.status = newSale.status.toUpperCase();
+
       await addSaleAPI(newSale);
       await loadSales();
       showToast("✅ Sale added successfully!");
@@ -115,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function markAsCompleted(id) {
     try {
-      await updateSaleAPI(id, { status: "completed" });
+      await updateSaleAPI(id, { status: "COMPLETED" });
       await loadSales();
       showToast("✅ Sale marked as completed!");
     } catch (err) {
@@ -141,11 +145,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function updateKPIs() {
     try {
-      const summary = await getSalesSummary();
-      totalSalesEl.textContent = `₦${summary.total.toLocaleString()}`;
-      cashSalesEl.textContent = `₦${summary.cash.toLocaleString()}`;
-      mobileSalesEl.textContent = `₦${summary.mobile.toLocaleString()}`;
-      pendingOrdersEl.textContent = summary.pending;
+      const summary = await getSalesSummary() || {};
+      totalSalesEl.textContent = `₦${summary.total?.toLocaleString() ?? 0}`;
+      cashSalesEl.textContent = `₦${summary.cash?.toLocaleString() ?? 0}`;
+      mobileSalesEl.textContent = `₦${summary.mobile?.toLocaleString() ?? 0}`;
+      pendingOrdersEl.textContent = summary.pending ?? 0;
     } catch (err) {
       console.error("Failed to fetch KPI summary:", err);
     }
@@ -163,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${sale.customerName}</td>
         <td>${sale.status}</td>
         <td>
-          ${sale.status === "pending" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
+          ${sale.status === "PENDING" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
           <button class="btn delete" data-id="${sale._id}"><i class="fa fa-trash"></i> Delete</button>
         </td>
       `;
@@ -176,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updatePendingOrders(filteredData) {
     pendingOrdersList.innerHTML = "";
-    filteredData.filter((s) => s.status === "pending").forEach((sale) => {
+    filteredData.filter((s) => s.status === "PENDING").forEach((sale) => {
       const li = document.createElement("li");
       li.textContent = `${sale.productName} `;
       const span = document.createElement("span");
@@ -188,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function updateTopCustomers() {
     try {
-      const customers = await getTopCustomersSales(); // updated usage
+      const customers = Array.isArray(await getTopCustomersSales()) ? await getTopCustomersSales() : [];
       topCustomersList.innerHTML = "";
       customers.slice(0, 5).forEach((c) => {
         const li = document.createElement("li");
@@ -205,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function updateTopProducts() {
     try {
-      const products = await getTopProducts();
+      const products = Array.isArray(await getTopProducts()) ? await getTopProducts() : [];
       topSellingProductsBody.innerHTML = "";
       products.slice(0, 5).forEach((p, index) => {
         const row = document.createElement("tr");
@@ -223,12 +227,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateChart(filteredData = salesData) {
     if (currentView === "monthly") {
-      let monthlyTotals = new Array(12).fill(0);
+      const monthlyTotals = new Array(12).fill(0);
       filteredData.forEach((sale) => { monthlyTotals[new Date(sale.date).getMonth()] += sale.amount; });
       salesChart.data.labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       salesChart.data.datasets[0].data = monthlyTotals;
     } else {
-      let yearlyTotals = {};
+      const yearlyTotals = {};
       filteredData.forEach((sale) => {
         const year = new Date(sale.date).getFullYear();
         yearlyTotals[year] = (yearlyTotals[year] || 0) + sale.amount;
@@ -244,8 +248,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let filtered = [...salesData];
     if (currentFilter !== "all") {
       filtered = currentFilter === "pending"
-        ? filtered.filter((s) => s.status === "pending")
-        : filtered.filter((s) => s.paymentType === currentFilter);
+        ? filtered.filter((s) => s.status === "PENDING")
+        : filtered.filter((s) => s.paymentType === currentFilter.toUpperCase());
     }
     if (searchInput.value.trim() !== "") {
       filtered = filtered.filter((s) =>
