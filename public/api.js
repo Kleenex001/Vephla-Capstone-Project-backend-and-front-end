@@ -1,323 +1,346 @@
-// sales.js
-import {
-  getSales,
-  addSale,
-  updateSale,
-  deleteSale as deleteSaleAPI,
-  completeSale,
-  getSalesSummary,
-  getSalesAnalytics,
-  getTopCustomersSales,
-  getTopProducts,
-  getPendingOrders,
-} from "./api.js";
+// api.js
+// -------------------- CONFIG --------------------
+const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
-document.addEventListener("DOMContentLoaded", () => {
-  // -------------------- MODAL --------------------
-  const modal = document.getElementById("addSaleModal");
-  const addSaleBtn = document.getElementById("addSaleBtn");
-  const closeModal = modal?.querySelector(".close");
-  const addSaleForm = document.getElementById("addSaleForm");
+// -------------------- HELPERS --------------------
+// -------------------- HELPERS --------------------
+async function handleFetch(res) {
+  // Read response text
+  const text = await res.text();
 
-  addSaleBtn?.addEventListener("click", () => (modal.style.display = "block"));
-  closeModal?.addEventListener("click", () => (modal.style.display = "none"));
-  window.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-  });
-
-  // -------------------- TOAST --------------------
-  const toastContainer = document.createElement("div");
-  toastContainer.id = "toastContainer";
-  toastContainer.style.position = "fixed";
-  toastContainer.style.top = "20px";
-  toastContainer.style.right = "20px";
-  toastContainer.style.zIndex = "9999";
-  toastContainer.style.display = "flex";
-  toastContainer.style.flexDirection = "column";
-  toastContainer.style.gap = "10px";
-  document.body.appendChild(toastContainer);
-
-  function showToast(message, type = "success", duration = 3000) {
-    const toast = document.createElement("div");
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    toast.style.padding = "12px 20px";
-    toast.style.borderRadius = "6px";
-    toast.style.color = "#fff";
-    toast.style.minWidth = "200px";
-    toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
-    toast.style.opacity = "0";
-    toast.style.transform = "translateX(100%)";
-    toast.style.transition = "all 0.3s ease";
-
-    switch (type) {
-      case "success": toast.style.backgroundColor = "#28a745"; break;
-      case "error": toast.style.backgroundColor = "#dc3545"; break;
-      case "info": toast.style.backgroundColor = "#17a2b8"; break;
-      default: toast.style.backgroundColor = "#333"; break;
-    }
-
-    toastContainer.appendChild(toast);
-    requestAnimationFrame(() => {
-      toast.style.opacity = "1";
-      toast.style.transform = "translateX(0)";
-    });
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateX(100%)";
-      toast.addEventListener("transitionend", () => toast.remove());
-    }, duration);
+  // Try to parse JSON, fallback to raw text if not JSON
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text || "Invalid JSON response" };
   }
 
-  // -------------------- KPI ELEMENTS --------------------
-  const totalSalesEl = document.getElementById("totalSales");
-  const cashSalesEl = document.getElementById("cashSales");
-  const mobileSalesEl = document.getElementById("mobileSales");
-  const completedOrdersEl = document.getElementById("completedOrders");
+  // If response not OK, throw the parsed object
+  if (!res.ok) {
+    throw data;
+  }
 
-  // -------------------- TABLE & SIDEBAR ELEMENTS --------------------
-  const productTableBody = document.getElementById("productTableBody");
-  const pendingOrdersList = document.getElementById("pendingOrdersList");
-  const topCustomersList = document.getElementById("topCustomers");
-  const topSellingProductsBody = document.getElementById("topSellingProducts");
+  return data;
+}
 
-  const filterSelect = document.getElementById("filterSelect");
-  const searchInput = document.getElementById("searchInput");
 
-  // -------------------- SALES CHART --------------------
-  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
-  let salesChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: [],
-      datasets: [{
-        label: "Sales",
-        data: [],
-        borderColor: "#007bff",
-        backgroundColor: "rgba(0,123,255,0.2)",
-        tension: 0.4,
-        fill: true
-      }]
+function getAuthToken() {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No auth token found. Please login.");
+  return token;
+}
+
+// -------------------- AUTH --------------------
+export async function loginUser(email, password) {
+  const res = await fetch(`${BASE_URL}/auth/signin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await handleFetch(res);
+  localStorage.setItem("token", data.token);
+  return data;
+}
+
+export async function signupUser(userData) {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+  return handleFetch(res);
+}
+
+export function logoutUser() {
+  localStorage.removeItem("token");
+}
+
+// -------------------- PASSWORD RESET --------------------
+export async function requestPasswordReset(email) {
+  const res = await fetch(`${BASE_URL}/auth/request-password-reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return handleFetch(res);
+}
+
+export async function resetPassword(email, otp, newPassword) {
+  const res = await fetch(`${BASE_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+  return handleFetch(res);
+}
+
+// -------------------- DASHBOARD --------------------
+export async function getDashboardSummary() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+export async function getQuickStats() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/quick-stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+export async function getPendingOrders() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/pending-orders`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+export async function getLowStockProducts() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/low-stock`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+export async function getTopCustomersDashboard() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+export async function getUserInfo() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/user-info`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// -------------------- CUSTOMERS --------------------
+export async function getCustomers() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/customers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+export async function addCustomer(customer) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/customers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+    body: JSON.stringify(customer),
   });
+  return handleFetch(res);
+}
 
-  let currentView = "monthly";
-  const monthlyTab = document.getElementById("monthlyTab");
-  const yearlyTab = document.getElementById("yearlyTab");
-
-  monthlyTab?.addEventListener("click", () => {
-    currentView = "monthly";
-    monthlyTab.classList.add("active");
-    yearlyTab.classList.remove("active");
-    updateDashboard();
+// -------------------- INVENTORY --------------------
+export async function getProducts() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/products`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
+  return handleFetch(res);
+}
 
-  yearlyTab?.addEventListener("click", () => {
-    currentView = "yearly";
-    yearlyTab.classList.add("active");
-    monthlyTab.classList.remove("active");
-    updateDashboard();
+export async function addProduct(product) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/products`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(product),
   });
+  return handleFetch(res);
+}
 
-  // -------------------- HELPERS --------------------
-  function normalizeSaleData(sale) {
-    return {
-      ...sale,
-      paymentType: sale.paymentType?.toLowerCase() === "cash" ? "Cash" : "Mobile",
-      status: sale.status?.toLowerCase() === "completed" ? "Completed" : "Pending",
-    };
-  }
+// -------------------- DELIVERIES --------------------
+export async function getDeliveries() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/deliveries`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  let salesData = [];
+export async function addDelivery(delivery) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/deliveries`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(delivery),
+  });
+  return handleFetch(res);
+}
 
-  // -------------------- CRUD --------------------
-  if (addSaleForm) {
-    addSaleForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+// -------------------- SUPPLIERS --------------------
+export async function getSuppliers() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/suppliers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-      const newSale = normalizeSaleData({
-        productName: document.getElementById("productName")?.value.trim() || "",
-        amount: parseFloat(document.getElementById("amount")?.value || 0),
-        paymentType: document.getElementById("paymentType")?.value || "Cash",
-        customerName: document.getElementById("customerName")?.value.trim() || "Unknown",
-        status: document.getElementById("status")?.value || "Pending",
-      });
+export async function addSupplier(supplier) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/suppliers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(supplier),
+  });
+  return handleFetch(res);
+}
+// -------------------- SALES --------------------
 
-      try {
-        await addSale(newSale);
-        showToast("✅ Sale added successfully!");
-        addSaleForm.reset();
-        if (modal) modal.style.display = "none";
-        updateDashboard();
-      } catch (err) {
-        showToast(`❌ Failed to add sale: ${err.message}`, "error");
-        console.error(err);
-      }
-    });
-  }
+// Normalize enum values
+function normalizeEnum(value, type) {
+  if (!value) return value;
+  const enums = {
+    paymentType: ["Cash", "Mobile"],
+    status: ["Pending", "Completed"],
+  };
+  const valid = enums[type].find(e => e.toLowerCase() === value.toLowerCase());
+  return valid || value;
+}
 
-  async function deleteSale(id) {
-    if (!confirm("Are you sure you want to delete this sale?")) return;
-    try {
-      await deleteSaleAPI(id);
-      showToast("🗑️ Sale deleted successfully", "info");
-      updateDashboard();
-    } catch (err) {
-      showToast(`❌ Failed to delete sale: ${err.message}`, "error");
-      console.error(err);
-    }
-  }
+// Get all sales
+export async function getSales() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  async function markAsCompleted(id) {
-    try {
-      await completeSale(id);
-      showToast("✅ Sale marked as completed!");
-      updateDashboard();
-    } catch (err) {
-      showToast(`❌ Failed to complete sale: ${err.message}`, "error");
-      console.error(err);
-    }
-  }
+// Add a new sale
+export async function addSale(sale) {
+  const token = getAuthToken();
 
-  // -------------------- DASHBOARD --------------------
-  function applyFilter() {
-    let filtered = [...salesData];
-    const currentFilter = filterSelect?.value || "all";
+  sale.paymentType = normalizeEnum(sale.paymentType, "paymentType");
+  sale.status = normalizeEnum(sale.status, "status");
 
-    if (currentFilter !== "all") {
-      if (currentFilter === "pending") filtered = filtered.filter((s) => s.status === "Pending");
-      else filtered = filtered.filter((s) => s.paymentType === (currentFilter === "cash" ? "Cash" : "Mobile"));
-    }
+  const res = await fetch(`${BASE_URL}/sales`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(sale),
+  });
+  return handleFetch(res);
+}
 
-    const searchTerm = searchInput?.value.trim().toLowerCase() || "";
-    if (searchTerm) {
-      filtered = filtered.filter((s) =>
-        s.productName.toLowerCase().includes(searchTerm) ||
-        (s.customerName?.toLowerCase() || "").includes(searchTerm)
-      );
-    }
-    return filtered;
-  }
+// Update sale by ID
+export async function updateSale(id, data) {
+  const token = getAuthToken();
 
-  function updateProductTable(filteredData) {
-    productTableBody.innerHTML = "";
-    filteredData.forEach((sale, index) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${sale.productName}</td>
-        <td>₦${sale.amount.toLocaleString()}</td>
-        <td>${sale.paymentType}</td>
-        <td>${sale.customerName}</td>
-        <td>${sale.status}</td>
-        <td>
-          <button class="btn delete" data-id="${sale._id}" style="background-color:#dc3545;color:#fff;border:none;padding:4px 8px;border-radius:4px;">
-            <i class="fa fa-trash"></i>
-          </button>
-        </td>
-      `;
-      productTableBody.appendChild(row);
-    });
+  if (data.paymentType) data.paymentType = normalizeEnum(data.paymentType, "paymentType");
+  if (data.status) data.status = normalizeEnum(data.status, "status");
 
-    document.querySelectorAll(".btn.delete").forEach((btn) =>
-      btn.addEventListener("click", () => deleteSale(btn.dataset.id))
-    );
-  }
+  const res = await fetch(`${BASE_URL}/sales/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleFetch(res);
+}
 
-  async function updatePendingOrders() {
-    try {
-      const data = await getPendingOrders();
-      pendingOrdersList.innerHTML = "";
-      data.pending.forEach((sale) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          ${sale.productName} - ₦${sale.amount.toLocaleString()} (${sale.customerName})
-          <button class="btn complete-small" data-id="${sale._id}" style="background-color:#006400;color:#fff;margin-left:10px;border:none;padding:4px 8px;border-radius:4px;">
-            <i class="fa fa-check"></i>
-          </button>
-        `;
-        pendingOrdersList.appendChild(li);
-      });
-      document.querySelectorAll(".btn.complete-small").forEach((btn) =>
-        btn.addEventListener("click", () => markAsCompleted(btn.dataset.id))
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  }
+// Delete sale by ID
+export async function deleteSale(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  async function updateTopCustomers() {
-    try {
-      const data = await getTopCustomersSales();
-      topCustomersList.innerHTML = "";
-      data.topCustomers.forEach(([name, total]) => {
-        const li = document.createElement("li");
-        li.textContent = `${name || "Unknown"} - ₦${total.toLocaleString()}`;
-        topCustomersList.appendChild(li);
-      });
-    } catch (err) { console.error(err); }
-  }
+// Mark sale as completed
+export async function completeSale(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/${id}/complete`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  async function updateTopProducts() {
-    try {
-      const data = await getTopProducts();
-      topSellingProductsBody.innerHTML = "";
-      data.topProducts.forEach(([name, total], index) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td>${index + 1}</td><td>${name}</td><td>₦${total.toLocaleString()}</td>`;
-        topSellingProductsBody.appendChild(row);
-      });
-    } catch (err) { console.error(err); }
-  }
+// Dashboard endpoints
+export async function getSalesSummary() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/summary/kpis`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  async function updateSalesChart() {
-    try {
-      const data = await getSalesAnalytics(currentView);
-      let labels = [], chartData = [];
-      if (currentView === "monthly") {
-        labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-        chartData = data.analytics;
-      } else {
-        labels = Object.keys(data.analytics);
-        chartData = Object.values(data.analytics);
-      }
-      salesChart.data.labels = labels;
-      salesChart.data.datasets[0].data = chartData;
-      salesChart.update();
-    } catch (err) { console.error(err); }
-  }
+export async function getSalesAnalytics(view = "monthly") {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/analytics?view=${view}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  async function updateKPIs() {
-    try {
-      const summary = await getSalesSummary();
-      totalSalesEl.textContent = `₦${summary.totalSales.toLocaleString()}`;
-      cashSalesEl.textContent = `₦${summary.cashSales.toLocaleString()}`;
-      mobileSalesEl.textContent = `₦${summary.mobileSales.toLocaleString()}`;
-      completedOrdersEl.textContent = summary.completedOrders;
-    } catch (err) { console.error(err); }
-  }
+export async function getTopCustomersSales() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/top-customers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  async function updateDashboard() {
-    try {
-      salesData = await getSales(); // always refresh
-      const filtered = applyFilter();
+export async function getTopProducts() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/top-products`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-      await updateKPIs();
-      updateProductTable(filtered);
-      await updatePendingOrders();
-      await updateTopCustomers();
-      await updateTopProducts();
-      await updateSalesChart();
-    } catch (err) {
-      console.error(err);
-      showToast("❌ Failed to refresh dashboard", "error");
-    }
-  }
 
-  filterSelect?.addEventListener("change", updateDashboard);
-  searchInput?.addEventListener("input", updateDashboard);
+// -------------------- SETTINGS --------------------
+export async function getSettings() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/settings`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
-  // Initial load
-  updateDashboard();
-});
+export async function saveSettings(settings) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/settings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(settings),
+  });
+  return handleFetch(res);
+}
