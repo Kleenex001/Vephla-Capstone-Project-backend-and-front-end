@@ -148,11 +148,20 @@ exports.getAllSales = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch sales", details: error.message });
   }
 };
-
 // Create a sale
 exports.createSale = async (req, res) => {
   try {
-    const sale = new Sale(req.body);
+    const { productName, amount, paymentType, customerName, status, date } = req.body;
+
+    const sale = new Sale({
+      productName,
+      amount,
+      paymentType: paymentType?.toLowerCase(), // normalize
+      customerName,
+      status: status?.toLowerCase(), // normalize
+      date: date || new Date(),
+    });
+
     await sale.save();
     res.status(201).json(sale);
   } catch (error) {
@@ -163,8 +172,15 @@ exports.createSale = async (req, res) => {
 // Update a sale by ID
 exports.updateSale = async (req, res) => {
   try {
-    const sale = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updates = { ...req.body };
+
+    // normalize enum values
+    if (updates.paymentType) updates.paymentType = updates.paymentType.toLowerCase();
+    if (updates.status) updates.status = updates.status.toLowerCase();
+
+    const sale = await Sale.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
     if (!sale) return res.status(404).json({ error: "Sale not found" });
+
     res.status(200).json(sale);
   } catch (error) {
     res.status(400).json({ error: "Failed to update sale", details: error.message });
