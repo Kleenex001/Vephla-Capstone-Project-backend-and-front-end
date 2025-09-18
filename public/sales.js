@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
       amount: parseFloat(document.getElementById("amount").value),
       paymentType: document.getElementById("paymentType").value,
       customer: document.getElementById("customerName").value.trim(),
-      status: document.getElementById("Status").value,
+      status: document.getElementById("status").value,
     });
 
     try {
