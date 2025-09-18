@@ -91,12 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
- async function addSale(newSale) {
+  async function addSale(newSale) {
     try {
-      // Convert to uppercase to match backend enums
-      // Use the correct backend enum values
-      newSale.paymentType = "cash"; // Replace with the actual valid enum value
-      newSale.status = "pending"; // Replace with the actual valid enum value
+      // Ensure correct backend enum values
+      newSale.paymentType = newSale.paymentType.toLowerCase(); // cash or mobile
+      newSale.status = newSale.status.toLowerCase(); // pending or completed
 
       await addSaleAPI(newSale);
       await loadSales();
@@ -106,7 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("⚠️ Failed to add sale", "error");
     }
   }
-
 
   async function deleteSale(id) {
     try {
@@ -121,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function markAsCompleted(id) {
     try {
-      await updateSaleAPI(id, { status: "COMPLETED" });
+      await updateSaleAPI(id, { status: "completed" }); // lowercase
       await loadSales();
       showToast("✅ Sale marked as completed!");
     } catch (err) {
@@ -169,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${sale.customerName}</td>
         <td>${sale.status}</td>
         <td>
-          ${sale.status === "PENDING" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
+          ${sale.status === "pending" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
           <button class="btn delete" data-id="${sale._id}"><i class="fa fa-trash"></i> Delete</button>
         </td>
       `;
@@ -182,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updatePendingOrders(filteredData) {
     pendingOrdersList.innerHTML = "";
-    filteredData.filter((s) => s.status === "PENDING").forEach((sale) => {
+    filteredData.filter((s) => s.status === "pending").forEach((sale) => {
       const li = document.createElement("li");
       li.textContent = `${sale.productName} `;
       const span = document.createElement("span");
@@ -250,8 +248,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let filtered = [...salesData];
     if (currentFilter !== "all") {
       filtered = currentFilter === "pending"
-        ? filtered.filter((s) => s.status === "PENDING")
-        : filtered.filter((s) => s.paymentType === currentFilter.toUpperCase());
+        ? filtered.filter((s) => s.status === "pending")
+        : filtered.filter((s) => s.paymentType === currentFilter.toLowerCase());
     }
     if (searchInput.value.trim() !== "") {
       filtered = filtered.filter((s) =>
