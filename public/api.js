@@ -327,7 +327,7 @@ export async function getTopProducts() {
 }
 
 // Pending orders
-export async function getPendingOrders() {
+export async function Orders() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
     headers: { Authorization: `Bearer ${token}` },
