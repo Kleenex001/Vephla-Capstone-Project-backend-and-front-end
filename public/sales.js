@@ -95,8 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // Convert to uppercase to match backend enums
       // Use the correct backend enum values
-      newSale.paymentType = "CASH_PAYMENT"; // Replace with the actual valid enum value
-      newSale.status = "PENDING_STATUS"; // Replace with the actual valid enum value
+      newSale.paymentType = "cash_payment"; // Replace with the actual valid enum value
+      newSale.status = "pending_status"; // Replace with the actual valid enum value
 
       await addSaleAPI(newSale);
       await loadSales();
