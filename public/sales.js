@@ -5,39 +5,33 @@ import {
   updateSale as updateSaleAPI,
   deleteSale as deleteSaleAPI,
   getSalesSummary,
-  getTopCustomers,
+  getTopCustomersSales, // updated import
   getTopProducts,
 } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Modal Elements
   const modal = document.getElementById("addSaleModal");
   const addSaleBtn = document.getElementById("addSaleBtn");
   const closeModal = modal.querySelector(".close");
   const addSaleForm = document.getElementById("addSaleForm");
 
-  // KPI Elements
   const totalSalesEl = document.getElementById("totalSales");
   const cashSalesEl = document.getElementById("cashSales");
   const mobileSalesEl = document.getElementById("mobileSales");
   const pendingOrdersEl = document.getElementById("pendingOrders");
 
-  // Table and Dashboard Elements
   const productTableBody = document.getElementById("productTableBody");
   const pendingOrdersList = document.getElementById("pendingOrdersList");
   const topCustomersList = document.getElementById("topCustomers");
   const topSellingProductsBody = document.getElementById("topSellingProducts");
 
-  // Filter Elements
   const filterSelect = document.getElementById("filterSelect");
   const searchInput = document.getElementById("searchInput");
 
-  // Global state
   let salesData = [];
   let currentFilter = "all";
   let currentView = "monthly";
 
-  // Chart.js Sales Analytics
   const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
   let salesChart = new Chart(ctx, {
     type: "line",
@@ -54,14 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       ],
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } },
-    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
   });
 
-  // Tabs for chart
   const monthlyTab = document.getElementById("monthlyTab");
   const yearlyTab = document.getElementById("yearlyTab");
 
@@ -79,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateChart();
   });
 
-  // Toast
   function showToast(message, type = "success") {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
@@ -88,12 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => toast.remove(), 3000);
   }
 
-  // Modal
   addSaleBtn.addEventListener("click", () => (modal.style.display = "block"));
   closeModal.addEventListener("click", () => (modal.style.display = "none"));
-  window.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-  });
+  window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
 
   // --- API Integration ---
   async function loadSales() {
@@ -139,10 +124,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- Form Submission ---
   addSaleForm.addEventListener("submit", (e) => {
     e.preventDefault();
-
     const newSale = {
       productName: document.getElementById("productName").value.trim(),
       amount: parseFloat(document.getElementById("amount").value),
@@ -151,13 +134,11 @@ document.addEventListener("DOMContentLoaded", () => {
       status: document.getElementById("status").value,
       date: new Date().toISOString(),
     };
-
     addSale(newSale);
     addSaleForm.reset();
     modal.style.display = "none";
   });
 
-  // --- Dashboard Updates ---
   async function updateKPIs() {
     try {
       const summary = await getSalesSummary();
@@ -182,47 +163,32 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${sale.customerName}</td>
         <td>${sale.status}</td>
         <td>
-          ${
-            sale.status === "pending"
-              ? `<button class="btn complete" data-id="${sale._id}">
-                   <i class="fa fa-check"></i> Complete
-                 </button>`
-              : ""
-          }
-          <button class="btn delete" data-id="${sale._id}">
-            <i class="fa fa-trash"></i> Delete
-          </button>
+          ${sale.status === "pending" ? `<button class="btn complete" data-id="${sale._id}"><i class="fa fa-check"></i> Complete</button>` : ""}
+          <button class="btn delete" data-id="${sale._id}"><i class="fa fa-trash"></i> Delete</button>
         </td>
       `;
       productTableBody.appendChild(row);
     });
 
-    document.querySelectorAll(".btn.delete").forEach((btn) =>
-      btn.addEventListener("click", () => deleteSale(btn.dataset.id))
-    );
-
-    document.querySelectorAll(".btn.complete").forEach((btn) =>
-      btn.addEventListener("click", () => markAsCompleted(btn.dataset.id))
-    );
+    document.querySelectorAll(".btn.delete").forEach((btn) => btn.addEventListener("click", () => deleteSale(btn.dataset.id)));
+    document.querySelectorAll(".btn.complete").forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
   function updatePendingOrders(filteredData) {
     pendingOrdersList.innerHTML = "";
-    filteredData
-      .filter((s) => s.status === "pending")
-      .forEach((sale) => {
-        const li = document.createElement("li");
-        li.textContent = `${sale.productName} `;
-        const span = document.createElement("span");
-        span.textContent = `₦${sale.amount.toLocaleString()}`;
-        li.appendChild(span);
-        pendingOrdersList.appendChild(li);
-      });
+    filteredData.filter((s) => s.status === "pending").forEach((sale) => {
+      const li = document.createElement("li");
+      li.textContent = `${sale.productName} `;
+      const span = document.createElement("span");
+      span.textContent = `₦${sale.amount.toLocaleString()}`;
+      li.appendChild(span);
+      pendingOrdersList.appendChild(li);
+    });
   }
 
   async function updateTopCustomers() {
     try {
-      const customers = await getTopCustomers();
+      const customers = await getTopCustomersSales(); // updated usage
       topCustomersList.innerHTML = "";
       customers.slice(0, 5).forEach((c) => {
         const li = document.createElement("li");
@@ -258,26 +224,18 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateChart(filteredData = salesData) {
     if (currentView === "monthly") {
       let monthlyTotals = new Array(12).fill(0);
-      filteredData.forEach((sale) => {
-        const month = new Date(sale.date).getMonth();
-        monthlyTotals[month] += sale.amount;
-      });
-      salesChart.data.labels = [
-        "Jan","Feb","Mar","Apr","May","Jun",
-        "Jul","Aug","Sep","Oct","Nov","Dec",
-      ];
+      filteredData.forEach((sale) => { monthlyTotals[new Date(sale.date).getMonth()] += sale.amount; });
+      salesChart.data.labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       salesChart.data.datasets[0].data = monthlyTotals;
     } else {
       let yearlyTotals = {};
       filteredData.forEach((sale) => {
         const year = new Date(sale.date).getFullYear();
-        if (!yearlyTotals[year]) yearlyTotals[year] = 0;
-        yearlyTotals[year] += sale.amount;
+        yearlyTotals[year] = (yearlyTotals[year] || 0) + sale.amount;
       });
       const years = Object.keys(yearlyTotals).sort();
-      const values = years.map((y) => yearlyTotals[y]);
       salesChart.data.labels = years;
-      salesChart.data.datasets[0].data = values;
+      salesChart.data.datasets[0].data = years.map((y) => yearlyTotals[y]);
     }
     salesChart.update();
   }
@@ -285,32 +243,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function applyFilter() {
     let filtered = [...salesData];
     if (currentFilter !== "all") {
-      if (currentFilter === "pending") {
-        filtered = filtered.filter((s) => s.status === "pending");
-      } else {
-        filtered = filtered.filter((s) => s.paymentType === currentFilter);
-      }
+      filtered = currentFilter === "pending"
+        ? filtered.filter((s) => s.status === "pending")
+        : filtered.filter((s) => s.paymentType === currentFilter);
     }
     if (searchInput.value.trim() !== "") {
-      filtered = filtered.filter(
-        (s) =>
-          s.productName.toLowerCase().includes(searchInput.value.toLowerCase()) ||
-          s.customerName.toLowerCase().includes(searchInput.value.toLowerCase())
+      filtered = filtered.filter((s) =>
+        s.productName.toLowerCase().includes(searchInput.value.toLowerCase()) ||
+        s.customerName.toLowerCase().includes(searchInput.value.toLowerCase())
       );
     }
     return filtered;
   }
 
-  filterSelect.addEventListener("change", () => {
-    currentFilter = filterSelect.value;
-    updateDashboard();
-  });
-
+  filterSelect.addEventListener("change", () => { currentFilter = filterSelect.value; updateDashboard(); });
   searchInput.addEventListener("input", () => updateDashboard());
 
   function updateDashboard() {
     const filteredData = applyFilter();
-    updateKPIs(); // from backend
+    updateKPIs();
     updateProductTable(filteredData);
     updatePendingOrders(filteredData);
     updateTopCustomers();
@@ -318,6 +269,5 @@ document.addEventListener("DOMContentLoaded", () => {
     updateChart(filteredData);
   }
 
-  // Init load
   loadSales();
 });

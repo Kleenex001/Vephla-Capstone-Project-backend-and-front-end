@@ -138,17 +138,12 @@ export async function getLowStockProducts() {
   }
 }
 
-export async function getTopCustomers() {
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    return handleFetch(res);
-  } catch (err) {
-    console.error("Top Customers Error:", err);
-    throw err;
-  }
+export async function getTopCustomersDashboard() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
 }
 
 export async function getUserInfo() {
@@ -356,19 +351,13 @@ export async function getSalesAnalytics(view = "monthly") {
     throw err;
   }
 }
-
-// Get top customers
-export async function getTopCustomers() {
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${BASE_URL}/sales/top-customers`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return handleFetch(res);
-  } catch (err) {
-    console.error("❌ Error fetching top customers:", err);
-    throw err;
-  }
+//top customers sales
+export async function getTopCustomersSales() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/sales/top-customers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
 }
 
 // Get top products
