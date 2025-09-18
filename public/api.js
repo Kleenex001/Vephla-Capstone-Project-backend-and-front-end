@@ -3,17 +3,21 @@
 const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
 // -------------------- HELPERS --------------------
+// -------------------- HELPERS --------------------
 async function handleFetch(res) {
+  // Read response text
   const text = await res.text();
+
+  // Try to parse JSON, fallback to raw text if not JSON
   let data;
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    data = { message: text }; // fallback if not JSON
+    data = { message: text || "Invalid JSON response" };
   }
 
+  // If response not OK, throw the parsed object
   if (!res.ok) {
-    // throw the parsed object instead of Error
     throw data;
   }
 
