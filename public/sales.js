@@ -201,8 +201,42 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${s.paymentType}</td>
         <td>${s.customerName}</td>
         <td>${s.status}</td>
-        <td>${new Date(s.date).toLocaleDateString()}</td>`;
+        <td>${new Date(s.date).toLocaleDateString()}</td>
+        <td>
+          <button class="complete-btn" data-id="${s.id}" ${s.status === "Completed" ? "disabled" : ""}>✅ Complete</button>
+          <button class="delete-btn" data-id="${s.id}">🗑 Delete</button>
+        </td>`;
       productTableBody.appendChild(tr);
+    });
+
+    // Wire up complete + delete buttons
+    document.querySelectorAll(".complete-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        try {
+          await safeCall(completeSale, id);
+          showToast("✅ Sale marked as complete");
+          await updateDashboard();
+        } catch (err) {
+          const parsed = parseServerError(err);
+          showToast(`❌ Complete failed: ${parsed.message}`, "error");
+        }
+      });
+    });
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        if (!confirm("⚠️ Are you sure you want to delete this sale?")) return;
+        try {
+          await safeCall(deleteSaleAPI, id);
+          showToast("🗑 Sale deleted");
+          await updateDashboard();
+        } catch (err) {
+          const parsed = parseServerError(err);
+          showToast(`❌ Delete failed: ${parsed.message}`, "error");
+        }
+      });
     });
   }
 
