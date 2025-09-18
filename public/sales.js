@@ -48,17 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.style.transition = "all 0.3s ease";
 
     switch (type) {
-      case "success":
-        toast.style.backgroundColor = "#28a745";
-        break;
-      case "error":
-        toast.style.backgroundColor = "#dc3545";
-        break;
-      case "info":
-        toast.style.backgroundColor = "#17a2b8";
-        break;
-      default:
-        toast.style.backgroundColor = "#333";
+      case "success": toast.style.backgroundColor = "#28a745"; break;
+      case "error": toast.style.backgroundColor = "#dc3545"; break;
+      case "info": toast.style.backgroundColor = "#17a2b8"; break;
+      default: toast.style.backgroundColor = "#333"; break;
     }
 
     toastContainer.appendChild(toast);
@@ -78,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const totalSalesEl = document.getElementById("totalSales");
   const cashSalesEl = document.getElementById("cashSales");
   const mobileSalesEl = document.getElementById("mobileSales");
-  const completedOrdersEl = document.getElementById("pendingOrders"); // renamed
+  const completedOrdersEl = document.getElementById("completedOrders");
 
   // -------------------- TABLE & DASHBOARD ELEMENTS --------------------
   const productTableBody = document.getElementById("productTableBody");
@@ -159,11 +152,11 @@ document.addEventListener("DOMContentLoaded", () => {
   addSaleForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const newSale = normalizeSaleData({
-      productName: document.getElementById("productName").value.trim(),
-      amount: parseFloat(document.getElementById("amount").value),
-      paymentType: document.getElementById("paymentType").value,
-      customer: document.getElementById("customerName").value.trim(),
-      status: document.getElementById("Status").value,
+      productName: document.getElementById("productName")?.value.trim() || "",
+      amount: parseFloat(document.getElementById("amount")?.value) || 0,
+      paymentType: document.getElementById("paymentType")?.value || "Cash",
+      customer: document.getElementById("customerName")?.value.trim() || "",
+      status: document.getElementById("Status")?.value || "Pending",
     });
 
     try {
@@ -289,10 +282,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".btn.complete").forEach((btn) => btn.addEventListener("click", () => markAsCompleted(btn.dataset.id)));
   }
 
-  function updateCompletedOrdersList(filteredData) {
+  function updatePendingOrdersList(filteredData) {
     pendingOrdersList.innerHTML = "";
     filteredData
-      .filter((s) => s.status === "Completed")
+      .filter((s) => s.status === "Pending")
       .forEach((s) => {
         const li = document.createElement("li");
         li.textContent = `${s.productName} - ₦${s.amount.toLocaleString()} (${s.customer})`;
@@ -356,7 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const filtered = applyFilter();
     updateKPIs(filtered);
     updateProductTable(filtered);
-    updateCompletedOrdersList(filtered);
+    updatePendingOrdersList(filtered);
     await updateTopCustomers();
     await updateTopProducts();
     await updateSalesChart(filtered);
