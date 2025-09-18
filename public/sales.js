@@ -2,17 +2,16 @@
 import {
   getSales,
   addSale,
-  updateSale,
-  deleteSale as deleteSaleApi,
+  deleteSale as deleteSaleAPI,
   completeSale,
   getSalesSummary,
   getSalesAnalytics,
-  getTopCustomers as getTopCustomersApi,
-  getTopProducts as getTopProductsApi,
-  getPendingOrders as getPendingOrdersApi,
+  getTopCustomers as fetchTopCustomers,
+  getTopProducts as fetchTopProducts,
+  getPendingOrders as fetchPendingOrders,
 } from "./api.js";
 
-// ============ Helpers ============
+// ================= Helpers =================
 function parseServerError(err) {
   try {
     if (!err) return { message: "Unknown error" };
@@ -35,20 +34,35 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
-// ============ UI Rendering ============
+// Animate numeric values
+function animateValue(element, start, end, duration = 1000) {
+  const range = end - start;
+  const startTime = performance.now();
 
-// KPIs
+  function step(currentTime) {
+    const progress = Math.min((currentTime - startTime) / duration, 1);
+    const value = Math.floor(progress * range + start);
+    element.textContent = `₦${value}`;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
+// ================= Load Data =================
+
+// Load KPI summary
 async function loadSummary() {
   const data = await safeCall(getSalesSummary);
   if (!data) return;
 
-  document.getElementById("totalSales").textContent = `₦${data.totalSales || 0}`;
-  document.getElementById("cashSales").textContent = `₦${data.cashSales || 0}`;
-  document.getElementById("mobileSales").textContent = `₦${data.mobileSales || 0}`;
-  document.getElementById("completedOrders").textContent = data.completedOrders || 0;
+  animateValue(document.getElementById("totalSales"), 0, data.totalSales || 0);
+  animateValue(document.getElementById("cashSales"), 0, data.cashSales || 0);
+  animateValue(document.getElementById("mobileSales"), 0, data.mobileSales || 0);
+  animateValue(document.getElementById("completedOrders"), 0, data.completedOrders || 0);
 }
 
-// Analytics Chart
+// Load analytics chart
 let analyticsChart;
 async function loadAnalytics(view = "monthly") {
   const data = await safeCall(getSalesAnalytics, view);
@@ -57,23 +71,25 @@ async function loadAnalytics(view = "monthly") {
   const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
   if (analyticsChart) analyticsChart.destroy();
 
+  let labels = [];
+  let values = [];
+
+  if (view === "monthly") {
+    labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    values = data.analytics || Array(12).fill(0);
+  } else {
+    labels = Object.keys(data.analytics || {}).sort();
+    values = Object.values(data.analytics || {});
+  }
+
   analyticsChart = new Chart(ctx, {
     type: "line",
-    data: {
-      labels: data.labels || [],
-      datasets: [
-        {
-          label: "Sales",
-          data: data.values || [],
-          borderColor: "#007bff",
-          fill: false,
-        },
-      ],
-    },
+    data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
+    options: { responsive: true, maintainAspectRatio: false },
   });
 }
 
-// Sales Table
+// Load sales table
 async function loadSalesTable() {
   const sales = await safeCall(getSales);
   if (!sales) return;
@@ -91,64 +107,79 @@ async function loadSalesTable() {
       <td>${sale.customerName}</td>
       <td>${sale.status}</td>
       <td>
-        <button class="btn small" data-action="complete" data-id="${sale.id}">✔</button>
-        <button class="btn small danger" data-action="delete" data-id="${sale.id}">🗑</button>
+        <button class="btn small" data-action="complete" data-id="${sale._id}">✔</button>
+        <button class="btn small danger" data-action="delete" data-id="${sale._id}">🗑</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-// Top Products
+// Load Top Products
 async function loadTopProducts() {
-  const products = await safeCall(getTopProductsApi);
+  const products = await safeCall(fetchTopProducts);
   if (!products) return;
 
   const tbody = document.getElementById("topSellingProducts");
   tbody.innerHTML = "";
 
-  products.forEach((p, i) => {
+  products.topProducts?.forEach((p, i) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${p.productName}</td>
-      <td>₦${p.totalAmount}</td>
-    `;
+    const amountTd = document.createElement("td");
+    tr.innerHTML = `<td>${i + 1}</td><td>${p[0]}</td>`; // p[0] = productName
+    tr.appendChild(amountTd);
     tbody.appendChild(tr);
+
+    animateValue(amountTd, 0, p[1] || 0);
   });
 }
 
-// Top Customers
+// Load Top Customers
 async function loadTopCustomers() {
-  const customers = await safeCall(getTopCustomersApi);
+  const customers = await safeCall(fetchTopCustomers);
   if (!customers) return;
 
   const ul = document.getElementById("topCustomers");
   ul.innerHTML = "";
 
-  customers.forEach(c => {
+  customers.topCustomers?.forEach(c => {
     const li = document.createElement("li");
-    li.textContent = `${c.customerName} - ₦${c.totalSpent}`;
     ul.appendChild(li);
+
+    const name = c[0];
+    const total = c[1];
+
+    let start = 0;
+    const duration = 1000;
+
+    function step(timestamp) {
+      if (!li.startTime) li.startTime = timestamp;
+      const progress = Math.min((timestamp - li.startTime) / duration, 1);
+      const value = Math.floor(progress * total + start);
+      li.textContent = `${name} - ₦${value}`;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
   });
 }
 
-// Pending Orders
+// Load Pending Orders
 async function loadPendingOrders() {
-  const orders = await safeCall(getPendingOrdersApi);
-  if (!orders) return;
+  const data = await safeCall(fetchPendingOrders);
+  if (!data) return;
 
   const ol = document.getElementById("pendingOrdersList");
   ol.innerHTML = "";
 
-  orders.forEach(o => {
+  data.pending?.forEach(o => {
     const li = document.createElement("li");
     li.textContent = `${o.productName} (${o.customerName})`;
     ol.appendChild(li);
   });
 }
 
-// ============ Event Handlers ============
+// ================= Event Handlers =================
 
 // Add Sale Modal
 function setupAddSaleModal() {
@@ -158,9 +189,7 @@ function setupAddSaleModal() {
 
   btn.onclick = () => (modal.style.display = "block");
   close.onclick = () => (modal.style.display = "none");
-  window.onclick = e => {
-    if (e.target === modal) modal.style.display = "none";
-  };
+  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
   const form = document.getElementById("addSaleForm");
   form.onsubmit = async e => {
@@ -177,13 +206,12 @@ function setupAddSaleModal() {
     if (newSale) {
       modal.style.display = "none";
       form.reset();
-      loadSalesTable();
-      loadSummary();
+      refreshAll();
     }
   };
 }
 
-// Table Actions (complete/delete)
+// Table actions (complete/delete)
 function setupTableActions() {
   document.getElementById("productTableBody").addEventListener("click", async e => {
     const btn = e.target.closest("button");
@@ -192,15 +220,10 @@ function setupTableActions() {
     const id = btn.dataset.id;
     const action = btn.dataset.action;
 
-    if (action === "complete") {
-      await safeCall(completeSale, id);
-    } else if (action === "delete") {
-      await safeCall(deleteSaleApi, id);
-    }
+    if (action === "complete") await safeCall(completeSale, id);
+    else if (action === "delete") await safeCall(deleteSaleAPI, id);
 
-    loadSalesTable();
-    loadSummary();
-    loadPendingOrders();
+    refreshAll();
   });
 }
 
@@ -227,14 +250,19 @@ function setupAnalyticsTabs() {
   };
 }
 
-// ============ Init ============
-document.addEventListener("DOMContentLoaded", () => {
+// Refresh all data
+function refreshAll() {
   loadSummary();
-  loadAnalytics("monthly");
   loadSalesTable();
   loadTopProducts();
   loadTopCustomers();
   loadPendingOrders();
+}
+
+// ================= Init =================
+document.addEventListener("DOMContentLoaded", () => {
+  refreshAll();
+  loadAnalytics("monthly");
 
   setupAddSaleModal();
   setupTableActions();
