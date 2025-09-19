@@ -33,7 +33,7 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
-// Animate numbers from start to end
+// Animate numbers for KPIs
 function animateValue(el, start, end, duration = 800) {
   if (!el) return;
   let startTimestamp = null;
@@ -67,10 +67,11 @@ async function loadSalesAnalytics(view = "monthly") {
     values = Object.values(data.analytics || {});
   }
 
+  // No animation: redraw chart directly
   analyticsChart = new Chart(ctx, {
     type: "line",
     data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
-    options: { responsive: true, maintainAspectRatio: false },
+    options: { responsive: true, maintainAspectRatio: false, animation: false },
   });
 }
 
@@ -81,7 +82,6 @@ async function refreshAll(view = "monthly") {
     animateValue(document.getElementById("totalSales"), 0, Number(kpiData.totalSales) || 0);
     animateValue(document.getElementById("cashSales"), 0, Number(kpiData.cashSales) || 0);
     animateValue(document.getElementById("mobileSales"), 0, Number(kpiData.mobileSales) || 0);
-
     const completedEl = document.getElementById("completedOrders");
     if (completedEl) completedEl.textContent = Number(kpiData.completedOrders) || 0;
   }
@@ -134,16 +134,8 @@ async function refreshAll(view = "monthly") {
       ul.appendChild(li);
       const name = c[0];
       const total = c[1];
-      let start = 0;
-      const duration = 1000;
-      function step(timestamp) {
-        if (!li.startTime) li.startTime = timestamp;
-        const progress = Math.min((timestamp - li.startTime) / duration, 1);
-        const value = Math.floor(progress * total + start);
-        li.textContent = `${name} - ₦${value}`;
-        if (progress < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
+      animateValue(li, 0, total, 1000); // Animate KPI-style only
+      li.textContent = `${name} - ₦${total}`; // final value
     });
   }
 
@@ -159,7 +151,7 @@ async function refreshAll(view = "monthly") {
     });
   }
 
-  // 6. Sales Analytics chart
+  // 6. Sales Analytics chart (no animation)
   await loadSalesAnalytics(view);
 
   // 7. Update tab classes
@@ -173,8 +165,6 @@ async function refreshAll(view = "monthly") {
 }
 
 // ================= Event Handlers =================
-
-// Add Sale
 function setupAddSaleModal() {
   const modal = document.getElementById("addSaleModal");
   const btn = document.getElementById("addSaleBtn");
@@ -198,12 +188,11 @@ function setupAddSaleModal() {
     if (newSale) {
       modal.style.display = "none";
       form.reset();
-      refreshAll(); // refresh dashboard after adding sale
+      refreshAll();
     }
   };
 }
 
-// Complete/Delete Sale
 function setupTableActions() {
   document.getElementById("productTableBody").addEventListener("click", async e => {
     const btn = e.target.closest("button");
@@ -215,20 +204,18 @@ function setupTableActions() {
     if (action === "complete") await safeCall(completeSale, id);
     else if (action === "delete") await safeCall(deleteSaleAPI, id);
 
-    refreshAll(); // refresh dashboard after action
+    refreshAll();
   });
 }
 
-// Filter/Search
 function setupFilters() {
   const filterSelect = document.getElementById("filterSelect");
   const searchInput = document.getElementById("searchInput");
 
-  filterSelect.addEventListener("change", loadSalesTable);
-  searchInput.addEventListener("input", loadSalesTable);
+  filterSelect.addEventListener("change", refreshAll);
+  searchInput.addEventListener("input", refreshAll);
 }
 
-// Chart Tabs
 function setupAnalyticsTabs() {
   document.getElementById("monthlyTab").onclick = () => refreshAll("monthly");
   document.getElementById("yearlyTab").onclick = () => refreshAll("yearly");
