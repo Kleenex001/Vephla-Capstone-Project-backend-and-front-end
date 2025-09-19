@@ -155,7 +155,7 @@ export async function addCustomer(customer) {
 export async function updateCustomer(id, data) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/customers/${id}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(data)
   });
@@ -258,15 +258,37 @@ export async function getExpiredProducts() {
 }
 // =================================================
 // DELIVERIES
-// =================================================
-export async function getDeliveries() {
+/**
+ * Get all deliveries, optionally filtered by status
+ * @param {string} status - 'pending' | 'completed' | 'cancelled' | 'all'
+ */
+export async function getDeliveries(status = 'all') {
   const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/deliveries`, {
+  let url = `${BASE_URL}/deliveries`;
+  if (status !== 'all') url += `?status=${status}`;
+  
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleFetch(res);
 }
 
+/**
+ * Get a single delivery by ID
+ * @param {string} id 
+ */
+export async function getDeliveryById(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/deliveries/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+/**
+ * Add a new delivery
+ * @param {object} delivery - { customer, package, date, agent, agentType, agentPhone, status }
+ */
 export async function addDelivery(delivery) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/deliveries`, {
@@ -280,9 +302,38 @@ export async function addDelivery(delivery) {
   return handleFetch(res);
 }
 
-// =================================================
+/**
+ * Update a delivery by ID
+ * @param {string} id 
+ * @param {object} data - Fields to update, e.g. { status: 'completed' }
+ */
+export async function updateDelivery(id, data) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/deliveries/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleFetch(res);
+}
+
+/**
+ * Delete a delivery by ID
+ * @param {string} id 
+ */
+export async function deleteDelivery(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/deliveries/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 // SUPPLIERS
-// =================================================
+
 export async function getSuppliers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/suppliers`, {

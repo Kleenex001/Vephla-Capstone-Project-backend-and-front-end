@@ -1,29 +1,42 @@
+// models/Delivery.js
+
 const mongoose = require('mongoose');
 
 const deliverySchema = new mongoose.Schema({
-  customerName: {
+  customer: {
     type: String,
-    required: true,
+    required: [true, "Customer name is required"],
+    trim: true
   },
-  packageDetails: {
+  package: {
     type: String,
-    required: true,
+    required: [true, "Package details are required"],
+    trim: true
   },
-  deliveryDate: {
+  date: {
     type: Date,
-    required: true,
+    required: [true, "Delivery date is required"]
   },
-  agentName: {
+  agent: {
     type: String,
-    required: true,
+    required: [true, "Delivery agent is required"],
+    trim: true
+  },
+  agentType: {
+    type: String,
+    enum: ["waybill", "logistic company", "other"],
+    default: "other"
+  },
+  agentPhone: {
+    type: String,
+    trim: true
   },
   status: {
     type: String,
-    enum: ['Pending', 'Completed', 'Canceled'],
-    default: 'Pending',
-  },
+    enum: ["pending", "completed", "cancelled"],
+    default: "pending",
+    set: v => v.toLowerCase()
+  }
 }, { timestamps: true });
 
-const Delivery = mongoose.model('Delivery', deliverySchema);
-
-module.exports = Delivery;
+module.exports = mongoose.model('Delivery', deliverySchema);

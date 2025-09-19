@@ -1,24 +1,22 @@
-// 
-// Delivery Management Logic
-// 
+// delivery.js
+import {
+  getDeliveries,
+  addDelivery as addDeliveryAPI,
+  updateDelivery,
+  deleteDelivery as deleteDeliveryAPI,
+} from './deliveryApi.js';
 
-// Data store
+// ---------- State ----------
 let deliveries = [];
-let agents = ["James Walker", "Susan Lee", "Michael Brown"]; // default agents
-let agentStats = {
-  "James Walker": 250,
-  "Susan Lee": 200,
-  "Michael Brown": 180
-};
+let agents = []; // empty, add dynamically
 
-// DOM elements
+// ---------- DOM Elements ----------
 const deliveryTableBody = document.querySelector("#deliveryTable tbody");
 const deliveryModal = document.getElementById("deliveryModal");
 const agentModal = document.getElementById("agentModal");
 const deliveryAgentSelect = document.getElementById("deliveryAgent");
 const topAgentsList = document.getElementById("topAgentsList");
 
-// KPI elements
 const kpiTotal = document.getElementById("kpiTotal");
 const kpiCompleted = document.getElementById("kpiCompleted");
 const kpiPending = document.getElementById("kpiPending");
@@ -26,14 +24,17 @@ const kpiCancelled = document.getElementById("kpiCancelled");
 
 // Chart
 const ctxDel = document.getElementById("deliveryOverviewChart").getContext("2d");
-let deliveryOverviewChart = new Chart(ctxDel, {
-  type: "bar",
+let deliveryChart = new Chart(ctxDel, {
+  type: "line",
   data: {
     labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"],
     datasets: [{
       label: "Deliveries",
-      data: [0,0,0,0,0,0,0,0],
-      backgroundColor: "#0e8a70"
+      data: Array(8).fill(0),
+      borderColor: "rgba(14,138,112,0.8)",
+      backgroundColor: "rgba(14,138,112,0.2)",
+      fill: true,
+      tension: 0.4
     }]
   },
   options: {
@@ -46,26 +47,35 @@ let deliveryOverviewChart = new Chart(ctxDel, {
   }
 });
 
+// ---------- Toast ----------
+function showToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add("show"), 100);
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
 
-// Functions
-
-
-// Render deliveries
+// ---------- Render Deliveries ----------
 function renderDeliveries() {
   deliveryTableBody.innerHTML = "";
-  deliveries.forEach((d, index) => {
+  deliveries.forEach((d, i) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${index + 1}</td>
+      <td>${i+1}</td>
       <td>${d.customer}</td>
       <td>${d.package}</td>
       <td><span class="status ${d.status}">${capitalize(d.status)}</span></td>
-      <td>${d.date}</td>
-      <td>${d.agent}</td>
+      <td>${new Date(d.date).toLocaleDateString()}</td>
+      <td>${d.agent.name} (${d.agent.type})</td>
       <td>
         ${d.status === "pending" ? `
-          <button class="btn small success" onclick="confirmDelivery(${index})">Confirm</button>
-          <button class="btn small danger" onclick="cancelDelivery(${index})">Cancel</button>
+          <button class="btn small success" onclick="confirmDelivery('${d._id}')">Confirm</button>
+          <button class="btn small danger" onclick="cancelDelivery('${d._id}')">Cancel</button>
         ` : `<em>—</em>`}
       </td>
     `;
@@ -73,7 +83,7 @@ function renderDeliveries() {
   });
 }
 
-// Update KPIs
+// ---------- Update KPIs ----------
 function updateKPIs() {
   kpiTotal.textContent = deliveries.length;
   kpiCompleted.textContent = deliveries.filter(d => d.status === "completed").length;
@@ -81,155 +91,142 @@ function updateKPIs() {
   kpiCancelled.textContent = deliveries.filter(d => d.status === "cancelled").length;
 }
 
-// Update Top Agents list
+// ---------- Update Top Agents ----------
 function updateTopAgents() {
-  topAgentsList.innerHTML = "";
-  const sorted = Object.entries(agentStats)
-    .sort((a, b) => b[1] - a[1]);
-  sorted.forEach(([agent, count]) => {
-    const li = document.createElement("li");
-    li.innerHTML = `${agent} <span>${count} Deliveries</span>`;
-    topAgentsList.appendChild(li);
+  const stats = {};
+  deliveries.forEach(d => {
+    if (!stats[d.agent.name]) stats[d.agent.name] = 0;
+    if (d.status === "completed") stats[d.agent.name]++;
   });
+
+  topAgentsList.innerHTML = "";
+  Object.entries(stats)
+    .sort((a,b) => b[1]-a[1])
+    .forEach(([name,count]) => {
+      const li = document.createElement("li");
+      li.innerHTML = `${name} <span>${count} Deliveries</span>`;
+      topAgentsList.appendChild(li);
+    });
 }
 
-// Add delivery
-function addDelivery(customer, pkg, date, agent) {
-  deliveries.push({ customer, package: pkg, date, agent, status: "pending" });
-  renderDeliveries();
-  updateKPIs();
+// ---------- Update Chart ----------
+function updateChart() {
+  const monthly = Array(8).fill(0);
+  const currentYear = new Date().getFullYear();
+  deliveries.forEach(d => {
+    if(d.status === "completed") {
+      const date = new Date(d.date);
+      const month = date.getMonth();
+      if(month >= 0 && month < monthly.length) monthly[month] += 1;
+    }
+  });
+  deliveryChart.data.datasets[0].data = monthly;
+  deliveryChart.update();
 }
 
-// Confirm delivery
-function confirmDelivery(index) {
-  const delivery = deliveries[index];
-  delivery.status = "completed";
-  agentStats[delivery.agent] = (agentStats[delivery.agent] || 0) + 1;
-  renderDeliveries();
-  updateKPIs();
-  updateTopAgents();
-}
+// ---------- Confirm/Cancel Delivery ----------
+window.confirmDelivery = async function(id) {
+  try {
+    await updateDelivery(id, { status: "completed" });
+    await fetchAndRenderDeliveries();
+    showToast("✅ Delivery confirmed", "success");
+  } catch(err) {
+    console.error(err);
+    showToast("❌ Failed to confirm delivery", "error");
+  }
+};
 
-// Cancel delivery
-function cancelDelivery(index) {
-  deliveries[index].status = "cancelled";
-  renderDeliveries();
-  updateKPIs();
-}
+window.cancelDelivery = async function(id) {
+  try {
+    await updateDelivery(id, { status: "cancelled" });
+    await fetchAndRenderDeliveries();
+    showToast("❌ Delivery cancelled", "error");
+  } catch(err) {
+    console.error(err);
+    showToast("❌ Failed to cancel delivery", "error");
+  }
+};
 
-// Add new agent
-function addAgent(name) {
-  if (!agents.includes(name)) {
-    agents.push(name);
-    agentStats[name] = 0;
-    populateAgentDropdown();
+// ---------- Fetch Deliveries ----------
+async function fetchAndRenderDeliveries() {
+  try {
+    const res = await getDeliveries();
+    deliveries = res.data;
+    renderDeliveries();
+    updateKPIs();
     updateTopAgents();
+    updateChart();
+  } catch(err) {
+    console.error(err);
+    showToast("❌ Failed to load deliveries", "error");
   }
 }
 
-// Populate agent dropdown
+// ---------- Add Delivery ----------
+document.getElementById("saveDeliveryBtn").addEventListener("click", async () => {
+  const customer = document.getElementById("customerName").value.trim();
+  const pkg = document.getElementById("packageDetails").value.trim();
+  const date = document.getElementById("deliveryDate").value;
+  const agentName = deliveryAgentSelect.value;
+  const agentType = document.getElementById("agentType")?.value || "Waybill";
+  const agentPhone = document.getElementById("agentPhone")?.value || "";
+
+  if(customer && pkg && date && agentName) {
+    try {
+      await addDeliveryAPI({
+        customer,
+        package: pkg,
+        date,
+        agent: { name: agentName, type: agentType, phone: agentPhone },
+        status: "pending"
+      });
+      deliveryModal.style.display = "none";
+      showToast("✅ Delivery added", "success");
+      await fetchAndRenderDeliveries();
+      document.getElementById("customerName").value = "";
+      document.getElementById("packageDetails").value = "";
+      document.getElementById("deliveryDate").value = "";
+    } catch(err) {
+      console.error(err);
+      showToast("❌ Failed to add delivery", "error");
+    }
+  } else showToast("⚠️ Fill all fields", "info");
+});
+
+// ---------- Add Agent ----------
+document.getElementById("saveAgentBtn").addEventListener("click", () => {
+  const name = document.getElementById("agentName").value.trim();
+  if(name && !agents.includes(name)) {
+    agents.push(name);
+    populateAgentDropdown();
+    agentModal.style.display = "none";
+    document.getElementById("agentName").value = "";
+    showToast("✅ Agent added", "success");
+  } else showToast("⚠️ Agent already exists or empty", "info");
+});
+
+// Populate dropdown
 function populateAgentDropdown() {
   deliveryAgentSelect.innerHTML = "";
-  agents.forEach(agent => {
+  agents.forEach(a => {
     const opt = document.createElement("option");
-    opt.value = agent;
-    opt.textContent = agent;
+    opt.value = a;
+    opt.textContent = a;
     deliveryAgentSelect.appendChild(opt);
   });
 }
 
-// Helper
+// ---------- Helpers ----------
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// =========================
-// Event Listeners
-// 
+// ---------- Modal controls ----------
+document.getElementById("addDeliveryBtn").addEventListener("click", () => deliveryModal.style.display = "flex");
+document.getElementById("closeModalBtn").addEventListener("click", () => deliveryModal.style.display = "none");
+document.getElementById("addAgentBtn").addEventListener("click", () => agentModal.style.display = "flex");
+document.getElementById("closeAgentModalBtn").addEventListener("click", () => agentModal.style.display = "none");
 
-// Open add delivery modal
-document.getElementById("addDeliveryBtn").addEventListener("click", () => {
-  deliveryModal.style.display = "flex";
-});
-
-// Save delivery
-document.getElementById("saveDeliveryBtn").addEventListener("click", () => {
-  const customer = document.getElementById("customerName").value.trim();
-  const pkg = document.getElementById("packageDetails").value.trim();
-  const date = document.getElementById("deliveryDate").value;
-  const agent = deliveryAgentSelect.value;
-
-  if (customer && pkg && date && agent) {
-    addDelivery(customer, pkg, date, agent);
-    deliveryModal.style.display = "none";
-    document.getElementById("customerName").value = "";
-    document.getElementById("packageDetails").value = "";
-    document.getElementById("deliveryDate").value = "";
-  } else {
-    alert("Please fill all fields");
-  }
-});
-
-// Close delivery modal
-document.getElementById("closeModalBtn").addEventListener("click", () => {
-  deliveryModal.style.display = "none";
-});
-
-// Open add agent modal
-document.getElementById("addAgentBtn").addEventListener("click", () => {
-  agentModal.style.display = "flex";
-});
-
-// Save agent
-document.getElementById("saveAgentBtn").addEventListener("click", () => {
-  const agentName = document.getElementById("agentName").value.trim();
-  if (agentName) {
-    addAgent(agentName);
-    agentModal.style.display = "none";
-    document.getElementById("agentName").value = "";
-  }
-});
-
-// Close agent modal
-document.getElementById("closeAgentModalBtn").addEventListener("click", () => {
-  agentModal.style.display = "none";
-});
-
-// Initialize
+// ---------- Init ----------
 populateAgentDropdown();
-updateTopAgents();
-renderDeliveries();
-updateKPIs();
-document.addEventListener("DOMContentLoaded", () => {
-  const ctx1 = document.getElementById("salesAnalyticsChart").getContext("2d");
-  const ctx2 = document.getElementById("overduePaymentsChart").getContext("2d");
-  const ctxDel = document.getElementById("deliveryOverviewChart").getContext("2d");
-  let deliveryOverviewChart = new Chart(ctxDel, {
-    type: "line",
-    data: {
-      labels: ["January", "February", "March", "April", "May", "June"],
-      datasets: [{
-        label: "Deliveries",
-        data: [12, 19, 3, 5, 2, 3],
-        backgroundColor: "rgba(14, 138, 112, 0.2)",
-        borderColor: "rgba(14, 138, 112, 1)",
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
-  });
-});
-document.addEventListener("DOMContentLoaded", () => {
-  setActivePage(location.hash.replace("#", "") || "dashboard");
-});
-window.addEventListener("hashchange", () => {
-  setActivePage(location.hash.replace("#", "") || "dashboard");
-});
-
+fetchAndRenderDeliveries();

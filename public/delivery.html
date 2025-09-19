@@ -173,24 +173,38 @@
   </div>
 
   <!-- Agent Modal -->
-  <div id="agentModal" class="modal">
-    <div class="modal-content">
-      <h2>Add Delivery Agent</h2>
-      <label>Agent Name</label>
-      <input type="text" id="agentName" placeholder="Enter agent name">
-      <div class="modal-actions">
-        <button class="btn primary" id="saveAgentBtn">Save</button>
-        <button class="btn cancel" id="closeAgentModalBtn">Cancel</button>
-      </div>
+ <!-- Agent Modal -->
+<div id="agentModal" class="modal">
+  <div class="modal-content">
+    <h2>Add Delivery Agent</h2>
+
+    <label>Agent Name</label>
+    <input type="text" id="agentName" placeholder="Enter agent name" />
+
+    <label>Phone Number</label>
+    <input type="text" id="agentPhone" placeholder="Enter phone number" />
+
+    <label>Type</label>
+    <select id="agentType">
+      <option value="">Select type</option>
+      <option value="Waybill">Waybill</option>
+      <option value="Logistic Company">Logistic Company</option>
+    </select>
+
+    <div class="modal-actions">
+      <button class="btn primary" id="saveAgentBtn">Save</button>
+      <button class="btn cancel" id="closeAgentModalBtn">Cancel</button>
     </div>
   </div>
+</div>
+
   
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script type="module" src="api.js"></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="delivery.js"></script>
+  <script type="module" src="delivery.js" defer></script>
 
     <script>
   document.addEventListener("DOMContentLoaded", () => {

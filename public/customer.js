@@ -1,4 +1,3 @@
-// customer.js
 import {
   getCustomers,
   addCustomer as addCustomerAPI,
@@ -27,6 +26,30 @@ const searchInput = document.getElementById('searchInput');
 const custMonthlyTab = document.getElementById("custMonthlyTab");
 const custYearlyTab = document.getElementById("custYearlyTab");
 
+// ---------- Inject CSS ----------
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  .status { padding: 4px 8px; border-radius: 4px; font-weight: 500; text-transform: capitalize; }
+  .status.paid { background-color: rgba(40,167,69,0.2); color: #28a745; }
+  .status.overdue { background-color: rgba(220,53,69,0.2); color: #dc3545; }
+
+  .btn-paid, .btn-delete {
+    padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; font-size: 0.6rem; transition: 0.3s;
+  }
+  .btn-paid { background-color: #28a745; color: #fff; }
+  .btn-paid:hover { background-color: #218838; }
+  .btn-delete { background-color: #dc3545; color: #fff; }
+  .btn-delete:hover { background-color: #c82333; }
+
+  .toast { 
+    position: fixed; top: 20px; right: 20px; z-index: 9999; background: #17a2b8; color: #fff; padding: 10px 14px; border-radius: 6px; opacity: 0; transform: translateX(100%); transition: all .3s ease; min-width: 200px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); 
+  }
+  .toast.success { background-color: #28a745; }
+  .toast.error { background-color: #dc3545; }
+  .toast.show { opacity: 1; transform: translateX(0); }
+`;
+document.head.appendChild(styleEl);
+
 // ---------- Chart Setup ----------
 const ctxCust = document.getElementById("customerOverdueChart")?.getContext("2d");
 const custMonthlyData = [];
@@ -39,18 +62,20 @@ const customerOverdueChart = new Chart(ctxCust, {
     datasets: [{
       label: "Overdue Payment",
       data: custMonthlyData,
-      borderColor: "#0e8a70",
-      backgroundColor: "rgba(14,138,112,0.1)",
+      borderColor: "rgba(220,53,69,0.7)",
+      backgroundColor: "rgba(220,53,69,0.2)",
       fill: true,
-      tension: 0.4
+      tension: 0.4,
+      pointRadius: 4,
+      pointBackgroundColor: "rgba(220,53,69,0.8)"
     }]
   },
   options: {
     responsive: true,
     plugins: { legend: { display: false }},
     scales: {
-      y: { beginAtZero: false },
-      x: { grid: { display: false }}
+      y: { beginAtZero: true, ticks: { color: "#333" }, grid: { color: "#eee" } },
+      x: { grid: { color: "#eee" }, ticks: { color: "#333" } }
     }
   }
 });
@@ -61,7 +86,7 @@ function showToast(message, type = "info") {
   toast.className = `toast ${type}`;
   toast.textContent = message;
   document.body.appendChild(toast);
-  setTimeout(() => toast.classList.add("show"), 100);
+  setTimeout(() => toast.classList.add("show"), 50);
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);
@@ -101,10 +126,10 @@ async function addCustomer(newCustomer) {
     updateKPIs();
     updateTopCustomers();
     updateCharts();
-    showToast("✅ Customer added successfully!", "success");
+    showToast(" Customer added successfully!", "success");
   } catch (err) {
     console.error(err);
-    showToast("❌ Failed to add customer", "error");
+    showToast("Failed to add customer", "error");
   }
 }
 
@@ -120,12 +145,12 @@ async function updateCustomer(id, data) {
     updateCharts();
   } catch (err) {
     console.error(err);
-    showToast("❌ Failed to update customer", "error");
+    showToast("Failed to update customer", "error");
   }
 }
 
 async function deleteCustomer(id) {
-  if (!confirm("⚠️ Are you sure you want to delete this customer?")) return;
+  if (!confirm("Are you sure you want to delete this customer?")) return;
   try {
     await deleteCustomerAPI(id);
     customers = customers.filter(c => c._id !== id);
@@ -133,10 +158,10 @@ async function deleteCustomer(id) {
     updateKPIs();
     updateTopCustomers();
     updateCharts();
-    showToast("🗑️ Customer deleted successfully!", "success");
+    showToast("Customer deleted successfully!", "success");
   } catch (err) {
     console.error(err);
-    showToast("❌ Failed to delete customer", "error");
+    showToast(" Failed to delete customer", "error");
   }
 }
 
@@ -160,10 +185,10 @@ function renderCustomers() {
       <td>₦${cust.packageWorth.toLocaleString()}</td>
       <td>${cust.quantity}</td>
       <td>${new Date(cust.paymentDate).toLocaleDateString()}</td>
-      <td>${cust.status}</td>
+      <td><span class="status ${cust.status}">${cust.status}</span></td>
       <td>
-        ${cust.status === 'overdue' ? `<button onclick="markPaid('${cust._id}')">Mark Paid</button>` : ''}
-        <button onclick="deleteCustomer('${cust._id}')" class="delete-btn">Delete</button>
+        ${cust.status === 'overdue' ? `<button class="btn-paid" onclick="markPaid('${cust._id}')">-Paid-</button>` : ''}
+        <button class="btn-delete" onclick="deleteCustomer('${cust._id}')">Delete</button>
       </td>
     `;
     customerTableBody.appendChild(row);
@@ -281,6 +306,9 @@ document.getElementById("exportExcelBtn").addEventListener("click", () => {
   XLSX.utils.book_append_sheet(wb, ws, "Customers");
   XLSX.writeFile(wb,"customers.xlsx");
 });
+
+// ---------- Expose global ----------
+window.deleteCustomer = deleteCustomer;
 
 // ---------- Init ----------
 fetchCustomers();
