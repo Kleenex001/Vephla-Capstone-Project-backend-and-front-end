@@ -47,47 +47,70 @@ function animateValue(el, start, end, duration = 800) {
 }
 
 // ================= Globals =================
+// ================= Real-time Sales Analytics =================
 let analyticsChart;
-let currentAnalyticsView = "monthly";
+let analyticsData = []; // holds last N points
+let analyticsLabels = [];
+const MAX_POINTS = 12; // show last 12 months or last N entries
 
-// ================= Load Analytics Chart =================
-async function loadSalesAnalytics(view = currentAnalyticsView) {
-  currentAnalyticsView = view;
+async function initSalesAnalytics(view = "monthly") {
   const data = await safeCall(getSalesAnalytics, view);
   if (!data) return;
 
+  if (view === "monthly") {
+    analyticsLabels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    analyticsData = data.analytics || Array(12).fill(0);
+  } else {
+    analyticsLabels = Object.keys(data.analytics || {}).sort();
+    analyticsData = Object.values(data.analytics || {});
+  }
+
   const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
 
-  let labels = [];
-  let values = [];
-
-  if (view === "monthly") {
-    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    values = data.analytics || Array(12).fill(0);
-  } else {
-    labels = Object.keys(data.analytics || {}).sort();
-    values = Object.values(data.analytics || {});
-  }
-
-  if (analyticsChart) {
-    // Update existing chart for wave-like effect
-    analyticsChart.data.labels = labels;
-    analyticsChart.data.datasets[0].data = values;
-    analyticsChart.update();
-  } else {
-    // Initial chart creation
-    analyticsChart = new Chart(ctx, {
-      type: "line",
-      data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false, tension: 0.4 }] },
-      options: { 
-        responsive: true, 
-        maintainAspectRatio: false, 
-        animation: false,
-        scales: { y: { beginAtZero: true } },
-      },
-    });
-  }
+  analyticsChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: analyticsLabels,
+      datasets: [{
+        label: "Sales",
+        data: analyticsData,
+        borderColor: "#007bff",
+        backgroundColor: "rgba(0,123,255,0.1)",
+        fill: true,
+        tension: 0.4, // smooth curve
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      scales: { y: { beginAtZero: true } },
+      plugins: { legend: { display: false } },
+    }
+  });
 }
+
+// Call this whenever new sales data arrives
+function updateSalesAnalytics(newData) {
+  // push new value and shift oldest one
+  analyticsData.push(newData);
+  if (analyticsData.length > MAX_POINTS) {
+    analyticsData.shift();
+  }
+
+  // update labels if needed (for dynamic time)
+  if (analyticsChart.data.labels.length < analyticsData.length) {
+    analyticsChart.data.labels.push(""); // empty label for wave effect
+  } else if (analyticsChart.data.labels.length > analyticsData.length) {
+    analyticsChart.data.labels.shift();
+  }
+
+  analyticsChart.data.datasets[0].data = analyticsData;
+  analyticsChart.update();
+}
+
+// Example: simulate new sale
+// updateSalesAnalytics(5000); // call this with new sale amount
 
 // ================= Load Other Data =================
 async function loadSalesTable() {
