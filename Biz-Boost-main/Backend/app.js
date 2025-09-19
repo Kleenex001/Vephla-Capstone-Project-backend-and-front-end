@@ -1,6 +1,5 @@
 // app.js
 const express = require('express');
-const cors = require('cors');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 
@@ -11,26 +10,28 @@ const app = express();
 
 // -------------------- MIDDLEWARE --------------------
 app.use(express.json()); // parse JSON bodies
-app.use(morgan('dev')); // logging
+app.use(morgan('dev'));  // logging
 
+// -------------------- CORS --------------------
 const allowedOrigins = [
   'https://bizboostcom.vercel.app', // production
   'http://localhost:5500',           // local dev
   'http://127.0.0.1:5500',           // local dev using 127.0.0.1
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    // allow requests with no origin (like curl or Postman)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204); // Preflight response
+  }
+  next();
+});
 
 // -------------------- ROUTES --------------------
 const authRoutes = require('./routes/authRoutes');
