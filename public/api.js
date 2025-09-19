@@ -1,375 +1,244 @@
-// api.js
-// =================================================
-// CONFIG
-// =================================================
-const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
+import {
+  getSales,
+  addSale,
+  deleteSale as deleteSaleAPI,
+  completeSale,
+  getSalesSummary,
+  getSalesAnalytics,
+  getTopCustomersSales as fetchTopCustomers,
+  getTopProductsSales as fetchTopProducts,
+  getPendingOrdersSales as fetchPendingOrders,
+} from "./api.js";
 
-// =================================================
-// HELPERS
-// =================================================
-async function handleFetch(res) {
-  const text = await res.text();
-
-  let data;
+// ================= Helpers =================
+function parseServerError(err) {
   try {
-    data = text ? JSON.parse(text) : {};
+    if (!err) return { message: "Unknown error" };
+    if (typeof err === "string") return { message: err };
+    if (err.error) return { message: err.error };
+    if (err.message) return { message: err.message };
+    return { message: JSON.stringify(err) };
   } catch {
-    data = { message: text || "Invalid JSON response" };
+    return { message: "Unexpected server error" };
   }
+}
 
-  if (!res.ok) {
-    throw data;
+async function safeCall(apiFn, ...args) {
+  try {
+    return await apiFn(...args);
+  } catch (err) {
+    console.error("API error:", err);
+    alert(parseServerError(err).message);
+    return null;
   }
-  return data;
 }
 
-function getAuthToken() {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("No auth token found. Please login.");
-  return token;
-}
-
-// =================================================
-// AUTH
-// =================================================
-export async function loginUser(email, password) {
-  const res = await fetch(`${BASE_URL}/auth/signin`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await handleFetch(res);
-  localStorage.setItem("token", data.token);
-  return data;
-}
-
-export async function signupUser(userData) {
-  const res = await fetch(`${BASE_URL}/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
-  return handleFetch(res);
-}
-
-export function logoutUser() {
-  localStorage.removeItem("token");
-}
-
-// =================================================
-// PASSWORD RESET
-// =================================================
-export async function requestPasswordReset(email) {
-  const res = await fetch(`${BASE_URL}/auth/request-password-reset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  return handleFetch(res);
-}
-
-export async function resetPassword(email, otp, newPassword) {
-  const res = await fetch(`${BASE_URL}/auth/reset-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, otp, newPassword }),
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// DASHBOARD
-// =================================================
-export async function getDashboardSummary() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/summary`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function getQuickStats() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/quick-stats`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// dashboard pending orders
-export async function getPendingOrdersDashboard() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/pending-orders`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function getLowStockProducts() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/low-stock`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function getTopCustomersDashboard() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function getUserInfo() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/user-info`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// CUSTOMERS
-// =================================================
-export async function getCustomers() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/customers`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function addCustomer(customer) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/customers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(customer),
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// INVENTORY
-// =================================================
-export async function getProducts() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/inventory/products`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function addProduct(product) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/inventory/products`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(product),
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// DELIVERIES
-// =================================================
-export async function getDeliveries() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/deliveries`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function addDelivery(delivery) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/deliveries`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(delivery),
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// SUPPLIERS
-// =================================================
-export async function getSuppliers() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/suppliers`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function addSupplier(supplier) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/suppliers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(supplier),
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// SALES
-// =================================================
-
-// normalize enums (must match backend lowercase)
-function normalizeEnum(value, type) {
-  if (!value) return value;
-  const enums = {
-    paymentType: ["cash", "mobile"],
-    status: ["pending", "completed"],
+// Animate numbers from start to end
+function animateValue(el, start, end, duration = 800) {
+  if (!el) return;
+  let startTimestamp = null;
+  const step = timestamp => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    el.textContent = `₦${Math.floor(progress * (end - start) + start)}`;
+    if (progress < 1) window.requestAnimationFrame(step);
   };
-  const valid = enums[type].find(e => e === value.toLowerCase());
-  return valid || value.toLowerCase();
+  window.requestAnimationFrame(step);
 }
 
-// get all sales
-export async function getSales() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales`, {
-    headers: { Authorization: `Bearer ${token}` },
+// ================= Load Data =================
+let analyticsChart;
+
+async function loadSalesAnalytics(view = "monthly") {
+  const data = await safeCall(getSalesAnalytics, view);
+  if (!data) return;
+
+  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
+  if (analyticsChart) analyticsChart.destroy();
+
+  let labels = [];
+  let values = [];
+
+  if (view === "monthly") {
+    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    values = data.analytics || Array(12).fill(0);
+  } else {
+    labels = Object.keys(data.analytics || {}).sort();
+    values = Object.values(data.analytics || {});
+  }
+
+  analyticsChart = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
+    options: { responsive: true, maintainAspectRatio: false },
   });
-  return handleFetch(res);
 }
 
-// add new sale
-export async function addSale(sale) {
-  const token = getAuthToken();
+async function refreshAll(view = "monthly") {
+  // 1. KPI summary
+  const kpiData = await safeCall(getSalesSummary);
+  if (kpiData) {
+    animateValue(document.getElementById("totalSales"), 0, Number(kpiData.totalSales) || 0);
+    animateValue(document.getElementById("cashSales"), 0, Number(kpiData.cashSales) || 0);
+    animateValue(document.getElementById("mobileSales"), 0, Number(kpiData.mobileSales) || 0);
 
-  sale.paymentType = normalizeEnum(sale.paymentType, "paymentType");
-  sale.status = normalizeEnum(sale.status, "status");
+    const completedEl = document.getElementById("completedOrders");
+    if (completedEl) completedEl.textContent = Number(kpiData.completedOrders) || 0;
+  }
 
-  const res = await fetch(`${BASE_URL}/sales`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(sale),
+  // 2. Sales table
+  const sales = await safeCall(getSales);
+  if (sales) {
+    const tbody = document.getElementById("productTableBody");
+    tbody.innerHTML = "";
+    sales.forEach((sale, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${sale.productName}</td>
+        <td>₦${sale.amount}</td>
+        <td>${sale.paymentType}</td>
+        <td>${sale.customerName}</td>
+        <td>${sale.status}</td>
+        <td>
+          <button class="btn small" data-action="complete" data-id="${sale._id}">✔</button>
+          <button class="btn small danger" data-action="delete" data-id="${sale._id}">🗑</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // 3. Top Products
+  const topProductsData = await safeCall(fetchTopProducts);
+  if (topProductsData) {
+    const tbody = document.getElementById("topSellingProducts");
+    tbody.innerHTML = "";
+    topProductsData.topProducts?.forEach((p, i) => {
+      const tr = document.createElement("tr");
+      const amountTd = document.createElement("td");
+      tr.innerHTML = `<td>${i + 1}</td><td>${p[0]}</td>`;
+      tr.appendChild(amountTd);
+      tbody.appendChild(tr);
+      animateValue(amountTd, 0, p[1] || 0);
+    });
+  }
+
+  // 4. Top Customers
+  const topCustomersData = await safeCall(fetchTopCustomers);
+  if (topCustomersData) {
+    const ul = document.getElementById("topCustomers");
+    ul.innerHTML = "";
+    topCustomersData.topCustomers?.forEach(c => {
+      const li = document.createElement("li");
+      ul.appendChild(li);
+      const name = c[0];
+      const total = c[1];
+      let start = 0;
+      const duration = 1000;
+      function step(timestamp) {
+        if (!li.startTime) li.startTime = timestamp;
+        const progress = Math.min((timestamp - li.startTime) / duration, 1);
+        const value = Math.floor(progress * total + start);
+        li.textContent = `${name} - ₦${value}`;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  // 5. Pending Orders
+  const pendingData = await safeCall(fetchPendingOrders);
+  if (pendingData) {
+    const ol = document.getElementById("pendingOrdersList");
+    ol.innerHTML = "";
+    pendingData.pending?.forEach(o => {
+      const li = document.createElement("li");
+      li.textContent = `${o.productName} (${o.customerName})`;
+      ol.appendChild(li);
+    });
+  }
+
+  // 6. Sales Analytics chart
+  await loadSalesAnalytics(view);
+
+  // 7. Update tab classes
+  if (view === "monthly") {
+    document.getElementById("monthlyTab").classList.add("active");
+    document.getElementById("yearlyTab").classList.remove("active");
+  } else {
+    document.getElementById("monthlyTab").classList.remove("active");
+    document.getElementById("yearlyTab").classList.add("active");
+  }
+}
+
+// ================= Event Handlers =================
+
+// Add Sale
+function setupAddSaleModal() {
+  const modal = document.getElementById("addSaleModal");
+  const btn = document.getElementById("addSaleBtn");
+  const close = modal.querySelector(".close");
+
+  btn.onclick = () => (modal.style.display = "block");
+  close.onclick = () => (modal.style.display = "none");
+  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+
+  const form = document.getElementById("addSaleForm");
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const sale = {
+      productName: document.getElementById("productName").value,
+      amount: parseFloat(document.getElementById("amount").value),
+      paymentType: document.getElementById("paymentType").value,
+      customerName: document.getElementById("customerName").value,
+      status: document.getElementById("status").value,
+    };
+    const newSale = await safeCall(addSale, sale);
+    if (newSale) {
+      modal.style.display = "none";
+      form.reset();
+      refreshAll(); // refresh dashboard after adding sale
+    }
+  };
+}
+
+// Complete/Delete Sale
+function setupTableActions() {
+  document.getElementById("productTableBody").addEventListener("click", async e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+
+    if (action === "complete") await safeCall(completeSale, id);
+    else if (action === "delete") await safeCall(deleteSaleAPI, id);
+
+    refreshAll(); // refresh dashboard after action
   });
-  return handleFetch(res);
 }
 
-// update sale
-export async function updateSale(id, data) {
-  const token = getAuthToken();
+// Filter/Search
+function setupFilters() {
+  const filterSelect = document.getElementById("filterSelect");
+  const searchInput = document.getElementById("searchInput");
 
-  if (data.paymentType) data.paymentType = normalizeEnum(data.paymentType, "paymentType");
-  if (data.status) data.status = normalizeEnum(data.status, "status");
-
-  const res = await fetch(`${BASE_URL}/sales/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-  return handleFetch(res);
+  filterSelect.addEventListener("change", loadSalesTable);
+  searchInput.addEventListener("input", loadSalesTable);
 }
 
-// delete sale
-export async function deleteSale(id) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+// Chart Tabs
+function setupAnalyticsTabs() {
+  document.getElementById("monthlyTab").onclick = () => refreshAll("monthly");
+  document.getElementById("yearlyTab").onclick = () => refreshAll("yearly");
 }
 
-// complete sale
-export async function completeSale(id) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/${id}/complete`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// sales summary
-export async function getSalesSummary() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/summary/kpis`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// sales analytics
-export async function getSalesAnalytics(view = "monthly") {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/analytics?view=${view}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// sales top customers
-export async function getTopCustomersSales() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/top-customers`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// sales top products
-export async function getTopProductsSales() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/top-products`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// sales pending orders
-export async function getPendingOrdersSales() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/sales/pending-orders`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-// =================================================
-// SETTINGS
-// =================================================
-export async function getSettings() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/settings`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
-}
-
-export async function saveSettings(settings) {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/settings`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(settings),
-  });
-  return handleFetch(res);
-}
+// ================= Init =================
+document.addEventListener("DOMContentLoaded", () => {
+  refreshAll();
+  setupAddSaleModal();
+  setupTableActions();
+  setupFilters();
+  setupAnalyticsTabs();
+});
