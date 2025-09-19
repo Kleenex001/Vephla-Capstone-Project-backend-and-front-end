@@ -1,10 +1,15 @@
 // customer.js
-import { getCustomers, addCustomer as addCustomerAPI, updateCustomer as updateCustomerAPI, deleteCustomer as deleteCustomerAPI } from './api.js';
+import {
+  getCustomers,
+  addCustomer as addCustomerAPI,
+  updateCustomer as updateCustomerAPI,
+  deleteCustomer as deleteCustomerAPI,
+} from './api.js';
 
-// State
+// ---------- State ----------
 let customers = [];
 
-// Elements
+// ---------- DOM Elements ----------
 const customerTableBody = document.getElementById('customerTableBody');
 const kpiPaid = document.getElementById('kpiPaid');
 const kpiOwed = document.getElementById('kpiOwed');
@@ -19,8 +24,11 @@ const addCustomerForm = document.getElementById('addCustomerForm');
 const filterSelect = document.getElementById('filterSelect');
 const searchInput = document.getElementById('searchInput');
 
-// Chart Setup
-const ctxCust = document.getElementById("customerOverdueChart").getContext("2d");
+const custMonthlyTab = document.getElementById("custMonthlyTab");
+const custYearlyTab = document.getElementById("custYearlyTab");
+
+// ---------- Chart Setup ----------
+const ctxCust = document.getElementById("customerOverdueChart")?.getContext("2d");
 const custMonthlyData = [];
 const custYearlyData = [];
 
@@ -47,7 +55,7 @@ const customerOverdueChart = new Chart(ctxCust, {
   }
 });
 
-// Toast
+// ---------- Toast ----------
 function showToast(message, type = "info") {
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
@@ -60,15 +68,16 @@ function showToast(message, type = "info") {
   }, 3000);
 }
 
-// Normalize Status
+// ---------- Normalize Status ----------
 function normalizeStatus(status) {
-  if (!status) return status;
-  status = status.toLowerCase();
-  if (status === 'owed') return 'overdue';
-  return status;
+  if (!status) return "pending";
+  const s = status.toLowerCase();
+  if (["paid", "active"].includes(s)) return "paid";
+  if (["owed", "overdue"].includes(s)) return "overdue";
+  return "pending";
 }
 
-// Fetch Customers
+// ---------- API Calls ----------
 async function fetchCustomers() {
   try {
     const res = await getCustomers();
@@ -83,7 +92,6 @@ async function fetchCustomers() {
   }
 }
 
-// Add Customer
 async function addCustomer(newCustomer) {
   newCustomer.status = normalizeStatus(newCustomer.status);
   try {
@@ -100,7 +108,6 @@ async function addCustomer(newCustomer) {
   }
 }
 
-// Update Customer
 async function updateCustomer(id, data) {
   if (data.status) data.status = normalizeStatus(data.status);
   try {
@@ -117,7 +124,6 @@ async function updateCustomer(id, data) {
   }
 }
 
-// Delete Customer
 async function deleteCustomer(id) {
   if (!confirm("⚠️ Are you sure you want to delete this customer?")) return;
   try {
@@ -134,13 +140,13 @@ async function deleteCustomer(id) {
   }
 }
 
-// Render Table
+// ---------- Render ----------
 function renderCustomers() {
   const filter = filterSelect.value;
   const search = searchInput.value.toLowerCase();
   customerTableBody.innerHTML = '';
 
-  let filtered = customers.filter(c => {
+  const filtered = customers.filter(c => {
     if (filter !== 'all' && c.status !== filter) return false;
     if (search && !c.customerName.toLowerCase().includes(search)) return false;
     return true;
@@ -164,7 +170,7 @@ function renderCustomers() {
   });
 }
 
-// Update KPIs
+// ---------- KPIs ----------
 function updateKPIs() {
   let totalPaid = 0, totalOwed = 0, totalOverdue = 0;
   const today = new Date();
@@ -182,13 +188,7 @@ function updateKPIs() {
   kpiOverdue.textContent = "₦" + totalOverdue.toLocaleString();
 }
 
-// Mark Paid
-window.markPaid = function(id) {
-  updateCustomer(id, { status: 'paid' });
-  showToast("💰 Customer marked as Paid!", "success");
-};
-
-// Top Customers
+// ---------- Top Customers ----------
 function updateTopCustomers() {
   const top = [...customers].sort((a,b) => b.packageWorth - a.packageWorth).slice(0,3);
   topCustomersList.innerHTML = '';
@@ -199,7 +199,7 @@ function updateTopCustomers() {
   });
 }
 
-// Update Charts
+// ---------- Charts ----------
 function updateCharts() {
   const monthly = Array(8).fill(0);
   const yearly = Array(8).fill(0);
@@ -221,50 +221,52 @@ function updateCharts() {
   customerOverdueChart.update();
 }
 
-// Tabs for Chart
-document.getElementById("custMonthlyTab").addEventListener("click", () => {
-  customerOverdueChart.data.datasets[0].data = custMonthlyData;
-  customerOverdueChart.update();
-  document.getElementById("custMonthlyTab").classList.add("active");
-  document.getElementById("custYearlyTab").classList.remove("active");
-});
+// ---------- Mark Paid ----------
+window.markPaid = function(id) {
+  updateCustomer(id, { status: 'paid' });
+  showToast("💰 Customer marked as Paid!", "success");
+};
 
-document.getElementById("custYearlyTab").addEventListener("click", () => {
-  customerOverdueChart.data.datasets[0].data = custYearlyData;
-  customerOverdueChart.update();
-  document.getElementById("custYearlyTab").classList.add("active");
-  document.getElementById("custMonthlyTab").classList.remove("active");
-});
-
-// Modal Logic
+// ---------- Modal ----------
 addCustomerBtn.addEventListener('click', () => addCustomerModal.style.display = 'block');
 closeModalBtn.addEventListener('click', () => addCustomerModal.style.display = 'none');
 window.addEventListener('click', (e) => { if(e.target === addCustomerModal) addCustomerModal.style.display = 'none'; });
 
-// Add Customer Form
+// ---------- Form Submit ----------
 addCustomerForm.addEventListener('submit', e => {
   e.preventDefault();
-  let statusInput = document.getElementById('status').value.toLowerCase();
-  let status = statusInput === 'owed' ? 'overdue' : statusInput;
-
   const newCustomer = {
     customerName: document.getElementById('customerName').value,
     packageWorth: parseFloat(document.getElementById('packageWorth').value),
     quantity: parseInt(document.getElementById('quantity').value, 10),
     paymentDate: document.getElementById('paymentDate').value,
-    status
+    status: normalizeStatus(document.getElementById('Status').value)
   };
-
   addCustomer(newCustomer);
   addCustomerForm.reset();
   addCustomerModal.style.display = 'none';
 });
 
-// Filters
+// ---------- Filters ----------
 filterSelect.addEventListener('change', renderCustomers);
 searchInput.addEventListener('input', renderCustomers);
 
-// Export to Excel
+// ---------- Tabs ----------
+custMonthlyTab.addEventListener("click", () => {
+  customerOverdueChart.data.datasets[0].data = custMonthlyData;
+  customerOverdueChart.update();
+  custMonthlyTab.classList.add("active");
+  custYearlyTab.classList.remove("active");
+});
+
+custYearlyTab.addEventListener("click", () => {
+  customerOverdueChart.data.datasets[0].data = custYearlyData;
+  customerOverdueChart.update();
+  custYearlyTab.classList.add("active");
+  custMonthlyTab.classList.remove("active");
+});
+
+// ---------- Export to Excel ----------
 document.getElementById("exportExcelBtn").addEventListener("click", () => {
   if(customers.length === 0){ showToast("No data to export","error"); return; }
   const ws = XLSX.utils.json_to_sheet(customers.map((c,i)=>({
@@ -280,5 +282,5 @@ document.getElementById("exportExcelBtn").addEventListener("click", () => {
   XLSX.writeFile(wb,"customers.xlsx");
 });
 
-// Init
+// ---------- Init ----------
 fetchCustomers();

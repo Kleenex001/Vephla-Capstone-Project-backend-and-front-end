@@ -4,14 +4,17 @@ const customerSchema = new mongoose.Schema({
   customerName: {
     type: String,
     required: true,
+    trim: true,
   },
   packageWorth: {
     type: Number,
     required: true,
+    min: 0,
   },
   quantity: {
     type: Number,
     required: true,
+    min: 1,
   },
   paymentDate: {
     type: Date,
@@ -19,16 +22,27 @@ const customerSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['PAID', 'OVERDUE'],        // store only lowercase
+    enum: ['paid', 'overdue'], // store only lowercase
     required: true,
-    set: v => {
-      if (!v) return v;
-      v = v.toLowerCase();
-      if (v === 'owed') return 'overdue';  // convert "owed" to "overdue"
-      return v;       // normalize input to lowercase
-    },
+    set: v => Customer.normalizeStatus(v),
   },
-}, { timestamps: true }); 
+}, {
+  timestamps: true,
+});
+
+// Static helper method to normalize status
+customerSchema.statics.normalizeStatus = function(status) {
+  if (!status) return 'overdue'; // default
+  const lower = status.toLowerCase();
+  if (lower === 'owed') return 'overdue';
+  return lower; // ensure lowercase
+};
+
+// Optional: Instance method to mark customer as paid
+customerSchema.methods.markPaid = function() {
+  this.status = 'paid';
+  return this.save();
+};
 
 const Customer = mongoose.model('Customer', customerSchema);
 
