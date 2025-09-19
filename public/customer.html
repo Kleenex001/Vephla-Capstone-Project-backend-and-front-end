@@ -53,32 +53,14 @@
       </header>
 
       <!-- Customer Management Section -->
+      <!-- Customer Section -->
       <section id="customers" class="page visible">
-        <h1></h1>
 
         <!-- KPI Cards -->
         <div class="kpis">
-          <div class="card kpi">
-            <i class="fa fa-check-circle"></i>
-            <div>
-              <p>Total Paid</p>
-              <h2 id="kpiPaid">0</h2>
-            </div>
-          </div>
-          <div class="card kpi">
-            <i class="fa fa-wallet"></i>
-            <div>
-              <p>Total Owed</p>
-              <h2 id="kpiOwed">0</h2>
-            </div>
-          </div>
-          <div class="card kpi">
-            <i class="fa fa-exclamation-circle"></i>
-            <div>
-              <p>Overdue Payment</p>
-              <h2 id="kpiOverdue">0</h2>
-            </div>
-          </div>
+          <div class="card kpi"><i class="fa fa-check-circle"></i><div><p>Total Paid</p><h2 id="kpiPaid">0</h2></div></div>
+          <div class="card kpi"><i class="fa fa-wallet"></i><div><p>Total Owed</p><h2 id="kpiOwed">0</h2></div></div>
+          <div class="card kpi"><i class="fa fa-exclamation-circle"></i><div><p>Overdue Payment</p><h2 id="kpiOverdue">0</h2></div></div>
         </div>
 
         <!-- Toolbar -->
@@ -87,7 +69,6 @@
             <select id="filterSelect">
               <option value="all">Filter: All</option>
               <option value="paid">Paid</option>
-              <option value="owed">Owed</option>
               <option value="overdue">Overdue</option>
             </select>
             <input type="search" id="searchInput" placeholder="Search" />
@@ -98,9 +79,9 @@
           </div>
         </div>
 
-        <!-- Table + Right Sidebar -->
+        <!-- Table + Sidebar -->
         <div class="grid-two">
-          <!-- Customer Table -->
+          <!-- Table -->
           <div class="card table-card">
             <table>
               <thead>
@@ -114,15 +95,12 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="customerTableBody">
-                <!-- Filled dynamically -->
-              </tbody>
+              <tbody id="customerTableBody"></tbody>
             </table>
           </div>
 
           <!-- Right Sidebar -->
           <aside class="stats">
-            <!-- Overdue Payment -->
             <div class="card">
               <div class="card-header">
                 <h3>Overdue Payment</h3>
@@ -134,12 +112,9 @@
               <canvas id="customerOverdueChart" height="120"></canvas>
             </div>
 
-            <!-- Top Customers -->
             <div class="card">
               <h3>Top Customers</h3>
-              <ul id="topCustomersList">
-                <!-- Filled dynamically -->
-              </ul>
+              <ul id="topCustomersList"></ul>
             </div>
           </aside>
         </div>
@@ -154,21 +129,21 @@
       <h2>Add Customer</h2>
       <form id="addCustomerForm">
         <label>Customer Name</label>
-        <input type="text" id="custName" required />
+        <input type="text" id="customerName" required />
 
         <label>Package Worth (₦)</label>
-        <input type="number" id="custAmount" required />
+        <input type="number" id="packageWorth" required />
 
         <label>Quantity</label>
-        <input type="number" id="custQty" required />
+        <input type="number" id="quantity" required />
 
         <label>Payment Date</label>
-        <input type="date" id="custDate" required />
+        <input type="date" id="paymentDate" required />
 
         <label>Status</label>
-        <select id="custStatus">
+        <select id="status">
           <option value="paid">Paid</option>
-          <option value="owed">Owed</option>
+          <option value="overdue">Owing</option>
         </select>
 
         <button type="submit" class="btn primary">Add Customer</button>
@@ -176,15 +151,13 @@
     </div>
   </div>
 
-  <!-- External Libraries -->
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
   <script src="config.js"></script>
-<script src="app.js"></script>
+  <script type="module" src="api.js"></script>
+  <script type="module" src="customer.js"></script>
 
-  <!-- Customer Logic -->
-  <script src="customer.js"></script>
 
     <script>
   document.addEventListener("DOMContentLoaded", () => {
@@ -210,10 +183,6 @@
   });
 </script>
     <script>
-        // Go Back button
-        document.getElementById('goBackBtn').addEventListener('click', () => {
-        window.history.back();
-        });
     
         // Modal functionality
         const modal = document.getElementById('purchaseModal');

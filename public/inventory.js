@@ -28,15 +28,28 @@ const deleteModal = document.getElementById('deleteModal');
 const cancelDelete = document.getElementById('cancelDelete');
 const confirmDelete = document.getElementById('confirmDelete');
 
-const purchaseModal = document.getElementById('purchaseModal');
-const purchaseForm = document.getElementById('purchaseForm');
-const purchaseQuantityInput = document.getElementById('purchaseQuantity');
-
 let products = [];
 let lowStockProducts = [];
 let expiredProducts = [];
 let deleteIndex = null;
 let selectedProductId = null;
+
+// === Inject CSS for button styling and row highlights ===
+const style = document.createElement('style');
+style.innerHTML = `
+  .low-stock { background-color: #ffe5e5; font-weight: bold; }
+  .expired { background-color: #f0f0f0; text-decoration: line-through; color: #777; }
+  .low-expired { background-color: #ffd6d6; font-weight: bold; text-decoration: line-through; color: #555; }
+  .edit-btn, .delete-btn {
+    padding: 4px 10px; margin: 0 2px; border: none; border-radius: 4px;
+    color: #fff; cursor: pointer; font-size: 13px;
+  }
+  .edit-btn { background-color: #1e90ff; }
+  .edit-btn:hover { background-color: #0b78e3; }
+  .delete-btn { background-color: #dc3545; }
+  .delete-btn:hover { background-color: #c82333; }
+`;
+document.head.appendChild(style);
 
 // === Tabs ===
 const tabs = document.querySelectorAll('.tab-buttons a');
@@ -54,24 +67,86 @@ tabs.forEach(tab => {
 // === Fetch Products ===
 async function fetchProducts() {
   try {
-    products = await getProducts();
-    lowStockProducts = await getLowStockProducts();
-    expiredProducts = await getExpiredProducts();
-    applyFilters();
+    const resProducts = await getProducts();
+    products = Array.isArray(resProducts.data)
+      ? resProducts.data.map(p => ({
+          id: p._id,
+          name: p.productName,
+          stock: p.stockLevel,
+          reorder: p.reorderLevel,
+          price: p.unitPrice,
+          expiry: p.expiryDate,
+          category: p.category
+        }))
+      : [];
+
+    await fetchLowStockAndExpired();
+    renderTables();
   } catch (err) {
     console.error('Failed to fetch products', err);
+    products = [];
+    lowStockProducts = [];
+    expiredProducts = [];
+    renderTables();
   }
 }
 
-// === Render Functions ===
-function renderAllProducts(list = products) {
-  allProductsTable.innerHTML = '';
-  const today = new Date().toISOString().split('T')[0];
+// === Fetch Low Stock & Expired ===
+async function fetchLowStockAndExpired() {
+  try {
+    const resLow = await getLowStockProducts();
+    lowStockProducts = Array.isArray(resLow.data) ? resLow.data.map(p => ({
+      id: p._id,
+      name: p.productName,
+      stock: p.stockLevel,
+      reorder: p.reorderLevel,
+      price: p.unitPrice,
+      expiry: p.expiryDate,
+      category: p.category
+    })) : [];
 
-  list.forEach((p, i) => {
-    const rowStyle = (p.stock <= p.reorder) ? 'color:red;font-weight:bold;' : 
-                     (p.expiry && p.expiry < today) ? 'color:gray;text-decoration:line-through;' : '';
-    const tr = `<tr style="${rowStyle}">
+    const resExpired = await getExpiredProducts();
+    expiredProducts = Array.isArray(resExpired.data) ? resExpired.data.map(p => ({
+      id: p._id,
+      name: p.productName,
+      stock: p.stockLevel,
+      reorder: p.reorderLevel,
+      price: p.unitPrice,
+      expiry: p.expiryDate,
+      category: p.category
+    })) : [];
+  } catch (err) {
+    console.error('Failed to fetch low-stock or expired products', err);
+    lowStockProducts = [];
+    expiredProducts = [];
+  }
+}
+
+// === Render Tables ===
+function renderTables() {
+  allProductsTable.innerHTML = '';
+  lowStockTable.innerHTML = '';
+  expiredTable.innerHTML = '';
+
+  const today = new Date().toISOString().split('T')[0];
+  const searchValue = searchInput.value.toLowerCase();
+  const selectedCategory = categoryFilter.value;
+
+  const filtered = products.filter(p =>
+    (selectedCategory === 'all' || p.category === selectedCategory) &&
+    p.name.toLowerCase().includes(searchValue)
+  );
+
+  filtered.forEach((p, i) => {
+    let rowClass = '';
+    const isLow = p.stock <= p.reorder;
+    const isExpired = p.expiry && p.expiry < today;
+
+    if (isLow && isExpired) rowClass = 'low-expired';
+    else if (isLow) rowClass = 'low-stock';
+    else if (isExpired) rowClass = 'expired';
+
+    const row = `<tr class="${rowClass}">
       <td>${i + 1}</td>
       <td>${p.name}</td>
       <td>${p.stock}</td>
@@ -80,137 +155,135 @@ function renderAllProducts(list = products) {
       <td>${p.category}</td>
       <td>₦${p.price.toLocaleString()}</td>
       <td>
-        <button onclick="openPurchase(${p.id})">Purchase</button>
-        <button onclick="openEdit(${p.id})">Edit</button>
-        <button onclick="openDelete(${i})">Delete</button>
+        <button class="edit-btn" onclick="openEdit('${p.id}')">Edit</button>
+        <button class="delete-btn" onclick="openDelete(${i})">Delete</button>
       </td>
     </tr>`;
-    allProductsTable.insertAdjacentHTML('beforeend', tr);
+
+    allProductsTable.insertAdjacentHTML('beforeend', row);
   });
+
+  // Low Stock Table
+  lowStockProducts
+    .filter(p => (selectedCategory === 'all' || p.category === selectedCategory) &&
+      p.name.toLowerCase().includes(searchValue))
+    .forEach((p, i) => {
+      const row = `<tr class="low-stock">
+        <td>${i + 1}</td>
+        <td>${p.name}</td>
+        <td>${p.stock}</td>
+        <td>${p.reorder}</td>
+        <td>${p.category}</td>
+        <td>₦${p.price.toLocaleString()}</td>
+      </tr>`;
+      lowStockTable.insertAdjacentHTML('beforeend', row);
+    });
+
+  // Expired Table
+  expiredProducts
+    .filter(p => (selectedCategory === 'all' || p.category === selectedCategory) &&
+      p.name.toLowerCase().includes(searchValue))
+    .forEach((p, i) => {
+      const row = `<tr class="expired">
+        <td>${i + 1}</td>
+        <td>${p.name}</td>
+        <td>${p.expiry || '-'}</td>
+        <td>${p.stock}</td>
+        <td>${p.category}</td>
+        <td>₦${p.price.toLocaleString()}</td>
+      </tr>`;
+      expiredTable.insertAdjacentHTML('beforeend', row);
+    });
 }
 
-function renderLowStock(list = lowStockProducts) {
-  lowStockTable.innerHTML = '';
-  list.forEach((p, i) => {
-    const tr = `<tr style="color:red;">
-      <td>${i + 1}</td>
-      <td>${p.name}</td>
-      <td>${p.stock}</td>
-      <td>${p.reorder}</td>
-      <td>${p.category}</td>
-      <td>₦${p.price.toLocaleString()}</td>
-    </tr>`;
-    lowStockTable.insertAdjacentHTML('beforeend', tr);
-  });
-}
-
-function renderExpired(list = expiredProducts) {
-  expiredTable.innerHTML = '';
-  list.forEach((p, i) => {
-    const tr = `<tr style="color:gray;">
-      <td>${i + 1}</td>
-      <td>${p.name}</td>
-      <td>${p.expiry}</td>
-      <td>${p.stock}</td>
-      <td>${p.category}</td>
-      <td>₦${p.price.toLocaleString()}</td>
-    </tr>`;
-    expiredTable.insertAdjacentHTML('beforeend', tr);
-  });
-}
-
-// === Apply Filters ===
-function applyFilters() {
-  const searchValue = searchInput.value.toLowerCase();
-  const selectedCategory = categoryFilter.value;
-
-  renderAllProducts(products.filter(p =>
-    (selectedCategory === 'all' || p.category === selectedCategory) &&
-    p.name.toLowerCase().includes(searchValue)
-  ));
-  renderLowStock(lowStockProducts.filter(p =>
-    (selectedCategory === 'all' || p.category === selectedCategory) &&
-    p.name.toLowerCase().includes(searchValue)
-  ));
-  renderExpired(expiredProducts.filter(p =>
-    (selectedCategory === 'all' || p.category === selectedCategory) &&
-    p.name.toLowerCase().includes(searchValue)
-  ));
-}
-
-searchInput.addEventListener('input', applyFilters);
-categoryFilter.addEventListener('change', applyFilters);
+// === Filters ===
+searchInput.addEventListener('input', renderTables);
+categoryFilter.addEventListener('change', renderTables);
 
 // === Add Product ===
-addProductBtn.onclick = () => addProductModal.classList.add('show');
-cancelAdd.onclick = () => addProductModal.classList.remove('show');
+addProductBtn?.addEventListener('click', () => addProductModal.classList.add('show'));
+cancelAdd?.addEventListener('click', () => addProductModal.classList.remove('show'));
 
-addProductForm.onsubmit = async e => {
+addProductForm?.addEventListener('submit', async e => {
   e.preventDefault();
-  const newProduct = {
-    name: document.getElementById('productName').value,
-    stock: parseInt(document.getElementById('stockLevel').value),
-    reorder: parseInt(document.getElementById('reorderLevel').value),
-    expiry: document.getElementById('expiryDate').value,
-    category: document.getElementById('productCategory').value,
-    price: parseFloat(document.getElementById('unitPrice').value),
-  };
+
+  const productName = document.getElementById('productName').value.trim();
+  const stockLevel = parseInt(document.getElementById('stockLevel').value, 10);
+  const reorderLevel = parseInt(document.getElementById('reorderLevel').value, 10);
+  const expiryDate = document.getElementById('expiryDate').value;
+  const category = document.getElementById('productCategory').value.trim();
+  const unitPrice = parseFloat(document.getElementById('unitPrice').value);
+
+  if (!productName || isNaN(stockLevel) || isNaN(reorderLevel) || !category || isNaN(unitPrice) || !expiryDate) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+
   try {
-    await addProduct(newProduct);
-    await fetchProducts();
-    addProductModal.classList.remove('show');
+    await addProduct({ productName, stockLevel, reorderLevel, expiryDate, category, unitPrice });
     addProductForm.reset();
+    addProductModal.classList.remove('show');
+    await fetchProducts();
   } catch (err) {
     console.error('Failed to add product', err);
-    alert(err.message || 'Failed to add product');
+    alert(err?.message || 'Failed to add product');
   }
-};
+});
 
 // === Edit Product ===
-function openEdit(id) {
+window.openEdit = function(id) {
   selectedProductId = id;
   const product = products.find(p => p.id === id);
-  if (!product) return;
+  if (!product || !editProductForm) return;
 
-  if (!editProductForm) return; // avoid errors if form not loaded
   editProductForm.name.value = product.name;
   editProductForm.stock.value = product.stock;
   editProductForm.reorder.value = product.reorder;
-  editProductForm.expiry.value = product.expiry;
+  editProductForm.expiry.value = product.expiry || '';
   editProductForm.category.value = product.category;
   editProductForm.price.value = product.price;
 
   editProductModal.classList.add('show');
-}
-if(cancelEdit) cancelEdit.onclick = () => editProductModal.classList.remove('show');
+};
 
-if(editProductForm) editProductForm.onsubmit = async e => {
+cancelEdit?.addEventListener('click', () => editProductModal.classList.remove('show'));
+
+editProductForm?.addEventListener('submit', async e => {
   e.preventDefault();
+
   const updatedProduct = {
-    name: editProductForm.name.value,
-    stock: parseInt(editProductForm.stock.value),
-    reorder: parseInt(editProductForm.reorder.value),
-    expiry: editProductForm.expiry.value,
-    category: editProductForm.category.value,
-    price: parseFloat(editProductForm.price.value)
+    productName: editProductForm.name.value.trim(),
+    stockLevel: parseInt(editProductForm.stock.value, 10),
+    reorderLevel: parseInt(editProductForm.reorder.value, 10),
+    expiryDate: editProductForm.expiry.value,
+    category: editProductForm.category.value.trim(),
+    unitPrice: parseFloat(editProductForm.price.value)
   };
+
+  if (!updatedProduct.productName || isNaN(updatedProduct.stockLevel) || isNaN(updatedProduct.reorderLevel) || !updatedProduct.category || isNaN(updatedProduct.unitPrice)) {
+    alert('Please fill in all required fields correctly.');
+    return;
+  }
+
   try {
     await updateProduct(selectedProductId, updatedProduct);
-    await fetchProducts();
     editProductModal.classList.remove('show');
+    await fetchProducts();
   } catch (err) {
     console.error('Failed to update product', err);
     alert('Failed to update product');
   }
-};
+});
 
 // === Delete Product ===
-function openDelete(index) {
+window.openDelete = function(index) {
   deleteIndex = index;
   deleteModal.classList.add('show');
-}
-if(cancelDelete) cancelDelete.onclick = () => deleteModal.classList.remove('show');
-if(confirmDelete) confirmDelete.onclick = async () => {
+};
+
+cancelDelete?.addEventListener('click', () => deleteModal.classList.remove('show'));
+
+confirmDelete?.addEventListener('click', async () => {
   if (deleteIndex !== null) {
     try {
       await deleteProduct(products[deleteIndex].id);
@@ -221,62 +294,6 @@ if(confirmDelete) confirmDelete.onclick = async () => {
     }
   }
   deleteModal.classList.remove('show');
-};
-
-// === Purchase Product ===
-function openPurchase(id) {
-  selectedProductId = id;
-  const product = products.find(p => p.id === id);
-  if (!product) return;
-
-  const today = new Date().toISOString().split('T')[0];
-  if (product.expiry && product.expiry < today) {
-    alert('Cannot purchase expired product!');
-    return;
-  }
-
-  if(!purchaseModal) return;
-  purchaseModal.classList.add('active');
-  document.getElementById('purchaseProductName').textContent = product.name;
-  document.getElementById('purchaseUnitPrice').textContent = `₦${product.price.toLocaleString()}`;
-  document.getElementById('purchaseAvailableStock').textContent = `Available Stock: ${product.stock}`;
-  document.getElementById('purchaseTotal').textContent = '₦0';
-  purchaseQuantityInput.value = '';
-
-  purchaseQuantityInput.oninput = () => {
-    let qty = parseInt(purchaseQuantityInput.value) || 0;
-    if (qty > product.stock) {
-      alert(`Cannot purchase more than available stock (${product.stock})`);
-      purchaseQuantityInput.value = product.stock;
-      qty = product.stock;
-    }
-    document.getElementById('purchaseTotal').textContent = `₦${(qty * product.price).toLocaleString()}`;
-  };
-}
-
-if(purchaseForm) purchaseForm.onsubmit = async e => {
-  e.preventDefault();
-  const quantity = parseInt(purchaseQuantityInput.value);
-  if (quantity > 0 && selectedProductId) {
-    const product = products.find(p => p.id === selectedProductId);
-    try {
-      await updateProduct(selectedProductId, { stock: product.stock - quantity });
-      await fetchProducts();
-      purchaseModal.classList.remove('active');
-      alert(`Purchased ${quantity} units of "${product.name}"`);
-    } catch (err) {
-      console.error('Failed to update stock', err);
-      alert('Purchase failed');
-    }
-  }
-};
-
-// Close purchase modal
-document.getElementById('closeModal')?.addEventListener('click', () => purchaseModal.classList.remove('active'));
-window.addEventListener('click', (event) => {
-  if (event.target === purchaseModal) {
-    purchaseModal.classList.remove('active');
-  }
 });
 
 // === Initial Fetch ===

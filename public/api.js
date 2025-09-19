@@ -129,30 +129,57 @@ export async function getUserInfo() {
   return handleFetch(res);
 }
 
-// =================================================
-// CUSTOMERS
-// =================================================
+/// ================= CUSTOMERS ==================
+
+// Get all customers
 export async function getCustomers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/customers`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` }
   });
   return handleFetch(res);
 }
 
+// Add a new customer
 export async function addCustomer(customer) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/customers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(customer),
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(customer)
   });
   return handleFetch(res);
 }
 
+// Update a customer
+export async function updateCustomer(id, data) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/customers/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  return handleFetch(res);
+}
+
+// Delete a customer
+export async function deleteCustomer(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/customers/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return handleFetch(res);
+}
+
+// Get overdue payments
+export async function getOverdueCustomers() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/customers/overdue`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return handleFetch(res);
+}
 // =================================================
 // INVENTORY
 // =================================================
