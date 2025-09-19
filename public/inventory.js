@@ -61,6 +61,7 @@ function renderTables() {
   allProductsTable.innerHTML = '';
   lowStockTable.innerHTML = '';
   expiredTable.innerHTML = '';
+
   const today = new Date().toISOString().split('T')[0];
   const searchValue = searchInput.value.toLowerCase();
   const selectedCategory = categoryFilter.value;
@@ -69,9 +70,8 @@ function renderTables() {
     if ((selectedCategory === 'all' || p.category === selectedCategory) &&
         p.name.toLowerCase().includes(searchValue)) {
 
-      const lowStockClass = p.stock <= p.reorder ? 'style="color:red;"' : '';
-
-      const tr = `<tr ${lowStockClass}>
+      // All Products Row
+      const tr = `<tr>
         <td>${i+1}</td>
         <td>${p.name}</td>
         <td>${p.stock}</td>
@@ -87,6 +87,7 @@ function renderTables() {
       </tr>`;
       allProductsTable.insertAdjacentHTML('beforeend', tr);
 
+      // Low Stock
       if(p.stock <= p.reorder){
         const low = `<tr style="color:red;">
           <td>${i+1}</td>
@@ -99,6 +100,7 @@ function renderTables() {
         lowStockTable.insertAdjacentHTML('beforeend', low);
       }
 
+      // Expired Products
       if(p.expiry && p.expiry < today){
         const exp = `<tr style="color:gray;">
           <td>${i+1}</td>
@@ -198,8 +200,8 @@ function openPurchase(id){
   selectedProductId = id;
   const product = products.find(p => p.id === id);
   if(!product) return;
-  const today = new Date().toISOString().split('T')[0];
 
+  const today = new Date().toISOString().split('T')[0];
   if(product.expiry && product.expiry < today){
     alert('Cannot purchase expired product!');
     return;
@@ -208,11 +210,17 @@ function openPurchase(id){
   purchaseModal.classList.add('active');
   document.getElementById('purchaseProductName').textContent = product.name;
   document.getElementById('purchaseUnitPrice').textContent = `₦${product.price.toLocaleString()}`;
+  document.getElementById('purchaseAvailableStock').textContent = `Available Stock: ${product.stock}`;
   document.getElementById('purchaseTotal').textContent = '₦0';
   purchaseQuantityInput.value = '';
 
   purchaseQuantityInput.oninput = () => {
-    const qty = parseInt(purchaseQuantityInput.value) || 0;
+    let qty = parseInt(purchaseQuantityInput.value) || 0;
+    if(qty > product.stock){
+      alert(`Cannot purchase more than available stock (${product.stock})`);
+      purchaseQuantityInput.value = product.stock;
+      qty = product.stock;
+    }
     document.getElementById('purchaseTotal').textContent = `₦${(qty * product.price).toLocaleString()}`;
   };
 }
@@ -223,11 +231,13 @@ purchaseForm.onsubmit = async e => {
   if(quantity > 0 && selectedProductId){
     const product = products.find(p => p.id === selectedProductId);
     try {
-      await updateProduct(selectedProductId, { stock: product.stock + quantity });
+      await updateProduct(selectedProductId, { stock: product.stock - quantity });
       await fetchProducts();
       purchaseModal.classList.remove('active');
+      alert(`Purchased ${quantity} units of "${product.name}"`);
     } catch(err) {
       console.error('Failed to update stock', err);
+      alert('Purchase failed');
     }
   }
 };
@@ -244,5 +254,5 @@ window.onclick = (event) => {
 searchInput.addEventListener('input', renderTables);
 categoryFilter.addEventListener('change', renderTables);
 
-// Initial fetch
+// === Initial Fetch ===
 fetchProducts();
