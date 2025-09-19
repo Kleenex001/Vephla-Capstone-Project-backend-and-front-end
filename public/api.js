@@ -105,7 +105,7 @@ export async function getPendingOrdersDashboard() {
   return handleFetch(res);
 }
 
-export async function getLowStockProducts() {
+export async function getDashboardLowStockProducts() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/low-stock`, {
     headers: { Authorization: `Bearer ${token}` },
