@@ -65,37 +65,7 @@ async function loadSummary() {
 }
 
 
-// Load analytics chart
-let analyticsChart;
 
-async function loadAnalytics(view = "monthly") {
-  const data = await safeCall(getSalesAnalytics, view);
-  if (!data) return;
-
-  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
-  let labels = [];
-  let values = [];
-
-  if (view === "monthly") {
-    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    values = data.analytics || Array(12).fill(0);
-  } else {
-    labels = Object.keys(data.analytics || {}).sort();
-    values = Object.values(data.analytics || {});
-  }
-
-  if (analyticsChart) {
-    analyticsChart.data.labels = labels;
-    analyticsChart.data.datasets[0].data = values;
-    analyticsChart.update({ duration: 0 }); // Update instantly, no animation
-  } else {
-    analyticsChart = new Chart(ctx, {
-      type: "line",
-      data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
-      options: { responsive: true, maintainAspectRatio: false, animation: false }, // no animation
-    });
-  }
-}
 
 // Load sales table
 async function loadSalesTable() {
