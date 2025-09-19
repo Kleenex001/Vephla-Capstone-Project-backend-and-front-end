@@ -13,10 +13,24 @@ const app = express();
 app.use(express.json()); // parse JSON bodies
 app.use(morgan('dev')); // logging
 
-// Configure CORS to allow requests from your frontend origin
+const allowedOrigins = [
+  'https://bizboostcom.vercel.app', // production
+  'http://localhost:5500',           // local dev
+  'http://127.0.0.1:5500',           // local dev using 127.0.0.1
+];
+
 app.use(cors({
-  origin: 'https://bizboostcom.vercel.app'
+  origin: function(origin, callback) {
+    // allow requests with no origin (like curl or Postman)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
 }));
+
 
 // -------------------- ROUTES --------------------
 const authRoutes = require('./routes/authRoutes');
