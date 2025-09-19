@@ -33,7 +33,7 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
-// Animate numbers from start to end for KPIs
+// Animate numbers for KPIs
 function animateValue(el, start, end, duration = 800) {
   if (!el) return;
   let startTimestamp = null;
@@ -50,14 +50,13 @@ function animateValue(el, start, end, duration = 800) {
 let analyticsChart;
 let currentAnalyticsView = "monthly";
 
-// ================= Load Data =================
+// ================= Load Analytics Chart =================
 async function loadSalesAnalytics(view = currentAnalyticsView) {
   currentAnalyticsView = view;
   const data = await safeCall(getSalesAnalytics, view);
   if (!data) return;
 
   const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
-  if (analyticsChart) analyticsChart.destroy();
 
   let labels = [];
   let values = [];
@@ -70,18 +69,27 @@ async function loadSalesAnalytics(view = currentAnalyticsView) {
     values = Object.values(data.analytics || {});
   }
 
-  analyticsChart = new Chart(ctx, {
-    type: "line",
-    data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      animation: false,
-      scales: { y: { beginAtZero: true } }
-    },
-  });
+  if (analyticsChart) {
+    // Update existing chart for wave-like effect
+    analyticsChart.data.labels = labels;
+    analyticsChart.data.datasets[0].data = values;
+    analyticsChart.update();
+  } else {
+    // Initial chart creation
+    analyticsChart = new Chart(ctx, {
+      type: "line",
+      data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false, tension: 0.4 }] },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        animation: false,
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+  }
 }
 
+// ================= Load Other Data =================
 async function loadSalesTable() {
   const sales = await safeCall(getSales);
   if (!sales) return;
@@ -148,17 +156,7 @@ async function loadTopCustomers() {
     ul.appendChild(li);
     const name = c[0];
     const total = c[1];
-
-    let start = 0;
-    const duration = 1000;
-    function step(timestamp) {
-      if (!li.startTime) li.startTime = timestamp;
-      const progress = Math.min((timestamp - li.startTime) / duration, 1);
-      const value = Math.floor(progress * total + start);
-      li.textContent = `${name} - ₦${value}`;
-      if (progress < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
+    li.textContent = `${name} - ₦${total}`;
   });
 }
 
