@@ -1,108 +1,127 @@
-
-
-let products = [
-  {
-    id: 1,
-    name: "Tomato Rice",
-    stock: 100,
-    reorder: 15,
-    price: 65000,
-    expiry: "2025-12-31",
-    img: "Assets/tomato.png",
-    category: "Category A"
-  }
-];
+import { 
+  getProducts, 
+  addProduct, 
+  deleteProduct, 
+  getLowStockProducts, 
+  getExpiredProducts 
+} from "./api.js";
 
 // DOM Elements
-const allTableBody = document.querySelector("#main tbody");
-const lowTableBody = document.querySelector("#low tbody");
-const expiredTableBody = document.querySelector("#expired tbody");
+const allTableBody = document.querySelector("#allProductsTable tbody");
+const lowTableBody = document.querySelector("#lowStockTable tbody");
+const expiredTableBody = document.querySelector("#expiredTable tbody");
 
 const addProductForm = document.getElementById("addProductForm");
-const searchInput = document.querySelector(".filters input[type='text']");
-const categorySelect = document.querySelector(".filters select");
+const addProductModal = document.getElementById("addProductModal");
+const addProductBtn = document.getElementById("addProductBtn");
+const cancelAdd = document.getElementById("cancelAdd");
 
-// Render Products
-function renderTables() {
-  // Clear tables
-  allTableBody.innerHTML = "";
-  lowTableBody.innerHTML = "";
-  expiredTableBody.innerHTML = "";
+const deleteModal = document.getElementById("deleteModal");
+const cancelDelete = document.getElementById("cancelDelete");
+const confirmDelete = document.getElementById("confirmDelete");
 
-  const today = new Date();
+const searchInput = document.getElementById("searchInput");
+const categoryFilter = document.getElementById("categoryFilter");
 
-  // Apply filters
-  const searchTerm = searchInput.value.toLowerCase();
-  const selectedCategory = categorySelect.value;
+let products = [];
+let deleteIndex = null;
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm);
-    const matchesCategory =
-      selectedCategory === "All" || p.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+// ================= Render Table =================
+function renderTableRows(tableBody, data, showDelete = false) {
+  tableBody.innerHTML = '';
+  data.forEach((p, i) => {
+    const tr = document.createElement('tr');
 
-  // Loop and add rows
-  filteredProducts.forEach((product, index) => {
-    const row = `
-      <tr>
-        <td>${index + 1}</td>
-        <td><img src="${product.img}" alt="${product.name}" width="32"></td>
-        <td>${product.name}</td>
-        <td>${product.stock}</td>
-        <td>${product.reorder}</td>
-        <td>NGN${product.price.toLocaleString()}</td>
-      </tr>
+    let rowContent = `
+      <td>${i + 1}</td>
+      <td>${p.name}</td>
+      <td>${p.stock}</td>
+      <td>${p.reorder || '-'}</td>
+      <td>${p.expiry || '-'}</td>
+      <td>${p.category}</td>
+      <td>₦${p.price}</td>
     `;
 
-    // All Products
-    allTableBody.insertAdjacentHTML("beforeend", row);
-
-    // Low Stock
-    if (product.stock < product.reorder) {
-      lowTableBody.insertAdjacentHTML("beforeend", row);
+    if(showDelete) {
+      rowContent += `<td><button onclick="openDelete(${i})" class="btn danger">Delete</button></td>`;
     }
 
-    // Expired
-    if (new Date(product.expiry) < today) {
-      expiredTableBody.insertAdjacentHTML("beforeend", row);
-    }
+    tr.innerHTML = rowContent;
+    tableBody.appendChild(tr);
   });
 }
 
-// Handle Add Product Form
-addProductForm.addEventListener("submit", e => {
+// ================= Load Products =================
+async function loadProducts() {
+  try {
+    products = await getProducts();
+    const lowStockProducts = await getLowStockProducts();
+    const expiredProducts = await getExpiredProducts();
+
+    // Apply search & category filters for All Products
+    const searchValue = searchInput.value.toLowerCase();
+    const selectedCategory = categoryFilter.value;
+    const filteredProducts = products.filter(p => 
+      (selectedCategory === 'all' || p.category === selectedCategory) &&
+      p.name.toLowerCase().includes(searchValue)
+    );
+
+    renderTableRows(allTableBody, filteredProducts, true);
+    renderTableRows(lowTableBody, lowStockProducts);
+    renderTableRows(expiredTableBody, expiredProducts);
+  } catch (err) {
+    console.error("Failed to load products:", err);
+  }
+}
+
+// ================= Add Product =================
+addProductBtn.onclick = () => addProductModal.classList.add('show');
+cancelAdd.onclick = () => addProductModal.classList.remove('show');
+
+addProductForm.onsubmit = async e => {
   e.preventDefault();
+  const newProduct = {
+    name: document.getElementById('productName').value,
+    stock: parseInt(document.getElementById('stockLevel').value),
+    reorder: parseInt(document.getElementById('reorderLevel').value),
+    expiry: document.getElementById('expiryDate').value,
+    category: document.getElementById('productCategory').value,
+    price: parseFloat(document.getElementById('unitPrice').value),
+  };
 
-  const name = document.getElementById("productName").value;
-  const stock = parseInt(document.getElementById("stockLevel").value);
-  const reorder = parseInt(document.getElementById("reorderLevel").value);
-  const price = parseFloat(document.getElementById("unitPrice").value);
-  const expiry = document.getElementById("expiryDate").value;
+  try {
+    await addProduct(newProduct);
+    addProductModal.classList.remove('show');
+    addProductForm.reset();
+    await loadProducts();
+  } catch (err) {
+    console.error("Failed to add product:", err);
+  }
+};
 
-  // For now, set default image & category
-  const img = "Assets/tomato.png";
-  const category = "Category A";
+// ================= Delete Product =================
+window.openDelete = (index) => {
+  deleteIndex = index;
+  deleteModal.classList.add('show');
+};
 
-  products.push({
-    id: products.length + 1,
-    name,
-    stock,
-    reorder,
-    price,
-    expiry,
-    img,
-    category
-  });
+cancelDelete.onclick = () => deleteModal.classList.remove('show');
 
-  renderTables();
-  addProductForm.reset();
-  document.getElementById("addProductModal").style.display = "none";
-});
+confirmDelete.onclick = async () => {
+  if(deleteIndex !== null){
+    try {
+      await deleteProduct(products[deleteIndex].id);
+      deleteModal.classList.remove('show');
+      await loadProducts();
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+    }
+  }
+};
 
-// Filters (Search & Category)
-searchInput.addEventListener("input", renderTables);
-categorySelect.addEventListener("change", renderTables);
+// ================= Filters =================
+searchInput.addEventListener('input', loadProducts);
+categoryFilter.addEventListener('change', loadProducts);
 
-// Init
-renderTables();
+// ================= Initialize =================
+loadProducts();

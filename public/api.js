@@ -156,6 +156,7 @@ export async function addCustomer(customer) {
 // =================================================
 // INVENTORY
 // =================================================
+// Get all products
 export async function getProducts() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/inventory/products`, {
@@ -164,6 +165,16 @@ export async function getProducts() {
   return handleFetch(res);
 }
 
+// Get a single product by ID
+export async function getProductById(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/products/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Add a new product
 export async function addProduct(product) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/inventory/products`, {
@@ -177,6 +188,47 @@ export async function addProduct(product) {
   return handleFetch(res);
 }
 
+// Update an existing product
+export async function updateProduct(id, updatedFields) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/products/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(updatedFields),
+  });
+  return handleFetch(res);
+}
+
+// Delete a product
+export async function deleteProduct(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/products/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Get products with low stock
+export async function getLowStockProducts() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/low-stock`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Get expired products
+export async function getExpiredProducts() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/expired`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 // =================================================
 // DELIVERIES
 // =================================================
