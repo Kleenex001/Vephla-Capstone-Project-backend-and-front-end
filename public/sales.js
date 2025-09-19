@@ -33,7 +33,7 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
-// Animate numbers for KPIs
+// Animate numbers from start to end for KPIs
 function animateValue(el, start, end, duration = 800) {
   if (!el) return;
   let startTimestamp = null;
@@ -46,10 +46,13 @@ function animateValue(el, start, end, duration = 800) {
   window.requestAnimationFrame(step);
 }
 
-// ================= Load Data =================
+// ================= Globals =================
 let analyticsChart;
+let currentAnalyticsView = "monthly";
 
-async function loadSalesAnalytics(view = "monthly") {
+// ================= Load Data =================
+async function loadSalesAnalytics(view = currentAnalyticsView) {
+  currentAnalyticsView = view;
   const data = await safeCall(getSalesAnalytics, view);
   if (!data) return;
 
@@ -67,101 +70,120 @@ async function loadSalesAnalytics(view = "monthly") {
     values = Object.values(data.analytics || {});
   }
 
-  // No animation: redraw chart directly
   analyticsChart = new Chart(ctx, {
     type: "line",
     data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false },
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      animation: false,
+      scales: { y: { beginAtZero: true } }
+    },
   });
 }
 
-async function refreshAll(view = "monthly") {
-  // 1. KPI summary
-  const kpiData = await safeCall(getSalesSummary);
-  if (kpiData) {
-    animateValue(document.getElementById("totalSales"), 0, Number(kpiData.totalSales) || 0);
-    animateValue(document.getElementById("cashSales"), 0, Number(kpiData.cashSales) || 0);
-    animateValue(document.getElementById("mobileSales"), 0, Number(kpiData.mobileSales) || 0);
-    const completedEl = document.getElementById("completedOrders");
-    if (completedEl) completedEl.textContent = Number(kpiData.completedOrders) || 0;
-  }
-
-  // 2. Sales table
+async function loadSalesTable() {
   const sales = await safeCall(getSales);
-  if (sales) {
-    const tbody = document.getElementById("productTableBody");
-    tbody.innerHTML = "";
-    sales.forEach((sale, i) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${i + 1}</td>
-        <td>${sale.productName}</td>
-        <td>₦${sale.amount}</td>
-        <td>${sale.paymentType}</td>
-        <td>${sale.customerName}</td>
-        <td>${sale.status}</td>
-        <td>
-          <button class="btn small" data-action="complete" data-id="${sale._id}">✔</button>
-          <button class="btn small danger" data-action="delete" data-id="${sale._id}">🗑</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+  if (!sales) return;
 
-  // 3. Top Products
-  const topProductsData = await safeCall(fetchTopProducts);
-  if (topProductsData) {
-    const tbody = document.getElementById("topSellingProducts");
-    tbody.innerHTML = "";
-    topProductsData.topProducts?.forEach((p, i) => {
-      const tr = document.createElement("tr");
-      const amountTd = document.createElement("td");
-      tr.innerHTML = `<td>${i + 1}</td><td>${p[0]}</td>`;
-      tr.appendChild(amountTd);
-      tbody.appendChild(tr);
-      animateValue(amountTd, 0, p[1] || 0);
-    });
-  }
+  const tbody = document.getElementById("productTableBody");
+  tbody.innerHTML = "";
 
-  // 4. Top Customers
-  const topCustomersData = await safeCall(fetchTopCustomers);
-  if (topCustomersData) {
-    const ul = document.getElementById("topCustomers");
-    ul.innerHTML = "";
-    topCustomersData.topCustomers?.forEach(c => {
-      const li = document.createElement("li");
-      ul.appendChild(li);
-      const name = c[0];
-      const total = c[1];
-      animateValue(li, 0, total, 1000); // Animate KPI-style only
-      li.textContent = `${name} - ₦${total}`; // final value
-    });
-  }
+  sales.forEach((sale, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${sale.productName}</td>
+      <td>₦${sale.amount}</td>
+      <td>${sale.paymentType}</td>
+      <td>${sale.customerName}</td>
+      <td>${sale.status}</td>
+      <td>
+        <button class="btn small" data-action="complete" data-id="${sale._id}">✔</button>
+        <button class="btn small danger" data-action="delete" data-id="${sale._id}">🗑</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
-  // 5. Pending Orders
-  const pendingData = await safeCall(fetchPendingOrders);
-  if (pendingData) {
-    const ol = document.getElementById("pendingOrdersList");
-    ol.innerHTML = "";
-    pendingData.pending?.forEach(o => {
-      const li = document.createElement("li");
-      li.textContent = `${o.productName} (${o.customerName})`;
-      ol.appendChild(li);
-    });
-  }
+async function loadSummary() {
+  const data = await safeCall(getSalesSummary);
+  if (!data) return;
 
-  // 6. Sales Analytics chart (no animation)
-  await loadSalesAnalytics(view);
+  animateValue(document.getElementById("totalSales"), 0, Number(data.totalSales) || 0);
+  animateValue(document.getElementById("cashSales"), 0, Number(data.cashSales) || 0);
+  animateValue(document.getElementById("mobileSales"), 0, Number(data.mobileSales) || 0);
 
-  // 7. Update tab classes
-  if (view === "monthly") {
-    document.getElementById("monthlyTab").classList.add("active");
-    document.getElementById("yearlyTab").classList.remove("active");
-  } else {
-    document.getElementById("monthlyTab").classList.remove("active");
-    document.getElementById("yearlyTab").classList.add("active");
-  }
+  const completedEl = document.getElementById("completedOrders");
+  if (completedEl) completedEl.textContent = Number(data.completedOrders) || 0;
+}
+
+async function loadTopProducts() {
+  const data = await safeCall(fetchTopProducts);
+  if (!data) return;
+
+  const tbody = document.getElementById("topSellingProducts");
+  tbody.innerHTML = "";
+
+  data.topProducts?.forEach((p, i) => {
+    const tr = document.createElement("tr");
+    const amountTd = document.createElement("td");
+    tr.innerHTML = `<td>${i + 1}</td><td>${p[0]}</td>`;
+    tr.appendChild(amountTd);
+    tbody.appendChild(tr);
+    animateValue(amountTd, 0, p[1] || 0);
+  });
+}
+
+async function loadTopCustomers() {
+  const data = await safeCall(fetchTopCustomers);
+  if (!data) return;
+
+  const ul = document.getElementById("topCustomers");
+  ul.innerHTML = "";
+
+  data.topCustomers?.forEach(c => {
+    const li = document.createElement("li");
+    ul.appendChild(li);
+    const name = c[0];
+    const total = c[1];
+
+    let start = 0;
+    const duration = 1000;
+    function step(timestamp) {
+      if (!li.startTime) li.startTime = timestamp;
+      const progress = Math.min((timestamp - li.startTime) / duration, 1);
+      const value = Math.floor(progress * total + start);
+      li.textContent = `${name} - ₦${value}`;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+async function loadPendingOrders() {
+  const data = await safeCall(fetchPendingOrders);
+  if (!data) return;
+
+  const ol = document.getElementById("pendingOrdersList");
+  ol.innerHTML = "";
+
+  data.pending?.forEach(o => {
+    const li = document.createElement("li");
+    li.textContent = `${o.productName} (${o.customerName})`;
+    ol.appendChild(li);
+  });
+}
+
+// ================= Refresh Dashboard =================
+async function refreshAll() {
+  await loadSummary();
+  await loadSalesTable();
+  await loadTopProducts();
+  await loadTopCustomers();
+  await loadPendingOrders();
+  await loadSalesAnalytics(currentAnalyticsView);
 }
 
 // ================= Event Handlers =================
@@ -197,7 +219,6 @@ function setupTableActions() {
   document.getElementById("productTableBody").addEventListener("click", async e => {
     const btn = e.target.closest("button");
     if (!btn) return;
-
     const id = btn.dataset.id;
     const action = btn.dataset.action;
 
@@ -211,9 +232,8 @@ function setupTableActions() {
 function setupFilters() {
   const filterSelect = document.getElementById("filterSelect");
   const searchInput = document.getElementById("searchInput");
-
-  filterSelect.addEventListener("change", refreshAll);
-  searchInput.addEventListener("input", refreshAll);
+  filterSelect.addEventListener("change", loadSalesTable);
+  searchInput.addEventListener("input", loadSalesTable);
 }
 
 function setupAnalyticsTabs() {
