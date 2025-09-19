@@ -187,7 +187,7 @@ async function refreshAll() {
   await loadTopProducts();
   await loadTopCustomers();
   await loadPendingOrders();
-  await loadSalesAnalytics(currentAnalyticsView);
+  await loadSalesAnalytics();
 }
 
 // ================= Event Handlers =================
