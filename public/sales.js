@@ -67,6 +67,7 @@ async function loadSummary() {
 
 // Load analytics chart
 let analyticsChart;
+
 async function loadAnalytics(view = "monthly") {
   const data = await safeCall(getSalesAnalytics, view);
   if (!data) return;
@@ -84,14 +85,16 @@ async function loadAnalytics(view = "monthly") {
   }
 
   if (analyticsChart) {
+    // Update existing chart data
     analyticsChart.data.labels = labels;
     analyticsChart.data.datasets[0].data = values;
-    analyticsChart.update();
+    analyticsChart.update(); // Grow line to new values
   } else {
+    // Create chart for the first time
     analyticsChart = new Chart(ctx, {
       type: "line",
       data: { labels, datasets: [{ label: "Sales", data: values, borderColor: "#007bff", fill: false }] },
-      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 800 } },
+      options: { responsive: true, maintainAspectRatio: false },
     });
   }
 }
