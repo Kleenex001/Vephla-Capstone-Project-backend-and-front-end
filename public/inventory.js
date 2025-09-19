@@ -2,21 +2,10 @@ import {
   getProducts,
   addProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getLowStockProducts,
+  getExpiredProducts
 } from './api.js';
-
-// === Tabs ===
-const tabs = document.querySelectorAll('.tab-buttons a');
-const contents = document.querySelectorAll('.tab-content');
-tabs.forEach(tab => {
-  tab.addEventListener('click', e => {
-    e.preventDefault();
-    tabs.forEach(t => t.classList.remove('active'));
-    contents.forEach(c => c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(tab.dataset.tab).classList.add('active');
-  });
-});
 
 // === DOM Elements ===
 const allProductsTable = document.querySelector('#allProductsTable tbody');
@@ -44,77 +33,113 @@ const purchaseForm = document.getElementById('purchaseForm');
 const purchaseQuantityInput = document.getElementById('purchaseQuantity');
 
 let products = [];
+let lowStockProducts = [];
+let expiredProducts = [];
 let deleteIndex = null;
 let selectedProductId = null;
 
-// === Fetch and Render Products ===
+// === Tabs ===
+const tabs = document.querySelectorAll('.tab-buttons a');
+const contents = document.querySelectorAll('.tab-content');
+tabs.forEach(tab => {
+  tab.addEventListener('click', e => {
+    e.preventDefault();
+    tabs.forEach(t => t.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// === Fetch Products ===
 async function fetchProducts() {
   try {
     products = await getProducts();
-    renderTables();
-  } catch(err) {
-    console.error('Failed to load products', err);
+    lowStockProducts = await getLowStockProducts();
+    expiredProducts = await getExpiredProducts();
+    applyFilters();
+  } catch (err) {
+    console.error('Failed to fetch products', err);
   }
 }
 
-function renderTables() {
+// === Render Functions ===
+function renderAllProducts(list = products) {
   allProductsTable.innerHTML = '';
-  lowStockTable.innerHTML = '';
-  expiredTable.innerHTML = '';
-
   const today = new Date().toISOString().split('T')[0];
+
+  list.forEach((p, i) => {
+    const rowStyle = (p.stock <= p.reorder) ? 'color:red;font-weight:bold;' : 
+                     (p.expiry && p.expiry < today) ? 'color:gray;text-decoration:line-through;' : '';
+    const tr = `<tr style="${rowStyle}">
+      <td>${i + 1}</td>
+      <td>${p.name}</td>
+      <td>${p.stock}</td>
+      <td>${p.reorder}</td>
+      <td>${p.expiry || '-'}</td>
+      <td>${p.category}</td>
+      <td>₦${p.price.toLocaleString()}</td>
+      <td>
+        <button onclick="openPurchase(${p.id})">Purchase</button>
+        <button onclick="openEdit(${p.id})">Edit</button>
+        <button onclick="openDelete(${i})">Delete</button>
+      </td>
+    </tr>`;
+    allProductsTable.insertAdjacentHTML('beforeend', tr);
+  });
+}
+
+function renderLowStock(list = lowStockProducts) {
+  lowStockTable.innerHTML = '';
+  list.forEach((p, i) => {
+    const tr = `<tr style="color:red;">
+      <td>${i + 1}</td>
+      <td>${p.name}</td>
+      <td>${p.stock}</td>
+      <td>${p.reorder}</td>
+      <td>${p.category}</td>
+      <td>₦${p.price.toLocaleString()}</td>
+    </tr>`;
+    lowStockTable.insertAdjacentHTML('beforeend', tr);
+  });
+}
+
+function renderExpired(list = expiredProducts) {
+  expiredTable.innerHTML = '';
+  list.forEach((p, i) => {
+    const tr = `<tr style="color:gray;">
+      <td>${i + 1}</td>
+      <td>${p.name}</td>
+      <td>${p.expiry}</td>
+      <td>${p.stock}</td>
+      <td>${p.category}</td>
+      <td>₦${p.price.toLocaleString()}</td>
+    </tr>`;
+    expiredTable.insertAdjacentHTML('beforeend', tr);
+  });
+}
+
+// === Apply Filters ===
+function applyFilters() {
   const searchValue = searchInput.value.toLowerCase();
   const selectedCategory = categoryFilter.value;
 
-  products.forEach((p, i) => {
-    if ((selectedCategory === 'all' || p.category === selectedCategory) &&
-        p.name.toLowerCase().includes(searchValue)) {
-
-      // All Products Row
-      const tr = `<tr>
-        <td>${i+1}</td>
-        <td>${p.name}</td>
-        <td>${p.stock}</td>
-        <td>${p.reorder}</td>
-        <td>${p.expiry || '-'}</td>
-        <td>${p.category}</td>
-        <td>₦${p.price.toLocaleString()}</td>
-        <td>
-          <button onclick="openPurchase(${p.id})">Purchase</button>
-          <button onclick="openEdit(${p.id})">Edit</button>
-          <button onclick="openDelete(${i})">Delete</button>
-        </td>
-      </tr>`;
-      allProductsTable.insertAdjacentHTML('beforeend', tr);
-
-      // Low Stock
-      if(p.stock <= p.reorder){
-        const low = `<tr style="color:red;">
-          <td>${i+1}</td>
-          <td>${p.name}</td>
-          <td>${p.stock}</td>
-          <td>${p.reorder}</td>
-          <td>${p.category}</td>
-          <td>₦${p.price.toLocaleString()}</td>
-        </tr>`;
-        lowStockTable.insertAdjacentHTML('beforeend', low);
-      }
-
-      // Expired Products
-      if(p.expiry && p.expiry < today){
-        const exp = `<tr style="color:gray;">
-          <td>${i+1}</td>
-          <td>${p.name}</td>
-          <td>${p.expiry}</td>
-          <td>${p.stock}</td>
-          <td>${p.category}</td>
-          <td>₦${p.price.toLocaleString()}</td>
-        </tr>`;
-        expiredTable.insertAdjacentHTML('beforeend', exp);
-      }
-    }
-  });
+  renderAllProducts(products.filter(p =>
+    (selectedCategory === 'all' || p.category === selectedCategory) &&
+    p.name.toLowerCase().includes(searchValue)
+  ));
+  renderLowStock(lowStockProducts.filter(p =>
+    (selectedCategory === 'all' || p.category === selectedCategory) &&
+    p.name.toLowerCase().includes(searchValue)
+  ));
+  renderExpired(expiredProducts.filter(p =>
+    (selectedCategory === 'all' || p.category === selectedCategory) &&
+    p.name.toLowerCase().includes(searchValue)
+  ));
 }
+
+searchInput.addEventListener('input', applyFilters);
+categoryFilter.addEventListener('change', applyFilters);
 
 // === Add Product ===
 addProductBtn.onclick = () => addProductModal.classList.add('show');
@@ -135,17 +160,19 @@ addProductForm.onsubmit = async e => {
     await fetchProducts();
     addProductModal.classList.remove('show');
     addProductForm.reset();
-  } catch(err) {
+  } catch (err) {
     console.error('Failed to add product', err);
+    alert(err.message || 'Failed to add product');
   }
 };
 
 // === Edit Product ===
-function openEdit(id){
+function openEdit(id) {
   selectedProductId = id;
   const product = products.find(p => p.id === id);
-  if(!product) return;
+  if (!product) return;
 
+  if (!editProductForm) return; // avoid errors if form not loaded
   editProductForm.name.value = product.name;
   editProductForm.stock.value = product.stock;
   editProductForm.reorder.value = product.reorder;
@@ -155,10 +182,9 @@ function openEdit(id){
 
   editProductModal.classList.add('show');
 }
+if(cancelEdit) cancelEdit.onclick = () => editProductModal.classList.remove('show');
 
-cancelEdit.onclick = () => editProductModal.classList.remove('show');
-
-editProductForm.onsubmit = async e => {
+if(editProductForm) editProductForm.onsubmit = async e => {
   e.preventDefault();
   const updatedProduct = {
     name: editProductForm.name.value,
@@ -172,41 +198,44 @@ editProductForm.onsubmit = async e => {
     await updateProduct(selectedProductId, updatedProduct);
     await fetchProducts();
     editProductModal.classList.remove('show');
-  } catch(err) {
+  } catch (err) {
     console.error('Failed to update product', err);
+    alert('Failed to update product');
   }
 };
 
 // === Delete Product ===
-function openDelete(index){
+function openDelete(index) {
   deleteIndex = index;
   deleteModal.classList.add('show');
 }
-cancelDelete.onclick = () => deleteModal.classList.remove('show');
-confirmDelete.onclick = async () => {
-  if(deleteIndex !== null){
+if(cancelDelete) cancelDelete.onclick = () => deleteModal.classList.remove('show');
+if(confirmDelete) confirmDelete.onclick = async () => {
+  if (deleteIndex !== null) {
     try {
       await deleteProduct(products[deleteIndex].id);
       await fetchProducts();
-    } catch(err) {
+    } catch (err) {
       console.error('Failed to delete product', err);
+      alert('Failed to delete product');
     }
   }
   deleteModal.classList.remove('show');
 };
 
 // === Purchase Product ===
-function openPurchase(id){
+function openPurchase(id) {
   selectedProductId = id;
   const product = products.find(p => p.id === id);
-  if(!product) return;
+  if (!product) return;
 
   const today = new Date().toISOString().split('T')[0];
-  if(product.expiry && product.expiry < today){
+  if (product.expiry && product.expiry < today) {
     alert('Cannot purchase expired product!');
     return;
   }
 
+  if(!purchaseModal) return;
   purchaseModal.classList.add('active');
   document.getElementById('purchaseProductName').textContent = product.name;
   document.getElementById('purchaseUnitPrice').textContent = `₦${product.price.toLocaleString()}`;
@@ -216,7 +245,7 @@ function openPurchase(id){
 
   purchaseQuantityInput.oninput = () => {
     let qty = parseInt(purchaseQuantityInput.value) || 0;
-    if(qty > product.stock){
+    if (qty > product.stock) {
       alert(`Cannot purchase more than available stock (${product.stock})`);
       purchaseQuantityInput.value = product.stock;
       qty = product.stock;
@@ -225,17 +254,17 @@ function openPurchase(id){
   };
 }
 
-purchaseForm.onsubmit = async e => {
+if(purchaseForm) purchaseForm.onsubmit = async e => {
   e.preventDefault();
   const quantity = parseInt(purchaseQuantityInput.value);
-  if(quantity > 0 && selectedProductId){
+  if (quantity > 0 && selectedProductId) {
     const product = products.find(p => p.id === selectedProductId);
     try {
       await updateProduct(selectedProductId, { stock: product.stock - quantity });
       await fetchProducts();
       purchaseModal.classList.remove('active');
       alert(`Purchased ${quantity} units of "${product.name}"`);
-    } catch(err) {
+    } catch (err) {
       console.error('Failed to update stock', err);
       alert('Purchase failed');
     }
@@ -243,16 +272,12 @@ purchaseForm.onsubmit = async e => {
 };
 
 // Close purchase modal
-document.getElementById('closeModal').onclick = () => purchaseModal.classList.remove('active');
-window.onclick = (event) => {
-  if(event.target === purchaseModal){
+document.getElementById('closeModal')?.addEventListener('click', () => purchaseModal.classList.remove('active'));
+window.addEventListener('click', (event) => {
+  if (event.target === purchaseModal) {
     purchaseModal.classList.remove('active');
   }
-};
-
-// === Filters Events ===
-searchInput.addEventListener('input', renderTables);
-categoryFilter.addEventListener('change', renderTables);
+});
 
 // === Initial Fetch ===
 fetchProducts();
