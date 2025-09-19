@@ -203,7 +203,7 @@ async function refreshAll() {
   await loadTopProducts();
   await loadTopCustomers();
   await loadPendingOrders();
-  await initSalesAnalytics(currentAnalyticsView);
+  await initSalesAnalytics(view);
 }
 
 // ================= Event Handlers =================
