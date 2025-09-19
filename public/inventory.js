@@ -1,80 +1,120 @@
-import { 
-  getProducts, 
-  addProduct, 
-  deleteProduct, 
-  getLowStockProducts, 
-  getExpiredProducts 
-} from "./api.js";
+import {
+  getProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct
+} from './api.js';
 
-// DOM Elements
-const allTableBody = document.querySelector("#allProductsTable tbody");
-const lowTableBody = document.querySelector("#lowStockTable tbody");
-const expiredTableBody = document.querySelector("#expiredTable tbody");
+// === Tabs ===
+const tabs = document.querySelectorAll('.tab-buttons a');
+const contents = document.querySelectorAll('.tab-content');
+tabs.forEach(tab => {
+  tab.addEventListener('click', e => {
+    e.preventDefault();
+    tabs.forEach(t => t.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
 
-const addProductForm = document.getElementById("addProductForm");
-const addProductModal = document.getElementById("addProductModal");
-const addProductBtn = document.getElementById("addProductBtn");
-const cancelAdd = document.getElementById("cancelAdd");
+// === DOM Elements ===
+const allProductsTable = document.querySelector('#allProductsTable tbody');
+const lowStockTable = document.querySelector('#lowStockTable tbody');
+const expiredTable = document.querySelector('#expiredTable tbody');
+const categoryFilter = document.getElementById('categoryFilter');
+const searchInput = document.getElementById('searchInput');
 
-const deleteModal = document.getElementById("deleteModal");
-const cancelDelete = document.getElementById("cancelDelete");
-const confirmDelete = document.getElementById("confirmDelete");
+// Modals
+const addProductModal = document.getElementById('addProductModal');
+const addProductBtn = document.getElementById('addProductBtn');
+const cancelAdd = document.getElementById('cancelAdd');
+const addProductForm = document.getElementById('addProductForm');
 
-const searchInput = document.getElementById("searchInput");
-const categoryFilter = document.getElementById("categoryFilter");
+const editProductModal = document.getElementById('editProductModal');
+const editProductForm = document.getElementById('editProductForm');
+const cancelEdit = document.getElementById('cancelEdit');
+
+const deleteModal = document.getElementById('deleteModal');
+const cancelDelete = document.getElementById('cancelDelete');
+const confirmDelete = document.getElementById('confirmDelete');
+
+const purchaseModal = document.getElementById('purchaseModal');
+const purchaseForm = document.getElementById('purchaseForm');
+const purchaseQuantityInput = document.getElementById('purchaseQuantity');
 
 let products = [];
 let deleteIndex = null;
+let selectedProductId = null;
 
-// ================= Render Table =================
-function renderTableRows(tableBody, data, showDelete = false) {
-  tableBody.innerHTML = '';
-  data.forEach((p, i) => {
-    const tr = document.createElement('tr');
-
-    let rowContent = `
-      <td>${i + 1}</td>
-      <td>${p.name}</td>
-      <td>${p.stock}</td>
-      <td>${p.reorder || '-'}</td>
-      <td>${p.expiry || '-'}</td>
-      <td>${p.category}</td>
-      <td>₦${p.price}</td>
-    `;
-
-    if(showDelete) {
-      rowContent += `<td><button onclick="openDelete(${i})" class="btn danger">Delete</button></td>`;
-    }
-
-    tr.innerHTML = rowContent;
-    tableBody.appendChild(tr);
-  });
-}
-
-// ================= Load Products =================
-async function loadProducts() {
+// === Fetch and Render Products ===
+async function fetchProducts() {
   try {
     products = await getProducts();
-    const lowStockProducts = await getLowStockProducts();
-    const expiredProducts = await getExpiredProducts();
-
-    // Apply search & category filters for All Products
-    const searchValue = searchInput.value.toLowerCase();
-    const selectedCategory = categoryFilter.value;
-    const filteredProducts = products.filter(p => 
-      (selectedCategory === 'all' || p.category === selectedCategory) &&
-      p.name.toLowerCase().includes(searchValue)
-    );
-
-    renderTableRows(allTableBody, filteredProducts, true);
-    renderTableRows(lowTableBody, lowStockProducts);
-    renderTableRows(expiredTableBody, expiredProducts);
-  } catch (err) {
-    console.error("Failed to load products:", err);
+    renderTables();
+  } catch(err) {
+    console.error('Failed to load products', err);
   }
 }
 
-// ================= Add Product =================
+function renderTables() {
+  allProductsTable.innerHTML = '';
+  lowStockTable.innerHTML = '';
+  expiredTable.innerHTML = '';
+  const today = new Date().toISOString().split('T')[0];
+  const searchValue = searchInput.value.toLowerCase();
+  const selectedCategory = categoryFilter.value;
+
+  products.forEach((p, i) => {
+    if ((selectedCategory === 'all' || p.category === selectedCategory) &&
+        p.name.toLowerCase().includes(searchValue)) {
+
+      const lowStockClass = p.stock <= p.reorder ? 'style="color:red;"' : '';
+
+      const tr = `<tr ${lowStockClass}>
+        <td>${i+1}</td>
+        <td>${p.name}</td>
+        <td>${p.stock}</td>
+        <td>${p.reorder}</td>
+        <td>${p.expiry || '-'}</td>
+        <td>${p.category}</td>
+        <td>₦${p.price.toLocaleString()}</td>
+        <td>
+          <button onclick="openPurchase(${p.id})">Purchase</button>
+          <button onclick="openEdit(${p.id})">Edit</button>
+          <button onclick="openDelete(${i})">Delete</button>
+        </td>
+      </tr>`;
+      allProductsTable.insertAdjacentHTML('beforeend', tr);
+
+      if(p.stock <= p.reorder){
+        const low = `<tr style="color:red;">
+          <td>${i+1}</td>
+          <td>${p.name}</td>
+          <td>${p.stock}</td>
+          <td>${p.reorder}</td>
+          <td>${p.category}</td>
+          <td>₦${p.price.toLocaleString()}</td>
+        </tr>`;
+        lowStockTable.insertAdjacentHTML('beforeend', low);
+      }
+
+      if(p.expiry && p.expiry < today){
+        const exp = `<tr style="color:gray;">
+          <td>${i+1}</td>
+          <td>${p.name}</td>
+          <td>${p.expiry}</td>
+          <td>${p.stock}</td>
+          <td>${p.category}</td>
+          <td>₦${p.price.toLocaleString()}</td>
+        </tr>`;
+        expiredTable.insertAdjacentHTML('beforeend', exp);
+      }
+    }
+  });
+}
+
+// === Add Product ===
 addProductBtn.onclick = () => addProductModal.classList.add('show');
 cancelAdd.onclick = () => addProductModal.classList.remove('show');
 
@@ -88,40 +128,121 @@ addProductForm.onsubmit = async e => {
     category: document.getElementById('productCategory').value,
     price: parseFloat(document.getElementById('unitPrice').value),
   };
-
   try {
     await addProduct(newProduct);
+    await fetchProducts();
     addProductModal.classList.remove('show');
     addProductForm.reset();
-    await loadProducts();
-  } catch (err) {
-    console.error("Failed to add product:", err);
+  } catch(err) {
+    console.error('Failed to add product', err);
   }
 };
 
-// ================= Delete Product =================
-window.openDelete = (index) => {
-  deleteIndex = index;
-  deleteModal.classList.add('show');
+// === Edit Product ===
+function openEdit(id){
+  selectedProductId = id;
+  const product = products.find(p => p.id === id);
+  if(!product) return;
+
+  editProductForm.name.value = product.name;
+  editProductForm.stock.value = product.stock;
+  editProductForm.reorder.value = product.reorder;
+  editProductForm.expiry.value = product.expiry;
+  editProductForm.category.value = product.category;
+  editProductForm.price.value = product.price;
+
+  editProductModal.classList.add('show');
+}
+
+cancelEdit.onclick = () => editProductModal.classList.remove('show');
+
+editProductForm.onsubmit = async e => {
+  e.preventDefault();
+  const updatedProduct = {
+    name: editProductForm.name.value,
+    stock: parseInt(editProductForm.stock.value),
+    reorder: parseInt(editProductForm.reorder.value),
+    expiry: editProductForm.expiry.value,
+    category: editProductForm.category.value,
+    price: parseFloat(editProductForm.price.value)
+  };
+  try {
+    await updateProduct(selectedProductId, updatedProduct);
+    await fetchProducts();
+    editProductModal.classList.remove('show');
+  } catch(err) {
+    console.error('Failed to update product', err);
+  }
 };
 
+// === Delete Product ===
+function openDelete(index){
+  deleteIndex = index;
+  deleteModal.classList.add('show');
+}
 cancelDelete.onclick = () => deleteModal.classList.remove('show');
-
 confirmDelete.onclick = async () => {
   if(deleteIndex !== null){
     try {
       await deleteProduct(products[deleteIndex].id);
-      deleteModal.classList.remove('show');
-      await loadProducts();
-    } catch (err) {
-      console.error("Failed to delete product:", err);
+      await fetchProducts();
+    } catch(err) {
+      console.error('Failed to delete product', err);
+    }
+  }
+  deleteModal.classList.remove('show');
+};
+
+// === Purchase Product ===
+function openPurchase(id){
+  selectedProductId = id;
+  const product = products.find(p => p.id === id);
+  if(!product) return;
+  const today = new Date().toISOString().split('T')[0];
+
+  if(product.expiry && product.expiry < today){
+    alert('Cannot purchase expired product!');
+    return;
+  }
+
+  purchaseModal.classList.add('active');
+  document.getElementById('purchaseProductName').textContent = product.name;
+  document.getElementById('purchaseUnitPrice').textContent = `₦${product.price.toLocaleString()}`;
+  document.getElementById('purchaseTotal').textContent = '₦0';
+  purchaseQuantityInput.value = '';
+
+  purchaseQuantityInput.oninput = () => {
+    const qty = parseInt(purchaseQuantityInput.value) || 0;
+    document.getElementById('purchaseTotal').textContent = `₦${(qty * product.price).toLocaleString()}`;
+  };
+}
+
+purchaseForm.onsubmit = async e => {
+  e.preventDefault();
+  const quantity = parseInt(purchaseQuantityInput.value);
+  if(quantity > 0 && selectedProductId){
+    const product = products.find(p => p.id === selectedProductId);
+    try {
+      await updateProduct(selectedProductId, { stock: product.stock + quantity });
+      await fetchProducts();
+      purchaseModal.classList.remove('active');
+    } catch(err) {
+      console.error('Failed to update stock', err);
     }
   }
 };
 
-// ================= Filters =================
-searchInput.addEventListener('input', loadProducts);
-categoryFilter.addEventListener('change', loadProducts);
+// Close purchase modal
+document.getElementById('closeModal').onclick = () => purchaseModal.classList.remove('active');
+window.onclick = (event) => {
+  if(event.target === purchaseModal){
+    purchaseModal.classList.remove('active');
+  }
+};
 
-// ================= Initialize =================
-loadProducts();
+// === Filters Events ===
+searchInput.addEventListener('input', renderTables);
+categoryFilter.addEventListener('change', renderTables);
+
+// Initial fetch
+fetchProducts();
