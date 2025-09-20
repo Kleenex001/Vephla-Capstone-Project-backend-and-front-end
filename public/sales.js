@@ -10,7 +10,6 @@ import {
   getPendingOrdersSales as fetchPendingOrders,
 } from "./api.js";
 
-// ================= Helpers =================
 function parseServerError(err) {
   try {
     if (!err) return { message: "Unknown error" };
@@ -33,7 +32,6 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
-// Animate KPI numbers
 function animateValue(el, start, end, duration = 800) {
   if (!el) return;
   let startTimestamp = null;
@@ -46,14 +44,12 @@ function animateValue(el, start, end, duration = 800) {
   window.requestAnimationFrame(step);
 }
 
-// ================= Sales Analytics =================
 let salesChart;
-let salesData = []; // keep original data for filtering
+let salesData = [];
 let currentAnalyticsView = "monthly";
 
 function renderSalesChart(labels, values) {
   const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
-
   if (salesChart) {
     salesChart.data.labels = labels;
     salesChart.data.datasets[0].data = values;
@@ -62,7 +58,7 @@ function renderSalesChart(labels, values) {
     salesChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: labels,
+        labels,
         datasets: [{
           label: "Sales",
           data: values,
@@ -87,7 +83,6 @@ async function initSalesAnalytics(view = "monthly") {
   currentAnalyticsView = view;
   const data = await safeCall(getSalesAnalytics, view);
   if (!data) return;
-
   let labels, values;
   if (view === "monthly") {
     labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -96,43 +91,28 @@ async function initSalesAnalytics(view = "monthly") {
     labels = Object.keys(data.analytics || {}).sort();
     values = Object.values(data.analytics || {});
   }
-
   renderSalesChart(labels, values);
 }
 
-// ================= Load Data =================
 async function loadSalesTable() {
   const sales = await safeCall(getSales);
   if (!sales) return;
-
-  salesData = sales; // store for filtering
+  salesData = sales;
   const tbody = document.getElementById("productTableBody");
   tbody.innerHTML = "";
 
   sales.forEach((sale, i) => {
-    const customerName =
-      sale.customerName ||
-      sale.customer ||
-      (sale.customer && sale.customer.name) ||
-      "Unknown";
+    let customerName = "Unknown";
+    if (sale.customer && sale.customer.name) customerName = sale.customer.name;
+    else if (sale.customerName) customerName = sale.customerName;
 
-    // Styled status like in delivery management
     let statusStyled = "";
-    if (sale.status.toLowerCase() === "completed") {
-      statusStyled = `<span class="status-btn completed">Completed</span>`;
-    } else if (sale.status.toLowerCase() === "pending") {
-      statusStyled = `<span class="status-btn pending">Pending</span>`;
-    } else {
-      statusStyled = `<span class="status-btn cancelled">Cancelled</span>`;
-    }
+    if (sale.status.toLowerCase() === "completed") statusStyled = `<span class="status-btn completed">Completed</span>`;
+    else if (sale.status.toLowerCase() === "pending") statusStyled = `<span class="status-btn pending">Pending</span>`;
+    else statusStyled = `<span class="status-btn cancelled">Cancelled</span>`;
 
-    // Conditionally render complete button
-    const completeBtn =
-      sale.status.toLowerCase() === "completed"
-        ? ""
-        : `<button class="action-btn complete-btn" data-action="complete" data-id="${sale._id}">
-             Complete
-           </button>`;
+    const completeBtn = sale.status.toLowerCase() === "completed" ? "" :
+      `<button class="action-btn complete-btn" data-action="complete" data-id="${sale._id}">Complete</button>`;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -144,9 +124,7 @@ async function loadSalesTable() {
       <td>${statusStyled}</td>
       <td>
         ${completeBtn}
-        <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">
-          Delete
-        </button>
+        <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -156,26 +134,21 @@ async function loadSalesTable() {
 async function loadSummary() {
   const data = await safeCall(getSalesSummary);
   if (!data) return;
-
   animateValue(document.getElementById("totalSales"), 0, Number(data.totalSales) || 0);
   animateValue(document.getElementById("cashSales"), 0, Number(data.cashSales) || 0);
   animateValue(document.getElementById("mobileSales"), 0, Number(data.mobileSales) || 0);
-
-  const completedEl = document.getElementById("completedOrders");
-  if (completedEl) completedEl.textContent = Number(data.completedOrders) || 0;
+  document.getElementById("completedOrders").textContent = Number(data.completedOrders) || 0;
 }
 
 async function loadTopProducts() {
   const data = await safeCall(fetchTopProducts);
   if (!data) return;
-
   const tbody = document.getElementById("topSellingProducts");
   tbody.innerHTML = "";
-
   data.topProducts?.forEach((p, i) => {
     const tr = document.createElement("tr");
     const amountTd = document.createElement("td");
-    tr.innerHTML = `<td>${i + 1}</td><td>${p[0]}</td>`;
+    tr.innerHTML = `<td>${i+1}</td><td>${p[0]}</td>`;
     tr.appendChild(amountTd);
     tbody.appendChild(tr);
     animateValue(amountTd, 0, p[1] || 0);
@@ -185,34 +158,29 @@ async function loadTopProducts() {
 async function loadTopCustomers() {
   const data = await safeCall(fetchTopCustomers);
   if (!data) return;
-
   const ul = document.getElementById("topCustomers");
   ul.innerHTML = "";
-
   data.topCustomers?.forEach(c => {
     const li = document.createElement("li");
     ul.appendChild(li);
-    const name = c[0];
-    const total = c[1];
-    li.textContent = `${name} - ₦${total}`;
+    const name = (c[0] && c[0].name) || c[0] || "Unknown";
+    li.textContent = `${name} - ₦${c[1]}`;
   });
 }
 
 async function loadPendingOrders() {
   const data = await safeCall(fetchPendingOrders);
   if (!data) return;
-
   const ol = document.getElementById("pendingOrdersList");
   ol.innerHTML = "";
-
   data.pending?.forEach(o => {
+    const customerName = (o.customer && o.customer.name) || o.customerName || "Anonymous";
     const li = document.createElement("li");
-    li.textContent = `${o.productName} (${o.customerName || "Anonymous"})`;
+    li.textContent = `${o.productName} (${customerName})`;
     ol.appendChild(li);
   });
 }
 
-// ================= Refresh Dashboard =================
 async function refreshAll() {
   await loadSummary();
   await loadSalesTable();
@@ -222,15 +190,13 @@ async function refreshAll() {
   await initSalesAnalytics();
 }
 
-// ================= Event Handlers =================
 function setupAddSaleModal() {
   const modal = document.getElementById("addSaleModal");
   const btn = document.getElementById("addSaleBtn");
   const close = modal.querySelector(".close");
-
-  btn.onclick = () => (modal.style.display = "block");
-  close.onclick = () => (modal.style.display = "none");
-  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+  btn.onclick = () => modal.style.display = "block";
+  close.onclick = () => modal.style.display = "none";
+  window.onclick = e => { if(e.target === modal) modal.style.display = "none"; };
 
   const form = document.getElementById("addSaleForm");
   form.onsubmit = async e => {
@@ -239,11 +205,11 @@ function setupAddSaleModal() {
       productName: document.getElementById("productName").value,
       amount: parseFloat(document.getElementById("amount").value),
       paymentType: document.getElementById("paymentType").value,
-      customerName: document.getElementById("customerName").value || "Anonymous",
+      customerName: document.getElementById("customerName").value || null,
       status: document.getElementById("status").value,
     };
     const newSale = await safeCall(addSale, sale);
-    if (newSale) {
+    if(newSale){
       modal.style.display = "none";
       form.reset();
       refreshAll();
@@ -254,13 +220,11 @@ function setupAddSaleModal() {
 function setupTableActions() {
   document.getElementById("productTableBody").addEventListener("click", async e => {
     const btn = e.target.closest("button");
-    if (!btn) return;
+    if(!btn) return;
     const id = btn.dataset.id;
     const action = btn.dataset.action;
-
-    if (action === "complete") await safeCall(completeSale, id);
-    else if (action === "delete") await safeCall(deleteSaleAPI, id);
-
+    if(action === "complete") await safeCall(completeSale, id);
+    else if(action === "delete") await safeCall(deleteSaleAPI, id);
     refreshAll();
   });
 }
@@ -272,38 +236,23 @@ function setupFilters() {
   function applyFilters() {
     const term = searchInput.value.toLowerCase();
     const filter = filterSelect.value.toLowerCase();
-
     const filteredLabels = [];
     const filteredValues = [];
-
-    document.querySelectorAll("#productTableBody tr").forEach((row, index) => {
+    document.querySelectorAll("#productTableBody tr").forEach((row, index)=>{
       const sale = salesData[index];
-      const customerName =
-        sale.customerName ||
-        sale.customer ||
-        (sale.customer && sale.customer.name) ||
-        "Unknown";
-
-      const matchesSearch =
-        sale.productName.toLowerCase().includes(term) ||
+      const customerName = (sale.customer && sale.customer.name) || sale.customerName || "Unknown";
+      const matchesSearch = sale.productName.toLowerCase().includes(term) ||
         customerName.toLowerCase().includes(term) ||
         sale.paymentType.toLowerCase().includes(term);
-
-      const matchesFilter =
-        !filter ||
-        sale.paymentType.toLowerCase() === filter ||
-        sale.status.toLowerCase() === filter;
-
-      if (matchesSearch && matchesFilter) {
+      const matchesFilter = !filter || sale.paymentType.toLowerCase() === filter || sale.status.toLowerCase() === filter;
+      if(matchesSearch && matchesFilter){
         row.style.display = "";
         filteredLabels.push(sale.productName);
         filteredValues.push(sale.amount);
-      } else {
-        row.style.display = "none";
-      }
+      } else row.style.display = "none";
     });
-
-    renderSalesChart(filteredLabels, filteredValues);
+    if(filteredLabels.length && filteredValues.length) renderSalesChart(filteredLabels, filteredValues);
+    else if(salesChart){ salesChart.destroy(); salesChart=null; }
   }
 
   searchInput.addEventListener("input", applyFilters);
@@ -315,78 +264,19 @@ function setupAnalyticsTabs() {
   document.getElementById("yearlyTab").onclick = () => initSalesAnalytics("yearly");
 }
 
-// ================= Inject Button Styles =================
 function injectStyles() {
   const style = document.createElement("style");
   style.textContent = `
-    .action-btn {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    .complete-btn {
-      background: #28a745;
-      color: #fff;
-    }
-    .complete-btn:hover {
-      background: #218838;
-    }
-    .delete-btn {
-      background: #dc3545;
-      color: #fff;
-    }
-    .delete-btn:hover {
-      background: #c82333;
-    }
+    .action-btn{padding:6px 10px;border:none;border-radius:6px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s ease;}
+    .complete-btn{background:#28a745;color:#fff;}
+    .complete-btn:hover{background:#218838;}
+    .delete-btn{background:#dc3545;color:#fff;}
+    .delete-btn:hover{background:#c82333;}
   `;
   document.head.appendChild(style);
 }
-function applyFilters() {
-  const term = searchInput.value.toLowerCase();
-  const filter = filterSelect.value.toLowerCase();
 
-  const filteredLabels = [];
-  const filteredValues = [];
-
-  document.querySelectorAll("#productTableBody tr").forEach((row, index) => {
-    const sale = salesData[index];
-    const customerName = sale.customerName || (sale.customer && sale.customer.name) || "Unknown";
-
-    const matchesSearch =
-      sale.productName.toLowerCase().includes(term) ||
-      customerName.toLowerCase().includes(term) ||
-      sale.paymentType.toLowerCase().includes(term);
-
-    const matchesFilter =
-      !filter ||
-      sale.paymentType.toLowerCase() === filter ||
-      sale.status.toLowerCase() === filter;
-
-    if (matchesSearch && matchesFilter) {
-      row.style.display = "";
-      filteredLabels.push(sale.productName);
-      filteredValues.push(sale.amount);
-    } else {
-      row.style.display = "none";
-    }
-  });
-
-  if (filteredLabels.length && filteredValues.length) {
-    renderSalesChart(filteredLabels, filteredValues);
-  } else if (salesChart) {
-    salesChart.destroy(); // avoid broken chart
-    salesChart = null;
-  }
-}
-
-// ================= Init =================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", ()=>{
   injectStyles();
   refreshAll();
   setupAddSaleModal();
