@@ -1,6 +1,10 @@
-// Supplier Data Store
-let suppliers = [];
-let purchases = [];
+import {
+  getSuppliers,
+  addSupplier,
+  updateSupplier,
+  deleteSupplier,
+  getTopRatedSuppliers,
+} from "./api.js";
 
 // DOM Elements
 const supplierBody = document.getElementById("supplierBody");
@@ -13,7 +17,7 @@ const pendingDeliveryEl = document.getElementById("pendingDelivery");
 const purchasedEl = document.getElementById("purchased");
 const cancelledEl = document.getElementById("cancelled");
 
-// Modal
+// Modal Elements
 const purchaseModal = document.getElementById("purchaseModal");
 const purchaseForm = document.getElementById("purchaseForm");
 const addPurchaseBtn = document.getElementById("addPurchaseBtn");
@@ -26,85 +30,61 @@ const filterCategory = document.getElementById("filterCategory");
 // Export
 const exportBtn = document.getElementById("exportBtn");
 
-// Open Modal
-addPurchaseBtn.addEventListener("click", () => {
-  purchaseModal.style.display = "flex";
-});
+// Local State
+let suppliers = [];
+let recent = [];
 
-// Close Modal
-closeModal.addEventListener("click", () => {
-  purchaseModal.style.display = "none";
-});
+// ================= MODAL =================
+addPurchaseBtn.addEventListener("click", () => (purchaseModal.style.display = "flex"));
+closeModal.addEventListener("click", () => (purchaseModal.style.display = "none"));
 
-// Submit Purchase Form
-purchaseForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+// ================= FETCH & RENDER =================
+async function loadSuppliers() {
+  try {
+    suppliers = await getSuppliers();
+    renderSuppliers();
+    updateKPIs();
+    loadTopSuppliers();
+    loadRecentPurchases();
+  } catch (err) {
+    console.error("Error loading suppliers:", err);
+  }
+}
 
-  const name = document.getElementById("supplierName").value.trim();
-  const category = document.getElementById("supplierCategory").value;
-  const leadTime = document.getElementById("leadTime").value.trim();
-  const rating = parseInt(document.getElementById("rating").value);
-
-  const newSupplier = {
-    id: suppliers.length + 1,
-    name,
-    category,
-    leadTime,
-    rating,
-    status: "Pending",
-  };
-
-  suppliers.push(newSupplier);
-  purchases.unshift({ name, category, status: "Pending" }); // For recent purchases
-
-  renderSuppliers();
-  updateKPIs();
-  updateTopSuppliers();
-  updateRecentPurchases();
-
-  purchaseForm.reset();
-  purchaseModal.style.display = "none";
-});
-
-// Render Supplier Table
 function renderSuppliers() {
   supplierBody.innerHTML = "";
-  let filteredSuppliers = [...suppliers];
+  let filtered = [...suppliers];
 
   const searchTerm = searchInput.value.toLowerCase();
-  const categoryFilter = filterCategory.value;
+  const categoryTerm = filterCategory.value;
 
-  if (categoryFilter !== "All") {
-    filteredSuppliers = filteredSuppliers.filter(s => s.category === categoryFilter);
+  if (categoryTerm !== "All") {
+    filtered = filtered.filter(s => s.category === categoryTerm);
   }
-
   if (searchTerm) {
-    filteredSuppliers = filteredSuppliers.filter(s =>
-      s.name.toLowerCase().includes(searchTerm)
-    );
+    filtered = filtered.filter(s => s.supplierName.toLowerCase().includes(searchTerm));
   }
 
-  filteredSuppliers.forEach((s, index) => {
+  filtered.forEach((s, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${s.name}</td>
+      <td>${idx + 1}</td>
+      <td>${s.supplierName}</td>
       <td>${s.category}</td>
       <td>${s.leadTime}</td>
       <td>
-        <select onchange="rateSupplier(${s.id}, this.value)">
-          ${[1,2,3,4,5].map(num =>
-            `<option value="${num}" ${s.rating === num ? "selected" : ""}>${"⭐".repeat(num)}</option>`
-          ).join("")}
+        <select onchange="updateRating(${s._id}, this.value)">
+          ${[1,2,3,4,5].map(n => `<option value="${n}" ${s.rating === n ? "selected" : ""}>${"⭐".repeat(n)}</option>`).join("")}
         </select>
       </td>
       <td><span class="status ${s.status.toLowerCase()}">${s.status}</span></td>
       <td>
         ${
-          s.status === "Pending"
-            ? `<button class="btn confirm" onclick="confirmPurchase(${s.id})">Confirm</button>
-               <button class="btn cancel" onclick="cancelPurchase(${s.id})">Cancel</button>`
-            : "-"
+          s.status === "Active"
+            ? `<button class="btn confirm" onclick="confirmPurchase('${s._id}')">Confirm</button>
+               <button class="btn cancel" onclick="cancelPurchase('${s._id}')">Cancel</button>
+               <button class="btn danger" onclick="deleteSupplierById('${s._id}')">Delete</button>`
+            : `<button class="btn danger" onclick="deleteSupplierById('${s._id}')">Delete</button>`
         }
       </td>
     `;
@@ -112,80 +92,125 @@ function renderSuppliers() {
   });
 }
 
-// Update KPIs
+// ================= KPI & Top/Recent =================
 function updateKPIs() {
-  const total = suppliers.length;
-  const pending = suppliers.filter(s => s.status === "Pending").length;
-  const purchased = suppliers.filter(s => s.status === "Purchased").length;
-  const cancelled = suppliers.filter(s => s.status === "Cancelled").length;
-
-  totalPurchasesEl.textContent = total;
-  pendingDeliveryEl.textContent = pending;
-  purchasedEl.textContent = purchased;
-  cancelledEl.textContent = cancelled;
+  totalPurchasesEl.textContent = suppliers.length;
+  pendingDeliveryEl.textContent = suppliers.filter(s => s.status === "Active").length;
+  purchasedEl.textContent = suppliers.filter(s => s.status === "Purchased").length;
+  cancelledEl.textContent = suppliers.filter(s => s.status === "Cancelled").length;
 }
 
-// Rate Supplier
-function rateSupplier(id, value) {
-  const supplier = suppliers.find(s => s.id === id);
-  if (supplier) {
-    supplier.rating = parseInt(value);
-    updateTopSuppliers();
+async function loadTopSuppliers() {
+  try {
+    const top = await getTopRatedSuppliers();
+    topSuppliers.innerHTML = "";
+    top.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = `${s.supplierName} (${ "⭐".repeat(s.rating) })`;
+      topSuppliers.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Error fetching top suppliers:", err);
   }
 }
 
-// Confirm Purchase
-function confirmPurchase(id) {
-  const supplier = suppliers.find(s => s.id === id);
-  if (supplier) {
-    supplier.status = "Purchased";
-    purchases.unshift({ name: supplier.name, category: supplier.category, status: "Purchased" });
-    renderSuppliers();
-    updateKPIs();
-    updateRecentPurchases();
-  }
-}
-
-// Cancel Purchase
-function cancelPurchase(id) {
-  const supplier = suppliers.find(s => s.id === id);
-  if (supplier) {
-    supplier.status = "Cancelled";
-    purchases.unshift({ name: supplier.name, category: supplier.category, status: "Cancelled" });
-    renderSuppliers();
-    updateKPIs();
-    updateRecentPurchases();
-  }
-}
-
-// Update Top Suppliers
-function updateTopSuppliers() {
-  const sorted = [...suppliers].sort((a, b) => b.rating - a.rating).slice(0, 3);
-  topSuppliers.innerHTML = "";
-  sorted.forEach(s => {
-    const li = document.createElement("li");
-    li.textContent = `${s.name} (${ "⭐".repeat(s.rating) })`;
-    topSuppliers.appendChild(li);
-  });
-}
-
-// Update Recent Purchases
-function updateRecentPurchases() {
+function loadRecentPurchases() {
   recentPurchases.innerHTML = "";
-  purchases.slice(0, 5).forEach(p => {
+  recent.slice(0, 5).forEach(p => {
     const li = document.createElement("li");
-    li.textContent = `${p.name} - ${p.status}`;
+    li.textContent = `${p.supplierName || p.name} - ${p.status}`;
     recentPurchases.appendChild(li);
   });
 }
 
-// Export Table to CSV
+// ================= ADD / UPDATE / DELETE =================
+purchaseForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const supplier = {
+    supplierName: document.getElementById("supplierName").value,
+    category: document.getElementById("supplierCategory").value,
+    leadTime: parseInt(document.getElementById("leadTime").value),
+    rating: parseInt(document.getElementById("rating").value),
+    status: "Active",
+  };
+  try {
+    const newSupplier = await addSupplier(supplier);
+    suppliers.unshift(newSupplier);
+    recent.unshift({ ...newSupplier });
+    renderSuppliers();
+    updateKPIs();
+    loadTopSuppliers();
+    loadRecentPurchases();
+    purchaseForm.reset();
+    purchaseModal.style.display = "none";
+  } catch (err) {
+    console.error("Error adding supplier:", err);
+  }
+});
+
+window.updateRating = async (id, value) => {
+  try {
+    const updated = await updateSupplier(id, { rating: parseInt(value) });
+    const index = suppliers.findIndex(s => s._id === id);
+    if (index > -1) suppliers[index] = updated;
+    loadTopSuppliers();
+    renderSuppliers();
+  } catch (err) {
+    console.error("Error updating rating:", err);
+  }
+};
+
+window.confirmPurchase = async id => {
+  try {
+    const updated = await updateSupplier(id, { status: "Purchased" });
+    const index = suppliers.findIndex(s => s._id === id);
+    if (index > -1) suppliers[index] = updated;
+    recent.unshift({ ...updated });
+    renderSuppliers();
+    updateKPIs();
+    loadRecentPurchases();
+  } catch (err) {
+    console.error("Error confirming purchase:", err);
+  }
+};
+
+window.cancelPurchase = async id => {
+  try {
+    const updated = await updateSupplier(id, { status: "Cancelled" });
+    const index = suppliers.findIndex(s => s._id === id);
+    if (index > -1) suppliers[index] = updated;
+    recent.unshift({ ...updated });
+    renderSuppliers();
+    updateKPIs();
+    loadRecentPurchases();
+  } catch (err) {
+    console.error("Error cancelling purchase:", err);
+  }
+};
+
+window.deleteSupplierById = async id => {
+  if (!confirm("Are you sure you want to delete this supplier?")) return;
+  try {
+    await deleteSupplier(id);
+    suppliers = suppliers.filter(s => s._id !== id);
+    renderSuppliers();
+    updateKPIs();
+    loadTopSuppliers();
+  } catch (err) {
+    console.error("Error deleting supplier:", err);
+  }
+};
+
+// ================= SEARCH / FILTER =================
+searchInput.addEventListener("input", renderSuppliers);
+filterCategory.addEventListener("change", renderSuppliers);
+
+// ================= EXPORT =================
 exportBtn.addEventListener("click", () => {
   let csv = "S/N,Supplier,Category,Lead Time,Rating,Status\n";
   suppliers.forEach((s, i) => {
-    csv += `${i+1},${s.name},${s.category},${s.leadTime},${s.rating},${s.status}\n`;
+    csv += `${i+1},${s.supplierName},${s.category},${s.leadTime},${s.rating},${s.status}\n`;
   });
-
   const blob = new Blob([csv], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -193,20 +218,5 @@ exportBtn.addEventListener("click", () => {
   link.click();
 });
 
-// Search & Filter
-searchInput.addEventListener("input", renderSuppliers);
-filterCategory.addEventListener("change", renderSuppliers);
-
-// Initialize
-renderSuppliers();
-updateKPIs();
-updateTopSuppliers();
-updateRecentPurchases();    
-document.addEventListener("DOMContentLoaded", () => {
-  setActivePage(location.hash.replace("#", "") || "dashboard");
-}
-);
-window.addEventListener("hashchange", () => {
-  setActivePage(location.hash.replace("#", "") || "dashboard");
-});
-
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded", loadSuppliers);

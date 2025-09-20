@@ -1,4 +1,3 @@
-// routes/supplierRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -10,15 +9,22 @@ const {
   getTopRatedSuppliers
 } = require('../controllers/supplierController');
 
-// Route for top-rated suppliers
+// =================================================
+// Supplier Routes
+// =================================================
+
+// GET /api/suppliers/top-rated?limit=5 - Get top-rated suppliers (optional query param 'limit')
 router.get('/top-rated', getTopRatedSuppliers);
 
-// Main route for getting all suppliers and adding a new one
+// GET /api/suppliers - Get all suppliers (optional query param 'status')
+// POST /api/suppliers - Add a new supplier
 router.route('/')
   .get(getAllSuppliers)
   .post(addNewSupplier);
 
-// Routes for getting, updating, or deleting a specific supplier by ID
+// GET /api/suppliers/:id - Get supplier by ID
+// PUT /api/suppliers/:id - Update supplier by ID
+// DELETE /api/suppliers/:id - Delete supplier by ID
 router.route('/:id')
   .get(getSupplierById)
   .put(updateSupplier)

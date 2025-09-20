@@ -360,19 +360,28 @@ export async function addAgentAPI(agent) {
 }
 
 
-// SUPPLIERS
-
+// Get all suppliers
 export async function getSuppliers() {
   const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/suppliers`, {
+  const res = await fetch(SUPPLIERS_URL, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleFetch(res);
 }
 
+// Get a single supplier by ID
+export async function getSupplierById(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Add a new supplier
 export async function addSupplier(supplier) {
   const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/suppliers`, {
+  const res = await fetch(SUPPLIERS_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -383,6 +392,38 @@ export async function addSupplier(supplier) {
   return handleFetch(res);
 }
 
+// Update an existing supplier
+export async function updateSupplier(id, updatedFields) {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(updatedFields),
+  });
+  return handleFetch(res);
+}
+
+// Delete a supplier
+export async function deleteSupplier(id) {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Get top-rated suppliers
+export async function getTopRatedSuppliers(limit = 5) {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/top-rated?limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 //  SALES
 
 

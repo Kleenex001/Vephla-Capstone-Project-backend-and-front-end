@@ -1,19 +1,24 @@
 const Supplier = require('../models/Suppliers');
 
+// Normalize status input
+function normalizeStatus(status) {
+  const validStatuses = ['Active', 'Inactive', 'On Hold'];
+  if (!status) return undefined;
+  const formatted = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  return validStatuses.includes(formatted) ? formatted : undefined;
+}
+
 // @desc    Get all suppliers with optional status filter
 // @route   GET /api/suppliers
 exports.getAllSuppliers = async (req, res) => {
   try {
-    const { status } = req.query;
-    let query = {};
-    if (status) {
-      query.status = status;
-    }
-
-    const suppliers = await Supplier.find(query);
-    res.status(200).json(suppliers);
+    const status = normalizeStatus(req.query.status);
+    const query = status ? { status } : {};
+    const suppliers = await Supplier.find(query).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: suppliers });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -22,12 +27,11 @@ exports.getAllSuppliers = async (req, res) => {
 exports.getSupplierById = async (req, res) => {
   try {
     const supplier = await Supplier.findById(req.params.id);
-    if (!supplier) {
-      return res.status(404).json({ error: 'Supplier not found' });
-    }
-    res.status(200).json(supplier);
+    if (!supplier) return res.status(404).json({ success: false, message: 'Supplier not found' });
+    res.status(200).json({ success: true, data: supplier });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -35,10 +39,22 @@ exports.getSupplierById = async (req, res) => {
 // @route   POST /api/suppliers
 exports.addNewSupplier = async (req, res) => {
   try {
-    const newSupplier = await Supplier.create(req.body);
-    res.status(201).json(newSupplier);
+    const { supplierName, category, leadTime, rating, status } = req.body;
+    if (!supplierName || !category || !leadTime || !rating)
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+
+    const newSupplier = await Supplier.create({
+      supplierName,
+      category,
+      leadTime,
+      rating,
+      status: normalizeStatus(status) || 'Active'
+    });
+
+    res.status(201).json({ success: true, data: newSupplier, message: 'Supplier created successfully' });
   } catch (err) {
-    res.status(400).json({ error: 'Invalid data' });
+    console.error(err);
+    res.status(400).json({ success: false, message: 'Invalid data or server error' });
   }
 };
 
@@ -46,16 +62,20 @@ exports.addNewSupplier = async (req, res) => {
 // @route   PUT /api/suppliers/:id
 exports.updateSupplier = async (req, res) => {
   try {
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, {
+    const updatedFields = { ...req.body };
+    if (updatedFields.status) updatedFields.status = normalizeStatus(updatedFields.status);
+
+    const supplier = await Supplier.findByIdAndUpdate(req.params.id, updatedFields, {
       new: true,
       runValidators: true,
     });
-    if (!supplier) {
-      return res.status(404).json({ error: 'Supplier not found' });
-    }
-    res.status(200).json(supplier);
+
+    if (!supplier) return res.status(404).json({ success: false, message: 'Supplier not found' });
+
+    res.status(200).json({ success: true, data: supplier, message: 'Supplier updated successfully' });
   } catch (err) {
-    res.status(400).json({ error: 'Invalid data' });
+    console.error(err);
+    res.status(400).json({ success: false, message: 'Invalid data or server error' });
   }
 };
 
@@ -64,22 +84,23 @@ exports.updateSupplier = async (req, res) => {
 exports.deleteSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findByIdAndDelete(req.params.id);
-    if (!supplier) {
-      return res.status(404).json({ error: 'Supplier not found' });
-    }
-    res.status(200).json({ message: 'Supplier deleted successfully' });
+    if (!supplier) return res.status(404).json({ success: false, message: 'Supplier not found' });
+    res.status(200).json({ success: true, message: 'Supplier deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
-// @desc    Get a list of top-rated suppliers
+// @desc    Get top-rated suppliers
 // @route   GET /api/suppliers/top-rated
 exports.getTopRatedSuppliers = async (req, res) => {
   try {
-    const topRatedSuppliers = await Supplier.find().sort({ rating: -1 }).limit(5);
-    res.status(200).json(topRatedSuppliers);
+    const limit = parseInt(req.query.limit) || 5;
+    const topSuppliers = await Supplier.find().sort({ rating: -1 }).limit(limit);
+    res.status(200).json({ success: true, data: topSuppliers });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
