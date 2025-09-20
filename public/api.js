@@ -341,7 +341,7 @@ export async function getTopDeliveryAgents() {
   return handleFetch(res);
 }
 
-// api.js
+// agentapi.js
 
 export async function getAgents() {
   const res = await fetch(`${BASE_URL}/agents`);
@@ -360,10 +360,25 @@ export async function addAgentAPI(agent) {
 }
 
 
-// Get all suppliers
-export async function getSuppliers() {
+// SUPPLIERS API 
+
+const SUPPLIERS_URL = `${BASE_URL}/suppliers`;
+
+// Enum normalization for supplier status
+function normalizeSupplierStatus(status) {
+  if (!status) return undefined;
+  const validStatuses = ["Active", "Inactive", "On Hold"];
+  const formatted = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  return validStatuses.includes(formatted) ? formatted : undefined;
+}
+
+// Get all suppliers (optionally filter by status)
+export async function getSuppliers(status) {
   const token = getAuthToken();
-  const res = await fetch(SUPPLIERS_URL, {
+  let url = SUPPLIERS_URL;
+  if (status) url += `?status=${normalizeSupplierStatus(status)}`;
+
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleFetch(res);
@@ -381,27 +396,25 @@ export async function getSupplierById(id) {
 // Add a new supplier
 export async function addSupplier(supplier) {
   const token = getAuthToken();
+  if (supplier.status) supplier.status = normalizeSupplierStatus(supplier.status);
+
   const res = await fetch(SUPPLIERS_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(supplier),
   });
   return handleFetch(res);
 }
 
 // Update an existing supplier
-export async function updateSupplier(id, updatedFields) {
+export async function updateSupplier(id, data) {
   const token = getAuthToken();
+  if (data.status) data.status = normalizeSupplierStatus(data.status);
+
   const res = await fetch(`${SUPPLIERS_URL}/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(updatedFields),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
   });
   return handleFetch(res);
 }
@@ -416,7 +429,7 @@ export async function deleteSupplier(id) {
   return handleFetch(res);
 }
 
-// Get top-rated suppliers
+// Get top-rated suppliers (optional limit, default 5)
 export async function getTopRatedSuppliers(limit = 5) {
   const token = getAuthToken();
   const res = await fetch(`${SUPPLIERS_URL}/top-rated?limit=${limit}`, {
@@ -424,6 +437,8 @@ export async function getTopRatedSuppliers(limit = 5) {
   });
   return handleFetch(res);
 }
+
+
 //  SALES
 
 

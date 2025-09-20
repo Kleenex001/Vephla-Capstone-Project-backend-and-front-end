@@ -27,7 +27,9 @@ exports.getAllSuppliers = async (req, res) => {
 exports.getSupplierById = async (req, res) => {
   try {
     const supplier = await Supplier.findById(req.params.id);
-    if (!supplier) return res.status(404).json({ success: false, message: 'Supplier not found' });
+    if (!supplier)
+      return res.status(404).json({ success: false, message: 'Supplier not found' });
+
     res.status(200).json({ success: true, data: supplier });
   } catch (err) {
     console.error(err);
@@ -39,19 +41,25 @@ exports.getSupplierById = async (req, res) => {
 // @route   POST /api/suppliers
 exports.addNewSupplier = async (req, res) => {
   try {
-    const { supplierName, category, leadTime, rating, status } = req.body;
-    if (!supplierName || !category || !leadTime || !rating)
+    const { name, category, leadTime, rating, status } = req.body;
+
+    // Validate required fields
+    if (!name || !category || !leadTime || !rating)
       return res.status(400).json({ success: false, message: 'All fields are required' });
 
     const newSupplier = await Supplier.create({
-      supplierName,
+      name,
       category,
       leadTime,
       rating,
-      status: normalizeStatus(status) || 'Active'
+      status: normalizeStatus(status) || 'Active',
     });
 
-    res.status(201).json({ success: true, data: newSupplier, message: 'Supplier created successfully' });
+    res.status(201).json({
+      success: true,
+      data: newSupplier,
+      message: 'Supplier created successfully',
+    });
   } catch (err) {
     console.error(err);
     res.status(400).json({ success: false, message: 'Invalid data or server error' });
@@ -63,6 +71,7 @@ exports.addNewSupplier = async (req, res) => {
 exports.updateSupplier = async (req, res) => {
   try {
     const updatedFields = { ...req.body };
+
     if (updatedFields.status) updatedFields.status = normalizeStatus(updatedFields.status);
 
     const supplier = await Supplier.findByIdAndUpdate(req.params.id, updatedFields, {
@@ -70,9 +79,14 @@ exports.updateSupplier = async (req, res) => {
       runValidators: true,
     });
 
-    if (!supplier) return res.status(404).json({ success: false, message: 'Supplier not found' });
+    if (!supplier)
+      return res.status(404).json({ success: false, message: 'Supplier not found' });
 
-    res.status(200).json({ success: true, data: supplier, message: 'Supplier updated successfully' });
+    res.status(200).json({
+      success: true,
+      data: supplier,
+      message: 'Supplier updated successfully',
+    });
   } catch (err) {
     console.error(err);
     res.status(400).json({ success: false, message: 'Invalid data or server error' });
@@ -84,7 +98,9 @@ exports.updateSupplier = async (req, res) => {
 exports.deleteSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findByIdAndDelete(req.params.id);
-    if (!supplier) return res.status(404).json({ success: false, message: 'Supplier not found' });
+    if (!supplier)
+      return res.status(404).json({ success: false, message: 'Supplier not found' });
+
     res.status(200).json({ success: true, message: 'Supplier deleted successfully' });
   } catch (err) {
     console.error(err);
