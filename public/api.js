@@ -257,7 +257,9 @@ export async function getExpiredProducts() {
   return handleFetch(res);
 }
 // =================================================
-// DELIVERIES
+// DELIVERIES API
+// =================================================
+
 /**
  * Get all deliveries, optionally filtered by status
  * @param {string} status - 'pending' | 'completed' | 'cancelled' | 'all'
@@ -266,7 +268,7 @@ export async function getDeliveries(status = 'all') {
   const token = getAuthToken();
   let url = `${BASE_URL}/deliveries`;
   if (status !== 'all') url += `?status=${status}`;
-  
+
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -275,7 +277,6 @@ export async function getDeliveries(status = 'all') {
 
 /**
  * Get a single delivery by ID
- * @param {string} id 
  */
 export async function getDeliveryById(id) {
   const token = getAuthToken();
@@ -287,7 +288,6 @@ export async function getDeliveryById(id) {
 
 /**
  * Add a new delivery
- * @param {object} delivery - { customer, package, date, agent, agentType, agentPhone, status }
  */
 export async function addDelivery(delivery) {
   const token = getAuthToken();
@@ -303,9 +303,7 @@ export async function addDelivery(delivery) {
 }
 
 /**
- * Update a delivery by ID
- * @param {string} id 
- * @param {object} data - Fields to update, e.g. { status: 'completed' }
+ * Update a delivery
  */
 export async function updateDelivery(id, data) {
   const token = getAuthToken();
@@ -321,8 +319,7 @@ export async function updateDelivery(id, data) {
 }
 
 /**
- * Delete a delivery by ID
- * @param {string} id 
+ * Delete a delivery
  */
 export async function deleteDelivery(id) {
   const token = getAuthToken();
@@ -332,6 +329,37 @@ export async function deleteDelivery(id) {
   });
   return handleFetch(res);
 }
+
+/**
+ * Get top delivery agents
+ */
+export async function getTopDeliveryAgents() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/deliveries/top-agents`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// api.js
+
+export async function getAgents() {
+  const res = await fetch(`${BASE_URL}/agents`);
+  if (!res.ok) throw new Error("Failed to fetch agents");
+  return res.json();
+}
+
+export async function addAgentAPI(agent) {
+  const res = await fetch(`${BASE_URL}/agents`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(agent)
+  });
+  if (!res.ok) throw new Error("Failed to add agent");
+  return res.json();
+}
+
+
 // SUPPLIERS
 
 export async function getSuppliers() {

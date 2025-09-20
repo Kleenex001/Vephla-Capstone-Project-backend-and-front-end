@@ -5,40 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Delivery Management | BizBoost</title>
   <link rel="stylesheet" href="delivery.css" />
-   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
   <!-- Sidebar -->
-  <!-- Sidebar -->
-<aside class="sidebar">
-  <div class="brand">
-    <img src="Assets/LOGO-TRANS 1.png" alt="BizBoost Logo" width="120"/>
-  </div>
-  <nav>
-    <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
-      <i class="fa fa-chart-line"></i> Dashboard
-    </button>
-    <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
-      <i class="fa fa-shopping-cart"></i> Sales And Order
-    </button>
-    <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
-      <i class="fa fa-box"></i> Inventory
-    </button>
-    <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
-      <i class="fa fa-users"></i> Customer Management
-    </button>
-    <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
-      <i class="fa fa-truck"></i> Delivery Management
-    </button>
-    <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
-      <i class="fa fa-industry"></i> Supplier Management
-    </button>
-    <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
-      <i class="fa fa-gear"></i> Settings
-    </button>
-  </nav>
-</aside>
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="Assets/LOGO-TRANS 1.png" alt="BizBoost Logo" width="120"/>
+    </div>
+    <nav>
+      <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
+        <i class="fa fa-chart-line"></i> Dashboard
+      </button>
+      <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+        <i class="fa fa-shopping-cart"></i> Sales And Order
+      </button>
+      <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+        <i class="fa fa-box"></i> Inventory
+      </button>
+      <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+        <i class="fa fa-users"></i> Customer Management
+      </button>
+      <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+        <i class="fa fa-truck"></i> Delivery Management
+      </button>
+      <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+        <i class="fa fa-industry"></i> Supplier Management
+      </button>
+      <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+        <i class="fa fa-gear"></i> Settings
+      </button>
+    </nav>
+  </aside>
 
   <!-- Main -->
   <main class="content">
@@ -53,7 +52,6 @@
 
     <!-- Delivery Management Section -->
     <section id="delivery" class="page visible">
-      <h1></h1>
 
       <!-- KPI Cards -->
       <div class="kpis">
@@ -153,6 +151,7 @@
   <div id="deliveryModal" class="modal">
     <div class="modal-content">
       <h2>Add New Delivery</h2>
+
       <label>Customer Name</label>
       <input type="text" id="customerName" placeholder="Enter customer name">
 
@@ -163,7 +162,13 @@
       <input type="date" id="deliveryDate">
 
       <label>Assign Agent</label>
-      <select id="deliveryAgent"></select>
+      <select id="deliveryAgent">
+        <!-- Options will be added dynamically like:
+        <option value="Sarah" data-type="logistic company" data-phone="08012345678">
+          Sarah (logistic company)
+        </option>
+        -->
+      </select>
 
       <div class="modal-actions">
         <button class="btn primary" id="saveDeliveryBtn">Save</button>
@@ -173,91 +178,67 @@
   </div>
 
   <!-- Agent Modal -->
- <!-- Agent Modal -->
-<div id="agentModal" class="modal">
-  <div class="modal-content">
-    <h2>Add Delivery Agent</h2>
+  <div id="agentModal" class="modal">
+    <div class="modal-content">
+      <h2>Add Delivery Agent</h2>
 
-    <label>Agent Name</label>
-    <input type="text" id="agentName" placeholder="Enter agent name" />
+      <label>Agent Name</label>
+      <input type="text" id="agentName" placeholder="Enter agent name">
 
-    <label>Phone Number</label>
-    <input type="text" id="agentPhone" placeholder="Enter phone number" />
+      <label>Agent Type</label>
+      <select id="agentMethod">
+        <option value="waybill">Waybill</option>
+        <option value="logistic company">Logistics Company</option>
+        <option value="other">Other</option>
+      </select>
 
-    <label>Type</label>
-    <select id="agentType">
-      <option value="">Select type</option>
-      <option value="Waybill">Waybill</option>
-      <option value="Logistic Company">Logistic Company</option>
-    </select>
+      <label>Agent Phone</label>
+      <input type="text" id="agentPhone" placeholder="Enter agent phone number">
 
-    <div class="modal-actions">
-      <button class="btn primary" id="saveAgentBtn">Save</button>
-      <button class="btn cancel" id="closeAgentModalBtn">Cancel</button>
+      <div class="modal-actions">
+        <button class="btn primary" id="saveAgentBtn">Save</button>
+        <button class="btn cancel" id="closeAgentModalBtn">Cancel</button>
+      </div>
     </div>
   </div>
-</div>
 
-  
-<script src="config.js"></script>
-<script type="module" src="api.js"></script>
+  <script src="config.js"></script>
+  <script type="module" src="api.js"></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="module" src="delivery.js" defer></script>
 
-    <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const path = window.location.pathname;
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const path = window.location.pathname;
 
-    document.querySelectorAll(".nav-link").forEach(link => {
-      const target = link.getAttribute("data-target");
+      document.querySelectorAll(".nav-link").forEach(link => {
+        const target = link.getAttribute("data-target");
 
-      if (
-        (target === "dashboard" && path.includes("dashboard.html")) ||
-        (target === "sales" && path.includes("sales.html")) ||
-        (target === "inventory" && path.includes("inventory.html")) ||
-        (target === "customers" && path.includes("customer.html")) ||
-        (target === "delivery" && path.includes("delivery.html")) ||
-        (target === "suppliers" && path.includes("suppliers.html")) ||
-        (target === "settings" && path.includes("settings.html"))
-      ) {
-        link.classList.add("active");
-      } else {
-        link.classList.remove("active");
-      }
-    });
-  });
-</script>
-    <script>
-        // Go Back button
-        document.getElementById('goBackBtn').addEventListener('click', () => {
-        window.history.back();
-        });
-    
-        // Modal functionality
-        const modal = document.getElementById('purchaseModal');
-        const addPurchaseBtn = document.getElementById('addPurchaseBtn');
-        const closeModalBtn = document.getElementById('closeModal');
-    
-        addPurchaseBtn.onclick = () => {
-        modal.classList.add('active');
-        };
-        closeModalBtn.onclick = () => {
-        modal.classList.remove('active');
-        };
-        window.onclick = (event) => {
-        if (event.target === modal) {
-            modal.classList.remove('active');
+        if (
+          (target === "dashboard" && path.includes("dashboard.html")) ||
+          (target === "sales" && path.includes("sales.html")) ||
+          (target === "inventory" && path.includes("inventory.html")) ||
+          (target === "customers" && path.includes("customer.html")) ||
+          (target === "delivery" && path.includes("delivery.html")) ||
+          (target === "suppliers" && path.includes("suppliers.html")) ||
+          (target === "settings" && path.includes("settings.html"))
+        ) {
+          link.classList.add("active");
+        } else {
+          link.classList.remove("active");
         }
-        };
-    </script>
-    <footer>
+      });
+    });
+  </script>
+
+  <footer>
     <nav class="bottom-nav">
       <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
         <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
       </button>
-      <button class="nav-bttm active" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
+      <button class="nav-bttm" data-target="sales" onclick="location.href='sales.html'" title="Sales And Order">
         <i class="fa fa-shopping-cart"><br><p>Sales</p></i>
       </button>
       <button class="nav-bttm" data-target="inventory" onclick="location.href='inventory.html'" title="Inventory">
@@ -266,7 +247,7 @@
       <button class="nav-bttm" data-target="customers" onclick="location.href='customer.html'" title="Customer Management">
         <i class="fa fa-users"><br><p>Customers</p></i>
       </button>
-      <button class="nav-bttm" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
+      <button class="nav-bttm active" data-target="delivery" onclick="location.href='delivery.html'" title="Delivery Management">
         <i class="fa fa-truck"><br><p>Delivery</p></i>
       </button>
       <button class="nav-bttm" data-target="suppliers" onclick="location.href='suppliers.html'" title="Supplier Management">
@@ -276,6 +257,6 @@
         <i class="fa fa-gear"><br><p>Settings</p></i>
       </button>
     </nav>
-</footer>
+  </footer>
 </body>
 </html>

@@ -1,3 +1,5 @@
+// routes/deliveryRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const {
@@ -5,7 +7,8 @@ const {
   addNewDelivery,
   getDeliveryById,
   updateDelivery,
-  deleteDelivery
+  deleteDelivery,
+  getTopAgents   // 
 } = require('../controllers/deliveryController');
 
 // Get all deliveries or add a new delivery
@@ -18,5 +21,8 @@ router.route('/:id')
   .get(getDeliveryById)
   .put(updateDelivery)
   .delete(deleteDelivery);
+
+// New route for top agents
+router.get('/top-agents', getTopAgents);
 
 module.exports = router;
