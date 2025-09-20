@@ -365,6 +365,84 @@ body {
 }
 
 
+/* === Action Buttons === */
+.actions-cell button {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+
+.actions-cell button:hover {
+  transform: translateY(-1px);
+}
+
+/* Confirm button (green) */
+.btn-confirm {
+  background: #0e8a70;
+  color: #fff;
+}
+.btn-confirm:hover {
+  background: #0b6d58;
+}
+
+/* Cancel button (orange/red) */
+.btn-cancel {
+  background: #e67e22;
+  color: #fff;
+}
+.btn-cancel:hover {
+  background: #ca6510;
+}
+
+/* Delete button (red) */
+.btn-delete {
+  background: #dc3545;
+  color: #fff;
+}
+.btn-delete:hover {
+  background: #a71d2a;
+}
+
+/* === Status Pills === */
+.status-pill {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+/* Pending (default grey/blue) */
+.status-pill.pending {
+  background: #d6e9f9;
+  color: #0d6efd;
+}
+
+/* Completed (green) */
+.status-pill.completed {
+  background: #d1f0e5;
+  color: #0e8a70;
+}
+
+/* Cancelled (red/orange) */
+.status-pill.cancelled {
+  background: #fde2e1;
+  color: #dc3545;
+}
+
+/* === Row background colors === */
+tr td .status-pill.completed { background: #d1f0e5; color: #0e8a70; }
+tr td .status-pill.cancelled { background: #fde2e1; color: #dc3545; }
+
+/* Optional: tint whole row */
+tr:has(.status-pill.completed) { background-color: #f5fdf9; }
+tr:has(.status-pill.cancelled) { background-color: #fff5f5; }
+
+
 .modal {
   position: fixed;
   top: 0;

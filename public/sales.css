@@ -279,6 +279,47 @@ h1 {
   border-radius: 6px;
 }
 
+/* Status labels */
+.status-btn {
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+.status-btn.completed {
+  background: #28a745; /* green */
+}
+.status-btn.pending {
+  background: #ffc107; /* yellow */
+  color: #222;
+}
+.status-btn.cancelled {
+  background: #dc3545; /* red */
+}
+
+/* Action buttons */
+.action-btn {
+  border: none;
+  padding: 5px 12px;
+  margin: 0 2px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+.complete-btn {
+  background: #007bff;
+  color: #fff;
+}
+.delete-btn {
+  background: #6c757d;
+  color: #fff;
+}
+.action-btn:hover {
+  opacity: 0.9;
+}
+
 .modal-content .btn.primary {
   background: #10b981;
   color: #fff;

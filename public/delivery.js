@@ -451,7 +451,6 @@ async function cancelDeliveryById(id) {
 
 async function deleteDeliveryById(id) {
   if (!id) return;
-  if (!confirm("Are you sure you want to delete this delivery?")) return;
   try {
     await deleteDelivery(id);
     deliveries = deliveries.filter(d => String(d._id) !== String(id));
@@ -463,9 +462,7 @@ async function deleteDeliveryById(id) {
   }
 }
 
-/* -------------------------
-   Event delegation on table for action buttons
-   ------------------------- */
+/* -------------------------Event delegation on table for action button------------------------- */
 if (deliveryTableBody) {
   deliveryTableBody.addEventListener("click", (ev) => {
     const btn = ev.target.closest("button");
@@ -477,9 +474,7 @@ if (deliveryTableBody) {
   });
 }
 
-/* -------------------------
-   Wire up modal open/close and buttons
-   ------------------------- */
+/* -------------------------Wire up modal open/close and buttons ------------------------- */
 addDeliveryBtn?.addEventListener("click", () => { if (deliveryModal) deliveryModal.style.display = "flex"; });
 closeDeliveryModalBtn?.addEventListener("click", () => { if (deliveryModal) deliveryModal.style.display = "none"; });
 saveDeliveryBtn?.addEventListener("click", onSaveDelivery);
@@ -534,9 +529,7 @@ window.cancelDelivery = (idxOrId) => {
   }
 };
 
-/* -------------------------
-   Initial load
-   ------------------------- */
+   //Initial load
 (async function init() {
   // restore agents from storage (in case API unavailable)
   const local = loadAgentsFromStorage();

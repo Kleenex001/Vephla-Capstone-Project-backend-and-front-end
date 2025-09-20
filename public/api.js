@@ -383,9 +383,8 @@ export async function addSupplier(supplier) {
   return handleFetch(res);
 }
 
-// =================================================
-// SALES
-// =================================================
+//  SALES
+
 
 // normalize enums (must match backend lowercase)
 function normalizeEnum(value, type) {

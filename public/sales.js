@@ -27,7 +27,7 @@ async function safeCall(apiFn, ...args) {
   try {
     return await apiFn(...args);
   } catch (err) {
-    console.error("API error:", err);
+    console.error("API error:", err.message);
     alert(parseServerError(err).message);
     return null;
   }
@@ -46,91 +46,107 @@ function animateValue(el, start, end, duration = 800) {
   window.requestAnimationFrame(step);
 }
 
-// ================= Real-time Sales Analytics =================
-let analyticsChart;
-let analyticsData = [];
-let analyticsLabels = [];
-const MAX_POINTS = 12;
+// ================= Sales Analytics =================
+let salesChart;
+let salesData = []; // keep original data for filtering
 let currentAnalyticsView = "monthly";
+
+function renderSalesChart(labels, values) {
+  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
+
+  if (salesChart) {
+    salesChart.data.labels = labels;
+    salesChart.data.datasets[0].data = values;
+    salesChart.update();
+  } else {
+    salesChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Sales",
+          data: values,
+          borderColor: "#007bff",
+          backgroundColor: "rgba(0,123,255,0.1)",
+          fill: true,
+          tension: 0.4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } },
+      }
+    });
+  }
+}
 
 async function initSalesAnalytics(view = "monthly") {
   currentAnalyticsView = view;
   const data = await safeCall(getSalesAnalytics, view);
   if (!data) return;
 
+  let labels, values;
   if (view === "monthly") {
-    analyticsLabels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    analyticsData = data.analytics || Array(12).fill(0);
+    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    values = data.analytics || Array(12).fill(0);
   } else {
-    analyticsLabels = Object.keys(data.analytics || {}).sort();
-    analyticsData = Object.values(data.analytics || {});
+    labels = Object.keys(data.analytics || {}).sort();
+    values = Object.values(data.analytics || {});
   }
 
-  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
-  if (analyticsChart) analyticsChart.destroy();
-
-  analyticsChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: analyticsLabels,
-      datasets: [{
-        label: "Sales",
-        data: analyticsData,
-        borderColor: "#007bff",
-        backgroundColor: "rgba(0,123,255,0.1)",
-        fill: true,
-        tension: 0.4,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      scales: { y: { beginAtZero: true } },
-      plugins: { legend: { display: false } },
-    }
-  });
+  renderSalesChart(labels, values);
 }
 
-// Update chart dynamically when new sale is added
-function pushNewSaleToChart(amount) {
-  if (currentAnalyticsView === "monthly") {
-    analyticsData.push(amount);
-    if (analyticsData.length > MAX_POINTS) analyticsData.shift();
-
-    if (analyticsLabels.length < analyticsData.length) analyticsLabels.push("");
-    else if (analyticsLabels.length > analyticsData.length) analyticsLabels.shift();
-
-    if (analyticsChart) {
-      analyticsChart.data.datasets[0].data = analyticsData;
-      analyticsChart.data.labels = analyticsLabels;
-      analyticsChart.update();
-    }
-  } else {
-    initSalesAnalytics(currentAnalyticsView);
-  }
-}
-
-// ================= Load Other Data =================
+// ================= Load Data =================
 async function loadSalesTable() {
   const sales = await safeCall(getSales);
   if (!sales) return;
 
+  salesData = sales; // store for filtering
   const tbody = document.getElementById("productTableBody");
   tbody.innerHTML = "";
 
   sales.forEach((sale, i) => {
+    const customerName =
+      sale.customerName ||
+      sale.customer ||
+      (sale.customer && sale.customer.name) ||
+      "Unknown";
+
+    // Styled status like in delivery management
+    let statusStyled = "";
+    if (sale.status.toLowerCase() === "completed") {
+      statusStyled = `<span class="status-btn completed">Completed</span>`;
+    } else if (sale.status.toLowerCase() === "pending") {
+      statusStyled = `<span class="status-btn pending">Pending</span>`;
+    } else {
+      statusStyled = `<span class="status-btn cancelled">Cancelled</span>`;
+    }
+
+    // Conditionally render complete button
+    const completeBtn =
+      sale.status.toLowerCase() === "completed"
+        ? ""
+        : `<button class="action-btn complete-btn" data-action="complete" data-id="${sale._id}">
+             Complete
+           </button>`;
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${i + 1}</td>
       <td>${sale.productName}</td>
       <td>₦${sale.amount}</td>
       <td>${sale.paymentType}</td>
-      <td>${sale.customerName || "Anonymous"}</td>
-      <td>${sale.status}</td>
+      <td>${customerName}</td>
+      <td>${statusStyled}</td>
       <td>
-        <button class="btn small" data-action="complete" data-id="${sale._id}">✔</button>
-        <button class="btn small danger" data-action="delete" data-id="${sale._id}">🗑</button>
+        ${completeBtn}
+        <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">
+          Delete
+        </button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -231,7 +247,6 @@ function setupAddSaleModal() {
       modal.style.display = "none";
       form.reset();
       refreshAll();
-      pushNewSaleToChart(sale.amount);
     }
   };
 }
@@ -251,10 +266,48 @@ function setupTableActions() {
 }
 
 function setupFilters() {
-  const filterSelect = document.getElementById("filterSelect");
   const searchInput = document.getElementById("searchInput");
-  filterSelect.addEventListener("change", loadSalesTable);
-  searchInput.addEventListener("input", loadSalesTable);
+  const filterSelect = document.getElementById("filterSelect");
+
+  function applyFilters() {
+    const term = searchInput.value.toLowerCase();
+    const filter = filterSelect.value.toLowerCase();
+
+    const filteredLabels = [];
+    const filteredValues = [];
+
+    document.querySelectorAll("#productTableBody tr").forEach((row, index) => {
+      const sale = salesData[index];
+      const customerName =
+        sale.customerName ||
+        sale.customer ||
+        (sale.customer && sale.customer.name) ||
+        "Unknown";
+
+      const matchesSearch =
+        sale.productName.toLowerCase().includes(term) ||
+        customerName.toLowerCase().includes(term) ||
+        sale.paymentType.toLowerCase().includes(term);
+
+      const matchesFilter =
+        !filter ||
+        sale.paymentType.toLowerCase() === filter ||
+        sale.status.toLowerCase() === filter;
+
+      if (matchesSearch && matchesFilter) {
+        row.style.display = "";
+        filteredLabels.push(sale.productName);
+        filteredValues.push(sale.amount);
+      } else {
+        row.style.display = "none";
+      }
+    });
+
+    renderSalesChart(filteredLabels, filteredValues);
+  }
+
+  searchInput.addEventListener("input", applyFilters);
+  filterSelect.addEventListener("change", applyFilters);
 }
 
 function setupAnalyticsTabs() {
@@ -262,8 +315,79 @@ function setupAnalyticsTabs() {
   document.getElementById("yearlyTab").onclick = () => initSalesAnalytics("yearly");
 }
 
+// ================= Inject Button Styles =================
+function injectStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .action-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .complete-btn {
+      background: #28a745;
+      color: #fff;
+    }
+    .complete-btn:hover {
+      background: #218838;
+    }
+    .delete-btn {
+      background: #dc3545;
+      color: #fff;
+    }
+    .delete-btn:hover {
+      background: #c82333;
+    }
+  `;
+  document.head.appendChild(style);
+}
+function applyFilters() {
+  const term = searchInput.value.toLowerCase();
+  const filter = filterSelect.value.toLowerCase();
+
+  const filteredLabels = [];
+  const filteredValues = [];
+
+  document.querySelectorAll("#productTableBody tr").forEach((row, index) => {
+    const sale = salesData[index];
+    const customerName = sale.customerName || (sale.customer && sale.customer.name) || "Unknown";
+
+    const matchesSearch =
+      sale.productName.toLowerCase().includes(term) ||
+      customerName.toLowerCase().includes(term) ||
+      sale.paymentType.toLowerCase().includes(term);
+
+    const matchesFilter =
+      !filter ||
+      sale.paymentType.toLowerCase() === filter ||
+      sale.status.toLowerCase() === filter;
+
+    if (matchesSearch && matchesFilter) {
+      row.style.display = "";
+      filteredLabels.push(sale.productName);
+      filteredValues.push(sale.amount);
+    } else {
+      row.style.display = "none";
+    }
+  });
+
+  if (filteredLabels.length && filteredValues.length) {
+    renderSalesChart(filteredLabels, filteredValues);
+  } else if (salesChart) {
+    salesChart.destroy(); // avoid broken chart
+    salesChart = null;
+  }
+}
+
 // ================= Init =================
 document.addEventListener("DOMContentLoaded", () => {
+  injectStyles();
   refreshAll();
   setupAddSaleModal();
   setupTableActions();
