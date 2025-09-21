@@ -5,41 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Supplier Management | BizBoost</title>
   <link rel="stylesheet" href="suppliers.css" />
-   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
   <!-- Sidebar -->
-  <!-- Sidebar -->
-<aside class="sidebar">
-  <div class="brand">
-    <img src="Assets/logo.png" alt="BizBoost Logo" width="120"/>
-  </div>
-  <nav>
-    <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
-      <i class="fa fa-chart-line"></i> Dashboard
-    </button>
-    <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
-      <i class="fa fa-shopping-cart"></i> Sales And Order
-    </button>
-    <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
-      <i class="fa fa-box"></i> Inventory
-    </button>
-    <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
-      <i class="fa fa-users"></i> Customer Management
-    </button>
-    <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
-      <i class="fa fa-truck"></i> Delivery Management
-    </button>
-    <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
-      <i class="fa fa-industry"></i> Supplier Management
-    </button>
-    <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
-      <i class="fa fa-gear"></i> Settings
-    </button>
-  </nav>
-</aside>
-
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="Assets/logo.png" alt="BizBoost Logo" width="120"/>
+    </div>
+    <nav>
+      <button class="nav-link" data-target="dashboard" onclick="location.href='dashboard.html'">
+        <i class="fa fa-chart-line"></i> Dashboard
+      </button>
+      <button class="nav-link" data-target="sales" onclick="location.href='sales.html'">
+        <i class="fa fa-shopping-cart"></i> Sales And Order
+      </button>
+      <button class="nav-link" data-target="inventory" onclick="location.href='inventory.html'">
+        <i class="fa fa-box"></i> Inventory
+      </button>
+      <button class="nav-link" data-target="customers" onclick="location.href='customer.html'">
+        <i class="fa fa-users"></i> Customer Management
+      </button>
+      <button class="nav-link" data-target="delivery" onclick="location.href='delivery.html'">
+        <i class="fa fa-truck"></i> Delivery Management
+      </button>
+      <button class="nav-link" data-target="suppliers" onclick="location.href='suppliers.html'">
+        <i class="fa fa-industry"></i> Supplier Management
+      </button>
+      <button class="nav-link" data-target="settings" onclick="location.href='settings.html'">
+        <i class="fa fa-gear"></i> Settings
+      </button>
+    </nav>
+  </aside>
 
   <!-- Main -->
   <main class="content">
@@ -54,39 +52,11 @@
 
     <!-- KPIs -->
     <section class="kpis">
-  <div class="card kpi">
-    <i class="fa fa-industry"></i>
-    <div>
-      <p>Total Suppliers</p>
-      <h2 id="totalSuppliers">0</h2>
-    </div>
-  </div>
-
-  <div class="card kpi">
-    <i class="fa fa-check-circle"></i>
-    <div>
-      <p>Active Suppliers</p>
-      <h2 id="activeSuppliers">0</h2>
-    </div>
-  </div>
-
-  <div class="card kpi">
-    <i class="fa fa-pause-circle"></i>
-    <div>
-      <p>On Hold Suppliers</p>
-      <h2 id="onHoldSuppliers">0</h2>
-    </div>
-  </div>
-
-  <div class="card kpi">
-    <i class="fa fa-times-circle"></i>
-    <div>
-      <p>Inactive Suppliers</p>
-      <h2 id="inactiveSuppliers">0</h2>
-    </div>
-  </div>
-</section>
-
+      <div class="card kpi"><i class="fa fa-box"></i><div><p>Total Purchases</p><h2 id="totalPurchases">0</h2></div></div>
+      <div class="card kpi"><i class="fa fa-clock"></i><div><p>Pending Delivery</p><h2 id="pendingDelivery">0</h2></div></div>
+      <div class="card kpi"><i class="fa fa-check"></i><div><p>Completed Purchased</p><h2 id="purchased">0</h2></div></div>
+      <div class="card kpi"><i class="fa fa-times"></i><div><p>Cancelled Purchase</p><h2 id="cancelled">0</h2></div></div>
+    </section>
 
     <!-- Supplier Management Page -->
     <section id="suppliers" class="page visible">
@@ -99,6 +69,7 @@
             <option value="All">All</option>
             <option value="Household Items">Household Items</option>
             <option value="Electronics">Electronics</option>
+            <option value="Others">Others</option>
           </select>
           <input type="search" id="searchInput" placeholder="Search Supplier" />
         </div>
@@ -116,11 +87,13 @@
             <thead>
               <tr>
                 <th>S/N</th>
-                <th>Supplier’s Name</th>
+                <th>Supplier Name</th>
                 <th>Category</th>
                 <th>Lead Time</th>
-                <th>Rating</th>
-                <th>Status</th>
+                <th>Purchase Status</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -133,7 +106,7 @@
         <!-- Sidebar Stats -->
         <div class="stats">
           <div class="card">
-            <h4>Top Rated Suppliers</h4>
+            <h4>Top Suppliers</h4>
             <ol id="topSuppliers"></ol>
           </div>
           <div class="card">
@@ -145,52 +118,40 @@
     </section>
   </main>
 
- <!-- Add / Edit Supplier Modal -->
-<div class="modal" id="supplierModal">
-  <div class="modal-content">
-    <h3 id="modalTitle">Add New Supplier</h3>
-    <form id="supplierForm">
-      <label for="supplierName">Supplier Name</label>
-      <input type="text" id="supplierName" placeholder="Enter supplier name" required />
+  <!-- Modal -->
+  <div class="modal" id="purchaseModal">
+    <div class="modal-content">
+      <h3>Add New Purchase</h3>
+      <form id="purchaseForm">
+        <label>Supplier Name</label>
+        <input type="text" id="supplierName" placeholder="Enter supplier name" required />
 
-      <label for="supplierCategory">Category</label>
-      <select id="supplierCategory">
-        <option value="Household Items">Household Items</option>
-        <option value="Electronics">Electronics</option>
-        <option value="Others">Others</option>
-      </select>
+        <label>Category</label>
+        <select id="supplierCategory">
+          <option>Household Items</option>
+          <option>Electronics</option>
+          <option>Others</option>
+        </select>
 
-      <label for="leadTime">Lead Time</label>
-      <input type="number" id="leadTime" placeholder="e.g. 3" min="0" required />
+        <label>Lead Time</label>
+        <input type="number" id="leadTime" placeholder="e.g. 3" min="0" required />
 
-      <label for="rating">Rating (1-5)</label>
-      <input type="number" id="rating" min="1" max="5" required />
+        <label>Email</label>
+        <input type="email" id="supplierEmail" placeholder="Enter supplier email" required />
 
-      <label for="status">Status</label>
-      <select id="status">
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
-        <option value="On Hold">On Hold</option>
-      </select>
+        <label>Phone</label>
+        <input type="text" id="supplierPhone" placeholder="Enter phone number" required />
 
-      <div class="modal-actions">
-        <button class="btn primary" id="addSupplierBtn">Add New Supplier</button>
-        <button type="button" class="btn secondary" id="closeSupplierModal">Cancel</button>
-      </div>
-    </form>
+        <label>Address</label>
+        <input type="text" id="supplierAddress" placeholder="Enter address" />
+
+        <button type="submit" class="btn primary">Add Purchase</button>
+        <button type="button" class="btn secondary" id="closeModal">Cancel</button>
+      </form>
+    </div>
   </div>
-</div>
 
-  <script src="config.js"></script>
-  <script type="module" src="api.js"></script>
-
-  <script type="module" src="suppliers.js" defer></script>
-  <!-- Toastify CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-
-<!-- Toastify JS -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-
+  <script src="suppliers.js" defer></script>
 
   <script>
   document.addEventListener("DOMContentLoaded", () => {
@@ -214,8 +175,9 @@
       }
     });
   });
-</script>
-<footer>
+  </script>
+
+  <footer>
     <nav class="bottom-nav">
       <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
         <i class="fa fa-chart-line"><br><p>Dashboard</p></i>
@@ -239,6 +201,6 @@
         <i class="fa fa-gear"><br><p>Settings</p></i>
       </button>
     </nav>
-</footer>
-    </body>
+  </footer>
+</body>
 </html>

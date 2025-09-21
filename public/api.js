@@ -361,14 +361,15 @@ export async function addAgentAPI(agent) {
 
 
 // SUPPLIERS API 
-
+does this make it possible?
+// ================= SUPPLIERS API =================
 const SUPPLIERS_URL = `${BASE_URL}/suppliers`;
 
-// Get all suppliers (optionally filter by status)
-export async function getSuppliers(status) {
+// Get all suppliers (optionally filter by purchase status)
+export async function getSuppliers(purchase) {
   const token = getAuthToken();
   let url = SUPPLIERS_URL;
-  if (status) url += `?status=${normalizeSupplierStatus(status)}`;
+  if (purchase) url += `?purchase=${purchase}`; // filter: Pending, Completed, Cancelled
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -388,25 +389,45 @@ export async function getSupplierById(id) {
 // Add a new supplier
 export async function addSupplier(supplier) {
   const token = getAuthToken();
-  if (supplier.status) supplier.status = normalizeSupplierStatus(supplier.status);
+
+  // ensure supplier object matches model
+  const body = {
+    name: supplier.name,
+    category: supplier.category || "Others",
+    leadTime: supplier.leadTime,
+    purchase: supplier.purchase || "Pending",
+    email: supplier.email,
+    phone: supplier.phone,
+    address: supplier.address || "",
+  };
 
   const res = await fetch(SUPPLIERS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(supplier),
+    body: JSON.stringify(body),
   });
   return handleFetch(res);
 }
 
 // Update an existing supplier
-export async function updateSupplier(id, data) {
+export async function updateSupplier(id, supplier) {
   const token = getAuthToken();
-  if (data.status) data.status = normalizeSupplierStatus(data.status);
+
+  // only include allowed fields
+  const body = {
+    ...(supplier.name && { name: supplier.name }),
+    ...(supplier.category && { category: supplier.category }),
+    ...(supplier.leadTime !== undefined && { leadTime: supplier.leadTime }),
+    ...(supplier.purchase && { purchase: supplier.purchase }),
+    ...(supplier.email && { email: supplier.email }),
+    ...(supplier.phone && { phone: supplier.phone }),
+    ...(supplier.address && { address: supplier.address }),
+  };
 
   const res = await fetch(`${SUPPLIERS_URL}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   return handleFetch(res);
 }
@@ -421,23 +442,48 @@ export async function deleteSupplier(id) {
   return handleFetch(res);
 }
 
-// Get top-rated suppliers (optional limit, default 5)
-export async function getTopRatedSuppliers(limit = 5) {
+// ================= PURCHASE MANAGEMENT =================
+
+// Confirm a supplier purchase
+export async function confirmPurchase(id) {
   const token = getAuthToken();
-  const res = await fetch(`${SUPPLIERS_URL}/top-rated?limit=${limit}`, {
+  const res = await fetch(`${SUPPLIERS_URL}/confirm/${id}`, {
+    method: "PUT", // match backend route
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleFetch(res);
 }
 
-// Get supplier purchase breakdown (Total, Pending, Completed, Cancelled)
-export async function getSupplierPurchaseBreakdown() {
+// Cancel a supplier purchase
+export async function cancelPurchase(id) {
   const token = getAuthToken();
-  const res = await fetch(`${SUPPLIERS_URL}/purchases/breakdown`, {
+  const res = await fetch(`${SUPPLIERS_URL}/cancel/${id}`, {
+    method: "PUT", // match backend route
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleFetch(res);
 }
+
+// ================= SUPPLIERS – Additional API Calls =================
+
+// Get recent purchases (last N suppliers)
+export async function getRecentPurchases(limit = 5) {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/recent?limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
+// Get top suppliers (by number of completed purchases)
+export async function getTopSuppliers(limit = 5) {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/top?limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
+
 
 //  SALES
 

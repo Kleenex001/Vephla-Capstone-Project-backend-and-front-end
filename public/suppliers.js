@@ -1,141 +1,194 @@
-// suppliers.js
 import {
   getSuppliers,
-  getSupplierById,
   addSupplier,
   updateSupplier,
   deleteSupplier,
-  getSupplierPurchaseBreakdown
+  confirmPurchase,
+  cancelPurchase,
+  getRecentPurchases,
+  getTopSuppliers
 } from "./api.js";
 
-// === DOM Elements ===
-const supplierTableBody = document.getElementById("supplierTableBody");
+// DOM Elements
+const supplierBody = document.getElementById("supplierBody");
+const topSuppliers = document.getElementById("topSuppliers");
+const recentPurchases = document.getElementById("recentPurchases");
 
-// KPI DOM elements
-const totalSuppliesEl = document.getElementById("totalSupplies");
-const pendingEl = document.getElementById("pendingSupplies");
-const completedEl = document.getElementById("completedSupplies");
-const cancelledEl = document.getElementById("cancelledSupplies");
+const totalPurchasesEl = document.getElementById("totalPurchases");
+const pendingDeliveryEl = document.getElementById("pendingDelivery");
+const purchasedEl = document.getElementById("purchased");
+const cancelledEl = document.getElementById("cancelled");
 
-// Form elements
-const supplierForm = document.getElementById("supplierForm");
-const supplierNameInput = document.getElementById("supplierName");
-const supplierCategoryInput = document.getElementById("supplierCategory");
-const supplierLeadTimeInput = document.getElementById("supplierLeadTime");
-const supplierRatingInput = document.getElementById("supplierRating");
-const supplierPurchaseInput = document.getElementById("supplierPurchase");
+const purchaseModal = document.getElementById("purchaseModal");
+const purchaseForm = document.getElementById("purchaseForm");
+const addPurchaseBtn = document.getElementById("addPurchaseBtn");
+const closeModal = document.getElementById("closeModal");
 
-let editingSupplierId = null;
+const searchInput = document.getElementById("searchInput");
+const filterCategory = document.getElementById("filterCategory");
 
-// === Load Supplier Purchase Breakdown ===
-async function loadSupplierBreakdown() {
-  try {
-    const breakdown = await getSupplierPurchaseBreakdown();
+const exportBtn = document.getElementById("exportBtn");
 
-    if (totalSuppliesEl) totalSuppliesEl.textContent = breakdown.totalSupplies || 0;
-    if (pendingEl) pendingEl.textContent = breakdown.pending || 0;
-    if (completedEl) completedEl.textContent = breakdown.completed || 0;
-    if (cancelledEl) cancelledEl.textContent = breakdown.cancelled || 0;
-  } catch (err) {
-    console.error("Failed to load supplier breakdown:", err);
-  }
-}
+// --------------------- MODAL ---------------------
+addPurchaseBtn.addEventListener("click", () => purchaseModal.style.display = "flex");
+closeModal.addEventListener("click", () => purchaseModal.style.display = "none");
 
-// === Load Suppliers into Table ===
+// --------------------- LOAD DATA ---------------------
+let suppliers = [];
+
 async function loadSuppliers() {
   try {
-    const suppliers = await getSuppliers();
-
-    supplierTableBody.innerHTML = "";
-
-    suppliers.forEach((s) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${s.name}</td>
-        <td>${s.category}</td>
-        <td>${s.leadTime} days</td>
-        <td>${s.rating}</td>
-        <td>${s.purchase || "N/A"}</td>
-        <td>
-          <button class="edit-btn" data-id="${s._id}">Edit</button>
-          <button class="delete-btn" data-id="${s._id}">Delete</button>
-        </td>
-      `;
-      supplierTableBody.appendChild(row);
-    });
-
-    // Bind edit & delete
-    document.querySelectorAll(".edit-btn").forEach((btn) =>
-      btn.addEventListener("click", () => editSupplier(btn.dataset.id))
-    );
-    document.querySelectorAll(".delete-btn").forEach((btn) =>
-      btn.addEventListener("click", () => removeSupplier(btn.dataset.id))
-    );
+    suppliers = await getSuppliers();
+    renderSuppliers();
+    updateKPIs();
+    loadRecentPurchases();
+    loadTopSuppliers();
   } catch (err) {
     console.error("Failed to load suppliers:", err);
   }
 }
 
-// === Add / Update Supplier ===
-supplierForm.addEventListener("submit", async (e) => {
+// --------------------- RENDER TABLE ---------------------
+function renderSuppliers() {
+  supplierBody.innerHTML = "";
+  let filtered = [...suppliers];
+
+  const searchTerm = searchInput.value.toLowerCase();
+  const categoryFilter = filterCategory.value;
+
+  if (categoryFilter !== "All") {
+    filtered = filtered.filter(s => s.category === categoryFilter);
+  }
+
+  if (searchTerm) {
+    filtered = filtered.filter(s => s.name.toLowerCase().includes(searchTerm));
+  }
+
+  filtered.forEach((s, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${s.name}</td>
+      <td>${s.category}</td>
+      <td>${s.leadTime}</td>
+      <td>${s.email || "-"}</td>
+      <td>${s.phone || "-"}</td>
+      <td>${s.address || "-"}</td>
+      <td><span class="status ${s.purchase.toLowerCase()}">${s.purchase}</span></td>
+      <td>
+        ${
+          s.purchase === "Pending"
+            ? `<button class="btn confirm" onclick="confirmSupplierPurchase('${s._id}')">Confirm</button>
+               <button class="btn cancel" onclick="cancelSupplierPurchase('${s._id}')">Cancel</button>`
+            : "-"
+        }
+      </td>
+    `;
+    supplierBody.appendChild(tr);
+  });
+}
+
+// --------------------- KPIs ---------------------
+function updateKPIs() {
+  const total = suppliers.length;
+  const pending = suppliers.filter(s => s.purchase === "Pending").length;
+  const completed = suppliers.filter(s => s.purchase === "Completed").length;
+  const cancelled = suppliers.filter(s => s.purchase === "Cancelled").length;
+
+  totalPurchasesEl.textContent = total;
+  pendingDeliveryEl.textContent = pending;
+  purchasedEl.textContent = completed;
+  cancelledEl.textContent = cancelled;
+}
+
+// --------------------- RECENT PURCHASES ---------------------
+async function loadRecentPurchases() {
+  try {
+    const recent = await getRecentPurchases();
+    recentPurchases.innerHTML = "";
+    recent.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = `${s.name} - ${s.purchase}`;
+      recentPurchases.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Failed to load recent purchases:", err);
+  }
+}
+
+// --------------------- TOP SUPPLIERS ---------------------
+async function loadTopSuppliers() {
+  try {
+    const top = await getTopSuppliers();
+    topSuppliers.innerHTML = "";
+    top.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s.name;
+      topSuppliers.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Failed to load top suppliers:", err);
+  }
+}
+
+// --------------------- FORM SUBMIT ---------------------
+purchaseForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const supplierData = {
-    name: supplierNameInput.value,
-    category: supplierCategoryInput.value,
-    leadTime: Number(supplierLeadTimeInput.value),
-    rating: Number(supplierRatingInput.value),
-    purchase: supplierPurchaseInput.value, // Pending, Completed, Cancelled
+  const supplier = {
+    name: document.getElementById("supplierName").value.trim(),
+    category: document.getElementById("supplierCategory").value,
+    leadTime: parseInt(document.getElementById("leadTime").value),
+    email: document.getElementById("supplierEmail").value.trim(),
+    phone: document.getElementById("supplierPhone").value.trim(),
+    address: document.getElementById("supplierAddress").value.trim(),
   };
 
   try {
-    if (editingSupplierId) {
-      await updateSupplier(editingSupplierId, supplierData);
-      editingSupplierId = null;
-    } else {
-      await addSupplier(supplierData);
-    }
-
-    supplierForm.reset();
+    await addSupplier(supplier);
     await loadSuppliers();
-    await loadSupplierBreakdown();
+    purchaseForm.reset();
+    purchaseModal.style.display = "none";
   } catch (err) {
-    console.error("Failed to save supplier:", err);
+    console.error("Failed to add supplier:", err);
   }
 });
 
-// === Edit Supplier ===
-async function editSupplier(id) {
+// --------------------- CONFIRM & CANCEL PURCHASE ---------------------
+window.confirmSupplierPurchase = async (id) => {
   try {
-    const supplier = await getSupplierById(id);
-
-    supplierNameInput.value = supplier.name;
-    supplierCategoryInput.value = supplier.category;
-    supplierLeadTimeInput.value = supplier.leadTime;
-    supplierRatingInput.value = supplier.rating;
-    supplierPurchaseInput.value = supplier.purchase || "";
-
-    editingSupplierId = id;
-  } catch (err) {
-    console.error("Failed to load supplier for editing:", err);
-  }
-}
-
-// === Delete Supplier ===
-async function removeSupplier(id) {
-  if (!confirm("Are you sure you want to delete this supplier?")) return;
-
-  try {
-    await deleteSupplier(id);
+    await confirmPurchase(id);
     await loadSuppliers();
-    await loadSupplierBreakdown();
   } catch (err) {
-    console.error("Failed to delete supplier:", err);
+    console.error("Failed to confirm purchase:", err);
   }
-}
+};
 
-// === Init ===
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadSuppliers();
-  await loadSupplierBreakdown();
+window.cancelSupplierPurchase = async (id) => {
+  try {
+    await cancelPurchase(id);
+    await loadSuppliers();
+  } catch (err) {
+    console.error("Failed to cancel purchase:", err);
+  }
+};
+
+// --------------------- EXPORT ---------------------
+exportBtn.addEventListener("click", () => {
+  let csv = "S/N,Supplier,Category,Lead Time,Email,Phone,Address,Status\n";
+  suppliers.forEach((s, i) => {
+    csv += `${i+1},${s.name},${s.category},${s.leadTime},${s.email || "-"},${s.phone || "-"},${s.address || "-"},${s.purchase}\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "suppliers.csv";
+  link.click();
 });
+
+// --------------------- SEARCH & FILTER ---------------------
+searchInput.addEventListener("input", renderSuppliers);
+filterCategory.addEventListener("change", renderSuppliers);
+
+// --------------------- INITIALIZE ---------------------
+document.addEventListener("DOMContentLoaded", loadSuppliers);

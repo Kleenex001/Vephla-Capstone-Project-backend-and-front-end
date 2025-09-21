@@ -13,7 +13,23 @@ exports.getSuppliers = async (req, res) => {
 // --- Add new supplier ---
 exports.addSupplier = async (req, res) => {
   try {
-    const supplier = new Supplier(req.body);
+    const { name, category, leadTime, purchase, email, phone, address } = req.body;
+
+    // Basic validation before hitting schema rules
+    if (!name || !category || leadTime == null || !email || !phone) {
+      return res.status(400).json({ error: "Please provide all required fields." });
+    }
+
+    const supplier = new Supplier({
+      name,
+      category,
+      leadTime,
+      purchase,
+      email,
+      phone,
+      address,
+    });
+
     await supplier.save();
     res.status(201).json(supplier);
   } catch (err) {
@@ -24,7 +40,14 @@ exports.addSupplier = async (req, res) => {
 // --- Update supplier ---
 exports.updateSupplier = async (req, res) => {
   try {
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { name, category, leadTime, purchase, email, phone, address } = req.body;
+
+    const supplier = await Supplier.findByIdAndUpdate(
+      req.params.id,
+      { name, category, leadTime, purchase, email, phone, address },
+      { new: true, runValidators: true }
+    );
+
     if (!supplier) return res.status(404).json({ error: "Supplier not found" });
     res.json(supplier);
   } catch (err) {
@@ -32,7 +55,7 @@ exports.updateSupplier = async (req, res) => {
   }
 };
 
-// --- Delete supplier (purchase) ---
+// --- Delete supplier ---
 exports.deleteSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.findByIdAndDelete(req.params.id);
@@ -70,5 +93,28 @@ exports.cancelPurchase = async (req, res) => {
     res.json(supplier);
   } catch (err) {
     res.status(500).json({ error: "Failed to cancel purchase" });
+  }
+};
+// --- Get recent purchases (last 5 suppliers) ---
+exports.getRecentSuppliers = async (req, res) => {
+  try {
+    const suppliers = await Supplier.find()
+      .sort({ createdAt: -1 }) // newest first
+      .limit(5);
+    res.json(suppliers);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch recent suppliers" });
+  }
+};
+
+// --- Get top suppliers (by completed purchases count) ---
+exports.getTopSuppliers = async (req, res) => {
+  try {
+    const suppliers = await Supplier.find({ purchase: "Completed" })
+      .sort({ createdAt: -1 }) // you can adjust sorting logic
+      .limit(5);
+    res.json(suppliers);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch top suppliers" });
   }
 };

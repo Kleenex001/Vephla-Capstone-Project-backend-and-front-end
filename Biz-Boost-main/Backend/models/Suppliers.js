@@ -18,18 +18,27 @@ const supplierSchema = new mongoose.Schema(
       required: [true, "Lead time is required"],
       min: [0, "Lead time cannot be negative"],
     },
-    rating: {
-      type: Number,
-      min: [1, "Rating must be at least 1"],
-      max: [5, "Rating cannot exceed 5"],
-      default: 3,
-    },
-
-    // instead of status → use purchase
     purchase: {
       type: String,
       enum: ["Pending", "Completed", "Cancelled"],
       default: "Pending",
+    },
+
+    // ✅ Contact info
+    email: {
+      type: String,
+      required: [true, "Supplier email is required"],
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"],
+    },
+    phone: {
+      type: String,
+      required: [true, "Supplier phone number is required"],
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true,
     },
   },
   {
@@ -37,7 +46,7 @@ const supplierSchema = new mongoose.Schema(
   }
 );
 
-// Virtual property to show formatted display name
+// Virtual property for formatted display name
 supplierSchema.virtual("displayName").get(function () {
   return `${this.name} (${this.category})`;
 });
