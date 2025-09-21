@@ -1,220 +1,141 @@
-// ==================== SUPPLIERS MODULE ====================
-import { getSuppliers, addSupplier, updateSupplier, deleteSupplier, getTopRatedSuppliers } from './api.js';
+// suppliers.js
+import {
+  getSuppliers,
+  getSupplierById,
+  addSupplier,
+  updateSupplier,
+  deleteSupplier,
+  getSupplierPurchaseBreakdown
+} from "./api.js";
 
-// ==================== DOM ELEMENTS ====================
-const supplierBody = document.getElementById("supplierBody");
-const topSuppliers = document.getElementById("topSuppliers");
-const recentPurchases = document.getElementById("recentPurchases");
+// === DOM Elements ===
+const supplierTableBody = document.getElementById("supplierTableBody");
 
-// KPIs
-const totalPurchasesEl = document.getElementById("totalPurchases");
-const pendingDeliveryEl = document.getElementById("pendingDelivery");
-const purchasedEl = document.getElementById("purchased");
-const cancelledEl = document.getElementById("cancelled");
+// KPI DOM elements
+const totalSuppliesEl = document.getElementById("totalSupplies");
+const pendingEl = document.getElementById("pendingSupplies");
+const completedEl = document.getElementById("completedSupplies");
+const cancelledEl = document.getElementById("cancelledSupplies");
 
-// Modal & Form
-const supplierModal = document.getElementById("supplierModal");
+// Form elements
 const supplierForm = document.getElementById("supplierForm");
-const modalTitle = document.getElementById("modalTitle");
-const addSupplierBtn = document.getElementById("addSupplierBtn");
-const closeSupplierModal = document.getElementById("closeSupplierModal");
-
-// Form fields
 const supplierNameInput = document.getElementById("supplierName");
 const supplierCategoryInput = document.getElementById("supplierCategory");
-const leadTimeInput = document.getElementById("leadTime");
-const ratingInput = document.getElementById("rating");
-const statusInput = document.getElementById("status");
+const supplierLeadTimeInput = document.getElementById("supplierLeadTime");
+const supplierRatingInput = document.getElementById("supplierRating");
+const supplierPurchaseInput = document.getElementById("supplierPurchase");
 
-// Search & Filter
-const searchInput = document.getElementById("searchInput");
-const filterCategory = document.getElementById("filterCategory");
-
-// Data storage
-let suppliers = [];
-let purchases = [];
 let editingSupplierId = null;
 
-// ==================== TOAST ====================
-function showToast(message, type = "info") {
-  Toastify({
-    text: message,
-    duration: 3000,
-    gravity: "top",
-    position: "right",
-    backgroundColor: type === "success" ? "green" : type === "error" ? "red" : "blue",
-    stopOnFocus: true,
-  }).showToast();
+// === Load Supplier Purchase Breakdown ===
+async function loadSupplierBreakdown() {
+  try {
+    const breakdown = await getSupplierPurchaseBreakdown();
+
+    if (totalSuppliesEl) totalSuppliesEl.textContent = breakdown.totalSupplies || 0;
+    if (pendingEl) pendingEl.textContent = breakdown.pending || 0;
+    if (completedEl) completedEl.textContent = breakdown.completed || 0;
+    if (cancelledEl) cancelledEl.textContent = breakdown.cancelled || 0;
+  } catch (err) {
+    console.error("Failed to load supplier breakdown:", err);
+  }
 }
 
-// ==================== MODAL EVENTS ====================
-document.getElementById("addPurchaseBtn").addEventListener("click", () => {
-  modalTitle.textContent = "Add New Supplier";
-  supplierForm.reset();
-  editingSupplierId = null;
-  supplierModal.style.display = "flex";
-});
+// === Load Suppliers into Table ===
+async function loadSuppliers() {
+  try {
+    const suppliers = await getSuppliers();
 
-closeSupplierModal.addEventListener("click", () => {
-  supplierModal.style.display = "none";
-});
+    supplierTableBody.innerHTML = "";
 
-// ==================== FORM SUBMIT ====================
+    suppliers.forEach((s) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${s.name}</td>
+        <td>${s.category}</td>
+        <td>${s.leadTime} days</td>
+        <td>${s.rating}</td>
+        <td>${s.purchase || "N/A"}</td>
+        <td>
+          <button class="edit-btn" data-id="${s._id}">Edit</button>
+          <button class="delete-btn" data-id="${s._id}">Delete</button>
+        </td>
+      `;
+      supplierTableBody.appendChild(row);
+    });
+
+    // Bind edit & delete
+    document.querySelectorAll(".edit-btn").forEach((btn) =>
+      btn.addEventListener("click", () => editSupplier(btn.dataset.id))
+    );
+    document.querySelectorAll(".delete-btn").forEach((btn) =>
+      btn.addEventListener("click", () => removeSupplier(btn.dataset.id))
+    );
+  } catch (err) {
+    console.error("Failed to load suppliers:", err);
+  }
+}
+
+// === Add / Update Supplier ===
 supplierForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const supplierData = {
-    name: supplierNameInput.value.trim(),
+    name: supplierNameInput.value,
     category: supplierCategoryInput.value,
-    leadTime: Number(leadTimeInput.value),
-    rating: Number(ratingInput.value),
-    status: statusInput.value
+    leadTime: Number(supplierLeadTimeInput.value),
+    rating: Number(supplierRatingInput.value),
+    purchase: supplierPurchaseInput.value, // Pending, Completed, Cancelled
   };
-
-  if (!supplierData.name || !supplierData.category || isNaN(supplierData.leadTime) || isNaN(supplierData.rating)) {
-    showToast("Please fill all required fields", "error");
-    return;
-  }
 
   try {
     if (editingSupplierId) {
-      // update
-      const updated = await updateSupplier(editingSupplierId, supplierData);
-      suppliers = suppliers.map(s => s._id === editingSupplierId ? updated : s);
-      showToast("Supplier updated successfully!", "success");
+      await updateSupplier(editingSupplierId, supplierData);
+      editingSupplierId = null;
     } else {
-      // add
-      const added = await addSupplier(supplierData);
-      suppliers.unshift(added);
-      purchases.unshift({ name: added.name, category: added.category, status: added.status });
-      showToast("Supplier added successfully!", "success");
+      await addSupplier(supplierData);
     }
 
-    renderSuppliers();
-    updateKPIs();
-    updateTopSuppliers();
-    updateRecentPurchases();
     supplierForm.reset();
-    supplierModal.style.display = "none";
+    await loadSuppliers();
+    await loadSupplierBreakdown();
   } catch (err) {
-    console.error("Error:", err);
-    showToast(err?.message || "Failed to save supplier", "error");
+    console.error("Failed to save supplier:", err);
   }
 });
 
-// ==================== RENDER SUPPLIERS ====================
-function renderSuppliers() {
-  supplierBody.innerHTML = "";
+// === Edit Supplier ===
+async function editSupplier(id) {
+  try {
+    const supplier = await getSupplierById(id);
 
-  if (!Array.isArray(suppliers)) return;
+    supplierNameInput.value = supplier.name;
+    supplierCategoryInput.value = supplier.category;
+    supplierLeadTimeInput.value = supplier.leadTime;
+    supplierRatingInput.value = supplier.rating;
+    supplierPurchaseInput.value = supplier.purchase || "";
 
-  let filteredSuppliers = [...suppliers];
-
-  // Filter
-  const searchTerm = searchInput.value.toLowerCase();
-  if (filterCategory.value !== "All") {
-    filteredSuppliers = filteredSuppliers.filter(s => s.category === filterCategory.value);
+    editingSupplierId = id;
+  } catch (err) {
+    console.error("Failed to load supplier for editing:", err);
   }
-  if (searchTerm) {
-    filteredSuppliers = filteredSuppliers.filter(s => s.name.toLowerCase().includes(searchTerm));
-  }
-
-  filteredSuppliers.forEach((s, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${s.name}</td>
-      <td>${s.category}</td>
-      <td>${s.leadTime}</td>
-      <td>${"⭐".repeat(s.rating)}</td>
-      <td>${s.status}</td>
-      <td>
-        <button class="btn primary" onclick="editSupplier('${s._id}')">Edit</button>
-        <button class="btn delete" onclick="deleteSupplierAction('${s._id}')">Delete</button>
-      </td>
-    `;
-    supplierBody.appendChild(tr);
-  });
 }
 
-// ==================== KPI UPDATES ====================
-function updateKPIs() {
-  totalPurchasesEl.textContent = suppliers.length;
-  pendingDeliveryEl.textContent = suppliers.filter(s => s.status === "On Hold").length;
-  purchasedEl.textContent = suppliers.filter(s => s.status === "Active").length;
-  cancelledEl.textContent = suppliers.filter(s => s.status === "Inactive").length;
-}
-
-// ==================== TOP & RECENT ====================
-function updateTopSuppliers() {
-  const top = [...suppliers].sort((a,b) => b.rating - a.rating).slice(0, 3);
-  topSuppliers.innerHTML = "";
-  top.forEach(s => {
-    const li = document.createElement("li");
-    li.textContent = `${s.name} (${ "⭐".repeat(s.rating) })`;
-    topSuppliers.appendChild(li);
-  });
-}
-
-function updateRecentPurchases() {
-  recentPurchases.innerHTML = "";
-  purchases.slice(0,5).forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.name} - ${p.status}`;
-    recentPurchases.appendChild(li);
-  });
-}
-
-// ==================== EDIT / DELETE ====================
-window.editSupplier = (id) => {
-  const supplier = suppliers.find(s => s._id === id);
-  if (!supplier) return;
-
-  editingSupplierId = id;
-  modalTitle.textContent = "Edit Supplier";
-  supplierNameInput.value = supplier.name;
-  supplierCategoryInput.value = supplier.category;
-  leadTimeInput.value = supplier.leadTime;
-  ratingInput.value = supplier.rating;
-  statusInput.value = supplier.status;
-  supplierModal.style.display = "flex";
-};
-
-window.deleteSupplierAction = async (id) => {
+// === Delete Supplier ===
+async function removeSupplier(id) {
   if (!confirm("Are you sure you want to delete this supplier?")) return;
 
   try {
     await deleteSupplier(id);
-    suppliers = suppliers.filter(s => s._id !== id);
-    renderSuppliers();
-    updateKPIs();
-    updateTopSuppliers();
-    showToast("Supplier deleted!", "success");
-  } catch(err) {
-    console.error(err);
-    showToast("Failed to delete supplier", "error");
-  }
-};
-
-// ==================== SEARCH & FILTER ====================
-searchInput.addEventListener("input", renderSuppliers);
-filterCategory.addEventListener("change", renderSuppliers);
-
-// ==================== INITIAL LOAD ====================
-async function loadSuppliers() {
-  try {
-    const res = await getSuppliers();
-    suppliers = res.data || [];
-    purchases = suppliers.map(s => ({ name: s.name, category: s.category, status: s.status }));
-
-    renderSuppliers();
-    updateKPIs();
-    updateTopSuppliers();
-    updateRecentPurchases();
-  } catch(err) {
-    console.error("Failed to load suppliers:", err);
-    showToast("Failed to load suppliers", "error");
+    await loadSuppliers();
+    await loadSupplierBreakdown();
+  } catch (err) {
+    console.error("Failed to delete supplier:", err);
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadSuppliers);
+// === Init ===
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadSuppliers();
+  await loadSupplierBreakdown();
+});

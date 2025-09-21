@@ -364,14 +364,6 @@ export async function addAgentAPI(agent) {
 
 const SUPPLIERS_URL = `${BASE_URL}/suppliers`;
 
-// Enum normalization for supplier status
-function normalizeSupplierStatus(status) {
-  if (!status) return undefined;
-  const validStatuses = ["Active", "Inactive", "On Hold"];
-  const formatted = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  return validStatuses.includes(formatted) ? formatted : undefined;
-}
-
 // Get all suppliers (optionally filter by status)
 export async function getSuppliers(status) {
   const token = getAuthToken();
@@ -438,6 +430,14 @@ export async function getTopRatedSuppliers(limit = 5) {
   return handleFetch(res);
 }
 
+// Get supplier purchase breakdown (Total, Pending, Completed, Cancelled)
+export async function getSupplierPurchaseBreakdown() {
+  const token = getAuthToken();
+  const res = await fetch(`${SUPPLIERS_URL}/purchases/breakdown`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleFetch(res);
+}
 
 //  SALES
 

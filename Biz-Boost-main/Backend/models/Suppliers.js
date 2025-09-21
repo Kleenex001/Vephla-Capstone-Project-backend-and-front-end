@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const supplierSchema = new mongoose.Schema(
   {
@@ -24,10 +24,12 @@ const supplierSchema = new mongoose.Schema(
       max: [5, "Rating cannot exceed 5"],
       default: 3,
     },
-    status: {
+
+    // instead of status → use purchase
+    purchase: {
       type: String,
-      enum: ["Active", "Inactive", "On Hold"],
-      default: "Active",
+      enum: ["Pending", "Completed", "Cancelled"],
+      default: "Pending",
     },
   },
   {
@@ -36,8 +38,8 @@ const supplierSchema = new mongoose.Schema(
 );
 
 // Virtual property to show formatted display name
-supplierSchema.virtual('displayName').get(function () {
+supplierSchema.virtual("displayName").get(function () {
   return `${this.name} (${this.category})`;
 });
 
-module.exports = mongoose.model('Supplier', supplierSchema);
+module.exports = mongoose.model("Supplier", supplierSchema);
