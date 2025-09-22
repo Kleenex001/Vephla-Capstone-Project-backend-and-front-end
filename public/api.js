@@ -5,43 +5,84 @@
 const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
 
-// HELPERS
+// ================= AUTH HELPERS =================
 
-async function handleFetch(res) {
-  const text = await res.text();
-
-  let data;
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = { message: text || "Invalid JSON response" };
-  }
-
-  if (!res.ok) {
-    throw data;
-  }
-  return data;
+// Get raw token
+function getAuthToken() {
+  return localStorage.getItem("token");
 }
 
-function getAuthToken() {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("No auth token found. Please login.");
+// Refresh token if expired/missing
+async function refreshAuthToken() {
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) throw new Error("Failed to refresh token");
+
+    const data = await res.json();
+    const newToken = data.token || data.accessToken || data.jwt;
+
+    if (newToken) {
+      localStorage.setItem("token", newToken);
+      return newToken;
+    }
+    return null;
+  } catch (err) {
+    console.error("Token refresh failed:", err);
+    return null;
+  }
+}
+
+// Ensure a valid token before making API calls
+export async function ensureAuthToken() {
+  let token = getAuthToken();
+
+  if (!token) {
+    token = await refreshAuthToken();
+  }
+
+  if (!token) {
+    // No valid token, log out user
+    localStorage.clear();
+    window.location.href = "signin.html"; // redirect to login
+    return null;
+  }
+
   return token;
 }
 
-// =================================================
-// AUTH
-// =================================================
+// Auth APIs
 export async function loginUser(email, password) {
   const res = await fetch(`${BASE_URL}/auth/signin`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
+
   const data = await handleFetch(res);
-  localStorage.setItem("token", data.token);
+
+  //  Support multiple possible token field names
+  const token = data.token || data.accessToken || data.jwt;
+
+  if (!token) {
+    throw new Error("Login successful but no token found in response.");
+  }
+
+  //  Store the token in localStorage
+  localStorage.setItem("token", token);
+
+  console.log("Stored token:", token); // 🔎 Debug log
+
   return data;
 }
+
 
 export async function signupUser(userData) {
   const res = await fetch(`${BASE_URL}/auth/signup`, {
