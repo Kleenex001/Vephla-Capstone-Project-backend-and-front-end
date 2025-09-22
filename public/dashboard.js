@@ -206,6 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     dueToast("Logged out successfully", "success");
-    setTimeout(() => (window.location.href = "index.html"), 1000);
+    setTimeout(() => (window.location.href = "signin.html"), 1000);
   });
 });

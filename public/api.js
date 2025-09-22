@@ -39,7 +39,7 @@ async function refreshAuthToken() {
     return null;
   }
 }
-
+/*
 // Ensure a valid token before making API calls
 export async function ensureAuthToken() {
   let token = getAuthToken();
@@ -51,14 +51,25 @@ export async function ensureAuthToken() {
   if (!token) {
     // No valid token, log out user
     localStorage.clear();
-    window.location.href = "signin.html"; // redirect to login
+    /*window.location.href = "signin.html"; // redirect to login
     return null;
   }
 
-  return token;
-}
+  return token;*/
+
 
 // Auth APIs
+
+// 1️⃣ Define handleFetch first
+async function handleFetch(res) {
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || res.statusText);
+  }
+  return res.json();
+}
+
+// 2️⃣ Then define loginUser
 export async function loginUser(email, password) {
   const res = await fetch(`${BASE_URL}/auth/signin`, {
     method: "POST",
@@ -66,23 +77,10 @@ export async function loginUser(email, password) {
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await handleFetch(res);
-
-  //  Support multiple possible token field names
-  const token = data.token || data.accessToken || data.jwt;
-
-  if (!token) {
-    throw new Error("Login successful but no token found in response.");
-  }
-
-  //  Store the token in localStorage
-  localStorage.setItem("token", token);
-
-  console.log("Stored token:", token); // 🔎 Debug log
-
+  const data = await handleFetch(res); // ✅ now this works
+  localStorage.setItem("token", data.token);
   return data;
 }
-
 
 export async function signupUser(userData) {
   const res = await fetch(`${BASE_URL}/auth/signup`, {
@@ -118,65 +116,73 @@ export async function resetPassword(email, otp, newPassword) {
   return handleFetch(res);
 }
 
-
 // ===================== DASHBOARD APIs ===================== //
 
-// GET summary (totals: sales, owed, delivery)
+// ✅ Reusable authenticated fetch with toast + auto redirect
+async function fetchWithAuth(url, options = {}) {
+  const token = await ensureAuthToken();
+  if (!token) return null; // already redirected in ensureAuthToken()
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+      "Content-Type": options.headers?.["Content-Type"] || "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.clear();
+      dueToast("Session expired. Please sign in again.", "error");
+      window.location.href = "signin.html";
+      return null;
+    }
+
+    let errorMessage = `Error ${res.status}: ${res.statusText}`;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (_) {}
+    dueToast(errorMessage, "error");
+    throw new Error(errorMessage);
+  }
+
+  return res.json();
+}
+
+// ✅ Dashboard Summary (totals: sales, owed, delivery)
 export async function getDashboardSummary() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/summary`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+  return fetchWithAuth(`${BASE_URL}/dashboard/summary`);
 }
 
-// GET quick stats (pending delivery, pending orders, expired products)
+// ✅ Quick stats (pending delivery, pending orders, expired products)
 export async function getQuickStats() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/quick-stats`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+  return fetchWithAuth(`${BASE_URL}/dashboard/quick-stats`);
 }
 
-// GET overdue payments (customers owing money)
+// ✅ Overdue payments (customers owing money)
 export async function getOverduePayments() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/overdue-payments`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+  return fetchWithAuth(`${BASE_URL}/dashboard/overdue-payments`);
 }
 
-// GET low stock products
+// ✅ Low stock products
 export async function getLowStockProductsDashboard() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/low-stock`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+  return fetchWithAuth(`${BASE_URL}/dashboard/low-stock`);
 }
 
-// GET top customers
+// ✅ Top customers
 export async function getTopCustomersDashboard() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+  return fetchWithAuth(`${BASE_URL}/dashboard/top-customers`);
 }
 
-// GET user info (for greeting: name + business name)
+// ✅ User info (for greeting: name + business name)
 export async function getUserInfo() {
-  const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/user-info`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleFetch(res);
+  return fetchWithAuth(`${BASE_URL}/dashboard/user-info`);
 }
 
-
-// Get all customers
+// Get all customers(customers dashboard)
 export async function getCustomers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/customers`, {
@@ -787,3 +793,5 @@ export async function saveSettings(settings) {
   });
   return handleFetch(res);
 }
+
+
