@@ -7,18 +7,17 @@ import {
   getTopCustomersDashboard,
   getUserInfo,
   getSalesAnalytics,
-  dueToast
+  logoutUser
 } from "./api.js";
 
 // ----------------- Load User Info -----------------
 async function loadUserInfo() {
   try {
     const user = await getUserInfo();
-    document.getElementById("greetingName").textContent = `Hello, ${user.name || "User"}`;
-    document.getElementById("businessName").textContent = user.businessName || "Your Business";
+    document.getElementById("greetingName").textContent = `Hello, ${user?.name || "User"}`;
+    document.getElementById("businessName").textContent = user?.businessName || "Your Business";
   } catch (err) {
     console.error("Failed to load user info", err);
-    dueToast("Error loading user info", "error");
   }
 }
 
@@ -26,12 +25,11 @@ async function loadUserInfo() {
 async function loadSummary() {
   try {
     const data = await getDashboardSummary();
-    document.getElementById("totalSales").textContent = `₦${(data.totalSales || 0).toLocaleString()}`;
-    document.getElementById("totalOwed").textContent = `₦${(data.totalOwed || 0).toLocaleString()}`;
-    document.getElementById("totalDelivery").textContent = data.totalDelivery || 0;
+    document.getElementById("totalSales").textContent = `₦${(data?.totalSales || 0).toLocaleString()}`;
+    document.getElementById("totalOwed").textContent = `₦${(data?.totalOwed || 0).toLocaleString()}`;
+    document.getElementById("totalDelivery").textContent = data?.totalDelivery || 0;
   } catch (err) {
     console.error("Failed to load summary", err);
-    dueToast("Error loading dashboard summary", "error");
   }
 }
 
@@ -49,7 +47,6 @@ async function loadQuickStats() {
     });
   } catch (err) {
     console.error("Failed to load quick stats", err);
-    dueToast("Error loading quick stats", "error");
   }
 }
 
@@ -57,7 +54,7 @@ async function loadQuickStats() {
 async function loadOverduePayments() {
   try {
     const data = await getOverduePayments();
-    const list = document.getElementById("overduePaymentList");
+    const list = document.getElementById("overduePaymentLists");
     list.innerHTML = "";
 
     if (!data || data.length === 0) {
@@ -67,14 +64,10 @@ async function loadOverduePayments() {
         const li = document.createElement("li");
         li.textContent = `${item.customerName} owes ₦${(item.amount || 0).toLocaleString()}`;
         list.appendChild(li);
-
-        // Show toast per overdue payment
-        dueToast(`${item.customerName} has an overdue payment of ₦${(item.amount || 0).toLocaleString()}`, "warning");
       });
     }
   } catch (err) {
     console.error("Failed to load overdue payments", err);
-    dueToast("Error loading overdue payments", "error");
   }
 }
 
@@ -96,7 +89,6 @@ async function loadLowStock() {
     }
   } catch (err) {
     console.error("Failed to load low stock", err);
-    dueToast("Error loading low stock products", "error");
   }
 }
 
@@ -114,7 +106,6 @@ async function loadTopCustomers() {
     });
   } catch (err) {
     console.error("Failed to load top customers", err);
-    dueToast("Error loading top customers", "error");
   }
 }
 
@@ -143,14 +134,13 @@ async function loadSalesAnalytics(view = "monthly") {
     });
   } catch (err) {
     console.error("Failed to load sales analytics", err);
-    dueToast("Error loading sales analytics", "error");
   }
 }
 
 // ----------------- Payment Analytics -----------------
 async function loadPaymentAnalytics(view = "monthly") {
   try {
-    const data = await getSalesAnalytics(view, "payments"); // assuming backend supports type
+    const data = await getSalesAnalytics(view, "payments");
     const ctx = document.getElementById("paymentChart").getContext("2d");
 
     new Chart(ctx, {
@@ -169,9 +159,19 @@ async function loadPaymentAnalytics(view = "monthly") {
     });
   } catch (err) {
     console.error("Failed to load payment analytics", err);
-    dueToast("Error loading payment analytics", "error");
   }
 }
+
+// ----------------- Logout -----------------
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try {
+    await logoutUser();
+    localStorage.clear();
+    setTimeout(() => (window.location.href = "signin.html"), 1000);
+  } catch (err) {
+    console.error("Logout failed", err);
+  }
+});
 
 // ----------------- Init -----------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -200,12 +200,5 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
       loadPaymentAnalytics(btn.dataset.view);
     });
-  });
-
-  // Logout button
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.clear();
-    dueToast("Logged out successfully", "success");
-    setTimeout(() => (window.location.href = "signin.html"), 1000);
   });
 });

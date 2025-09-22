@@ -15,8 +15,6 @@ app.use(morgan('dev'));  // logging
 // -------------------- CORS --------------------
 const allowedOrigins = [
   'https://bizboostcom.vercel.app', // production
-  'http://localhost:5500',           // local dev
-  'http://127.0.0.1:5500',           // local dev using 127.0.0.1
 ];
 
 app.use((req, res, next) => {

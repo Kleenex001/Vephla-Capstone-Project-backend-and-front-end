@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BizBoost Dashboard</title>
   <link rel="stylesheet" href="dashboard.css"/>
-   <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
+  <link rel="icon" type="image/x-icon" href="Assets/logo.png" width="100px" height="100px">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
@@ -50,10 +50,9 @@
        <div>
         <br><br>
         <div class="dashboard-header">
-        <h2 id="greetingName"></h2>
-        <p id="businessName"></p>
+          <h2 id="greetingName"></h2>
+          <p id="businessName"></p>
         </div>
-
         <br><br>
         </div>
         <span class="spacer"></span>
@@ -65,32 +64,28 @@
     <section id="dashboard" class="page">
       <!-- KPIs -->
       <div class="kpis">
-  <div class="card kpi">
-    <i class="fa fa-coins"></i>
-    <div>
-      <p>Total Sales</p>
-      <h2 id="totalSales"></h2>
-      <canvas id="sparkSales" height="30"></canvas>
-    </div>
-  </div>
-  <div class="card kpi">
-    <i class="fa fa-file-invoice-dollar"></i>
-    <div>
-      <p>Total Owed</p>
-      <h2 id="totalOwed"></h2>
-      <canvas id="sparkOwed" height="30"></canvas>
-    </div>
-  </div>
-  <div class="card kpi">
-    <i class="fa fa-sack-dollar"></i>
-    <div>
-      <p>Total Delivery</p>
-      <h2 id="totalDelivery"></h2>
-      <canvas id="sparkDelivery" height="30"></canvas>
-    </div>
-  </div>
-</div>
-
+        <div class="card kpi">
+          <i class="fa fa-coins"></i>
+          <div>
+            <p>Total Sales</p>
+            <h2 id="totalSales"></h2>
+          </div>
+        </div>
+        <div class="card kpi">
+          <i class="fa fa-file-invoice-dollar"></i>
+          <div>
+            <p>Total Owed</p>
+            <h2 id="totalOwed"></h2>
+          </div>
+        </div>
+        <div class="card kpi">
+          <i class="fa fa-sack-dollar"></i>
+          <div>
+            <p>Total Delivery</p>
+            <h2 id="totalDelivery"></h2>
+          </div>
+        </div>
+      </div>
 
       <!-- Charts + Stats -->
       <div class="grid-two">
@@ -133,7 +128,7 @@
           </div>
           <div class="card">
             <h4>Overdue Payments</h4>
-            <ol id="overduePaymentLists"></ol>
+            <ol id="overduePaymentList"></ol>
           </div>
           <div class="card">
             <h4>Low Stock Products</h4>
@@ -148,9 +143,8 @@
     </section>
   </main>
 
-<script src="config.js"></script>
-<script type="module" src="api.js"></script>
-
+  <script src="config.js"></script>
+  <script type="module" src="api.js"></script>
   <script type="module" src="dashboard.js" defer></script>
 
   <script>
@@ -174,8 +168,8 @@
         }
       });
     });
-
   </script>
+
   <footer>
     <nav class="bottom-nav">
       <button class="nav-bttm" data-target="dashboard" onclick="location.href='dashboard.html'" title="Dashboard">
@@ -200,6 +194,6 @@
         <i class="fa fa-gear"><br><p>Settings</p></i>
       </button>
     </nav>
-</footer>
+  </footer>
 </body>
 </html>

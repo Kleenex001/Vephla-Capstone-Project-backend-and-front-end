@@ -5,68 +5,69 @@
 const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
 
-// ================= AUTH HELPERS =================
+/// ---------- Utility: Handle fetch responses ----------
+export async function handleFetch(res) {
+  try {
+    if (!res.ok) {
+      let errorMessage = `Error ${res.status}: ${res.statusText}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (_) {}
+      throw new Error(errorMessage);
+    }
+    return res.json();
+  } catch (err) {
+    console.error("API Error:", err.message);
+    throw err;
+  }
+}
 
-// Get raw token
+// ---------- Auth Helpers ----------
+export async function ensureAuthToken() {
+  let token = localStorage.getItem("token");
+
+  if (!token) {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (refreshToken) {
+      try {
+        const res = await fetch(`${BASE_URL}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken }),
+        });
+        const data = await res.json();
+        token = data.token || data.accessToken || data.jwt;
+        if (token) localStorage.setItem("token", token);
+      } catch (err) {
+        console.error("Token refresh failed:", err);
+      }
+    }
+  }
+
+  if (!token) {
+    localStorage.clear();
+    window.location.href = "signin.html";
+    return null;
+  }
+
+  return token;
+}
+
 function getAuthToken() {
   return localStorage.getItem("token");
 }
 
-// Refresh token if expired/missing
-async function refreshAuthToken() {
-  const refreshToken = localStorage.getItem("refreshToken");
-  if (!refreshToken) return null;
+// ---------- Fetch wrapper with auth ----------
+export async function fetchWithAuth(url, options = {}) {
+  const token = await ensureAuthToken();
+  if (!token) throw new Error("No token found");
 
-  try {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
+  options.headers = options.headers || {};
+  options.headers.Authorization = `Bearer ${token}`;
 
-    if (!res.ok) throw new Error("Failed to refresh token");
-
-    const data = await res.json();
-    const newToken = data.token || data.accessToken || data.jwt;
-
-    if (newToken) {
-      localStorage.setItem("token", newToken);
-      return newToken;
-    }
-    return null;
-  } catch (err) {
-    console.error("Token refresh failed:", err);
-    return null;
-  }
-}
-/*
-// Ensure a valid token before making API calls
-export async function ensureAuthToken() {
-  let token = getAuthToken();
-
-  if (!token) {
-    token = await refreshAuthToken();
-  }
-
-  if (!token) {
-    // No valid token, log out user
-    localStorage.clear();
-    /*window.location.href = "signin.html"; // redirect to login
-    return null;
-  }
-
-  return token;*/
-
-
-// Auth APIs
-
-// 1️⃣ Define handleFetch first
-async function handleFetch(res) {
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || res.statusText);
-  }
-  return res.json();
+  const res = await fetch(url, options);
+  return handleFetch(res);
 }
 
 // 2️⃣ Then define loginUser
@@ -116,68 +117,35 @@ export async function resetPassword(email, otp, newPassword) {
   return handleFetch(res);
 }
 
-// ===================== DASHBOARD APIs ===================== //
 
-// ✅ Reusable authenticated fetch with toast + auto redirect
-async function fetchWithAuth(url, options = {}) {
-  const token = await ensureAuthToken();
-  if (!token) return null; // already redirected in ensureAuthToken()
+// ================== Dashboard APIs ==================
 
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
-      "Content-Type": options.headers?.["Content-Type"] || "application/json",
-    },
-  });
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      localStorage.clear();
-      dueToast("Session expired. Please sign in again.", "error");
-      window.location.href = "signin.html";
-      return null;
-    }
-
-    let errorMessage = `Error ${res.status}: ${res.statusText}`;
-    try {
-      const errorData = await res.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch (_) {}
-    dueToast(errorMessage, "error");
-    throw new Error(errorMessage);
-  }
-
-  return res.json();
-}
-
-// ✅ Dashboard Summary (totals: sales, owed, delivery)
+// GET summary (totals: sales, owed, delivery)
 export async function getDashboardSummary() {
   return fetchWithAuth(`${BASE_URL}/dashboard/summary`);
 }
 
-// ✅ Quick stats (pending delivery, pending orders, expired products)
+// GET quick stats (pending delivery, pending orders, expired products)
 export async function getQuickStats() {
   return fetchWithAuth(`${BASE_URL}/dashboard/quick-stats`);
 }
 
-// ✅ Overdue payments (customers owing money)
+// GET overdue payments (customers owing money)
 export async function getOverduePayments() {
   return fetchWithAuth(`${BASE_URL}/dashboard/overdue-payments`);
 }
 
-// ✅ Low stock products
+// GET low stock products
 export async function getLowStockProductsDashboard() {
   return fetchWithAuth(`${BASE_URL}/dashboard/low-stock`);
 }
 
-// ✅ Top customers
+// GET top customers
 export async function getTopCustomersDashboard() {
   return fetchWithAuth(`${BASE_URL}/dashboard/top-customers`);
 }
 
-// ✅ User info (for greeting: name + business name)
+// GET user info (for greeting: name + business name)
 export async function getUserInfo() {
   return fetchWithAuth(`${BASE_URL}/dashboard/user-info`);
 }
