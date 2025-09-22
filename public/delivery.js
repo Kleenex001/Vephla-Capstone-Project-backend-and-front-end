@@ -538,3 +538,10 @@ window.cancelDelivery = (idxOrId) => {
   await loadAgents();
   await loadDeliveries();
 })();
+
+window.addEventListener('storage', (event) => {
+  if (event.key === 'logoutAll') {
+    showToast('👋 Logged out from another session', 'info');
+    window.location.href = 'signin.html';
+  }
+});

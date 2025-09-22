@@ -20,7 +20,22 @@ const getAllProducts = async (req, res) => {
 // @route   GET /api/inventory/low-stock
 const getLowStockProducts = async (req, res) => {
   try {
-    const products = await Product.find({ $expr: { $lt: ['$stockLevel', '$reorderLevel'] } });
+    const products = await Product.find({ $expr: { $lt: ['$stockLevel', '$reorderLevel'] }, stockLevel: { $gt: 0 } });
+    res.status(200).json({
+      status: 'success',
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get products that are out of stock
+// @route   GET /api/inventory/out-of-stock
+const getOutOfStockProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ stockLevel: { $lte: 0 } });
     res.status(200).json({
       status: 'success',
       count: products.length,
@@ -41,6 +56,30 @@ const getExpiredProducts = async (req, res) => {
       status: 'success',
       count: products.length,
       data: products
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get notifications (low stock, out of stock, expired)
+// @route   GET /api/inventory/notifications
+const getNotificationProducts = async (req, res) => {
+  try {
+    const today = new Date();
+
+    const lowStock = await Product.find({ $expr: { $lt: ['$stockLevel', '$reorderLevel'] }, stockLevel: { $gt: 0 } });
+    const outOfStock = await Product.find({ stockLevel: { $lte: 0 } });
+    const expired = await Product.find({ expiryDate: { $lt: today } });
+
+    res.status(200).json({
+      status: 'success',
+      count: lowStock.length + outOfStock.length + expired.length,
+      data: {
+        lowStock,
+        outOfStock,
+        expired
+      }
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Server error', error: error.message });
@@ -104,7 +143,9 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   getAllProducts,
   getLowStockProducts,
+  getOutOfStockProducts,
   getExpiredProducts,
+  getNotificationProducts,
   getProductById,
   addNewProduct,
   updateProduct,

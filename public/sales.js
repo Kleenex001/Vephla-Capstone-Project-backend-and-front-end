@@ -284,3 +284,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
   setupFilters();
   setupAnalyticsTabs();
 });
+
+window.addEventListener('storage', (event) => {
+  if (event.key === 'logoutAll') {
+    showToast('👋 Logged out from another session', 'info');
+    window.location.href = 'sign in.html';
+  }
+});

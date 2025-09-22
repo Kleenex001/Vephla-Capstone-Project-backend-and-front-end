@@ -1,129 +1,100 @@
-//  Sidebar navigation 
-function setActivePage(page) {
-  document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
-  const activeBtn = document.querySelector(`.nav-link[data-target="${page}"]`);
-  if (activeBtn) activeBtn.classList.add('active');
-}
+// settings.js
 
-//  Go Back button 
-document.getElementById('goBackBtn')?.addEventListener('click', () => {
-  window.history.back();
-});
+import { getSettings, saveSettings as saveSettingsAPI } from './api.js';
 
-//  Toast Notification 
-function showToast(message, type = "info") {
-  const toast = document.createElement("div");
+// ---------- Toast Notification ----------
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = message;
   document.body.appendChild(toast);
 
-  setTimeout(() => toast.classList.add("show"), 100);
+  setTimeout(() => toast.classList.add('show'), 100);
   setTimeout(() => {
-    toast.classList.remove("show");
+    toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
-//  Modal functions
-function openModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.add('active');
-}
-function closeModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.remove('active');
-}
-document.querySelectorAll('.modal').forEach(modal => {
-  modal.addEventListener('click', e => {
-    if (e.target === modal) closeModal(modal.id);
-  });
-});
+// ---------- Apply Settings to Page ----------
+function applySettingsToPage(settings) {
+  const businessNameEl = document.getElementById('businessNameHeader');
+  if (businessNameEl && settings.businessName) {
+    businessNameEl.textContent = settings.businessName;
+  }
 
-//  Settings Form Save (Backend Ready) 
-const settingsForm = document.getElementById("settingsForm");
+  const userNameEl = document.getElementById('userNameHeader');
+  if (userNameEl && settings.contactPerson) {
+    userNameEl.textContent = settings.contactPerson;
+  }
+
+  const syncStatusEl = document.getElementById('syncStatus');
+  if (syncStatusEl) {
+    syncStatusEl.textContent = settings.cloudBackup ? 'Online' : 'Offline';
+    syncStatusEl.style.color = settings.cloudBackup ? 'green' : 'red';
+  }
+
+  document.querySelectorAll('[data-currency]').forEach(el => {
+    el.textContent = settings.currency;
+  });
+}
+
+// ---------- Save Settings ----------
+const settingsForm = document.getElementById('settingsForm');
 
 async function saveSettings(e) {
   e?.preventDefault();
 
-  const settings = {
-    notifications: settingsForm?.notifications.checked ?? true,
-    currency: settingsForm?.currency.value ?? "NGN",
-    dateFormat: settingsForm?.dateFormat.value ?? "DD/MM/YYYY",
-    syncOnline: settingsForm?.syncOnline.checked ?? true,
+  const updatedSettings = {
+    businessName: settingsForm?.businessName?.value || '',
+    contactPerson: settingsForm?.contactPerson?.value || '',
+    email: settingsForm?.email?.value || '',
+    phone: settingsForm?.phone?.value || '',
+    businessCategory: settingsForm?.businessCategory?.value || '',
+    language: settingsForm?.language?.value || 'English',
+    currency: settingsForm?.currency?.value || 'NGN',
+    dateFormat: settingsForm?.dateFormat?.value || 'DD/MM/YYYY',
+    notifications: settingsForm?.notifications?.checked ?? true,
+    exportData: settingsForm?.exportData?.checked ?? false,
+    cloudBackup: settingsForm?.cloudBackup?.checked ?? false,
   };
 
   try {
-    const res = await fetch("/api/settings", {
-      method: "POST", // or PUT depending on your backend
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings),
-    });
+    const saved = await saveSettingsAPI(updatedSettings);
 
-    if (!res.ok) throw new Error("Failed to save settings");
+    // Save to localStorage for cross-tab updates
+    localStorage.setItem('bizboostSettings', JSON.stringify(saved));
 
-    showToast("✅ Settings saved successfully!", "success");
+    // Dispatch event for current tab
+    document.dispatchEvent(new CustomEvent('settingsApplied', { detail: saved }));
 
-    // Dispatch global event so dashboard can react
-    document.dispatchEvent(new CustomEvent("settingsApplied", { detail: settings }));
+    showToast('✅ Settings saved successfully!', 'success');
   } catch (err) {
     console.error(err);
-    showToast("❌ Error saving settings", "error");
+    showToast('❌ Error saving settings', 'error');
   }
 }
 
-settingsForm?.addEventListener("submit", saveSettings);
+settingsForm?.addEventListener('submit', saveSettings);
 
-//  Load + Apply Settings (from Backend) 
-async function loadSettings() {
-  try {
-    const res = await fetch("/api/settings");
-    if (!res.ok) throw new Error("Failed to load settings");
-
-    const saved = await res.json();
-    if (!saved) return;
-
-    if (settingsForm) {
-      settingsForm.notifications.checked = saved.notifications ?? true;
-      settingsForm.currency.value = saved.currency ?? "NGN";
-      settingsForm.dateFormat.value = saved.dateFormat ?? "DD/MM/YYYY";
-      settingsForm.syncOnline.checked = saved.syncOnline ?? true;
-    }
-
-    applySettingsToPage(saved);
-  } catch (err) {
-    console.error(err);
-    showToast("⚠️ Unable to load settings from server", "error");
-  }
-}
-
-function applySettingsToPage(settings) {
-  const syncStatusEl = document.getElementById("syncStatus");
-  if (syncStatusEl) {
-    syncStatusEl.textContent = settings.syncOnline ? "Online" : "Offline";
-    syncStatusEl.style.color = settings.syncOnline ? "green" : "red";
-  }
-}
-
-//  Live Previews 
-document.querySelector('input[name="notifications"]')?.addEventListener("change", e => {
-  showToast(e.target.checked ? "🔔 Notifications enabled" : "🔕 Notifications disabled");
-});
-document.querySelector("select[name='currency']")?.addEventListener("change", e => {
-  showToast(`💱 Currency changed to: ${e.target.value}`);
-});
-document.querySelector("select[name='dateFormat']")?.addEventListener("change", e => {
-  showToast(`📅 Date format set to: ${e.target.value}`);
+// ---------- Logout with Modal ----------
+document.getElementById('logoutBtn')?.addEventListener('click', () => {
+  openModal('logoutModal'); // Open the logout confirmation modal
 });
 
-//  Export / Sync actions 
-function downloadReceipt() {
-  const link = document.createElement("a");
-  link.href = "Assets/sample-receipt.pdf";
-  link.download = "Receipt.pdf";
-  link.click();
-  showToast("📄 Receipt downloaded", "success");
-}
-async function manualSync() {
+document.getElementById('confirmLogoutBtn')?.addEventListener('click', () => {
+  // Propagate logout to all tabs
+  localStorage.setItem('logoutAll', Date.now());
+  showToast('👋 Logged out', 'info');
+  window.location.href = 'signin.html';
+});
+
+document.getElementById('cancelLogoutBtn')?.addEventListener('click', () => {
+  closeModal('logoutModal');
+});
+
+// ---------- Manual Sync ----------
+document.querySelector("#exportModal .btn.primary")?.addEventListener("click", async () => {
   showToast("🔄 Sync started...", "info");
   try {
     const res = await fetch("/api/sync", { method: "POST" });
@@ -133,43 +104,62 @@ async function manualSync() {
     console.error(err);
     showToast("❌ Sync error", "error");
   }
+});
+
+// ---------- Download Receipt ----------
+document.querySelector("#receiptModal .btn.primary")?.addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.href = "Assets/sample-receipt.pdf";
+  link.download = "Receipt.pdf";
+  link.click();
+  showToast("📄 Receipt downloaded", "success");
+});
+
+// ---------- Cross-Tab Event Listener ----------
+window.addEventListener('storage', (event) => {
+  if (event.key === 'bizboostSettings') {
+    const settings = JSON.parse(event.newValue);
+    applySettingsToPage(settings);
+    showToast('⚡ Settings updated in another tab', 'info');
+  }
+
+  if (event.key === 'logoutAll') {
+    showToast('👋 Logged out from another session', 'info');
+    window.location.href = 'signin.html';
+  }
+});
+
+// ---------- Modal Functions ----------
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.add('active');
 }
-document.querySelector("#receiptModal .btn.primary")?.addEventListener("click", downloadReceipt);
-document.querySelector("#exportModal .btn.primary")?.addEventListener("click", manualSync);
 
-//  Logout 
-document.getElementById("logoutBtn")?.addEventListener("click", () => {
-  if (confirm("Are you sure you want to logout?")) {
-    showToast("👋 Logged out", "info");
-    window.location.href = "sign in.html";
-  }
-});
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.remove('active');
+}
 
-// Global Settings Listener 
-document.addEventListener("settingsApplied", e => {
-  const settings = e.detail;
-
-  // Example: update all currency fields
-  document.querySelectorAll("[data-currency]").forEach(el => {
-    el.textContent = settings.currency;
+// Close modal when clicking outside
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', e => {
+    if (e.target === modal) closeModal(modal.id);
   });
-
-  // Example: re-render charts if present
-  if (window.updateDashboardCharts) {
-    window.updateDashboardCharts(settings);
-  }
-
-  // Example: refresh KPIs if function exists
-  if (window.updateKPIs) {
-    window.updateKPIs(settings);
-  }
 });
 
-// Init 
-document.addEventListener("DOMContentLoaded", () => {
-  setActivePage(location.hash.replace("#", "") || "dashboard");
-  loadSettings();
-});
-window.addEventListener("hashchange", () => {
-  setActivePage(location.hash.replace("#", "") || "dashboard");
+// ---------- Initialize Settings ----------
+document.addEventListener('DOMContentLoaded', async () => {
+  const saved = localStorage.getItem('bizboostSettings');
+  if (saved) applySettingsToPage(JSON.parse(saved));
+
+  try {
+    const latest = await getSettings();
+    if (latest) {
+      applySettingsToPage(latest);
+      localStorage.setItem('bizboostSettings', JSON.stringify(latest));
+    }
+  } catch (err) {
+    console.error('Failed to load settings from backend', err);
+    showToast('⚠️ Could not load settings', 'error');
+  }
 });

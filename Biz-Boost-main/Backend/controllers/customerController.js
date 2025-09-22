@@ -65,7 +65,7 @@ exports.deleteCustomer = async (req, res) => {
 // Get customers with overdue payments
 exports.getOverduePayments = async (req, res) => {
   try {
-    const overdueCustomers = await Customer.find({ status: 'Overdue' });
+    const overdueCustomers = await Customer.find({ status: 'overdue' }); // lowercase matches schema enum
     res.status(200).json({ success: true, data: overdueCustomers });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -37,14 +37,14 @@ exports.getSummary = async (req, res) => {
 // GET /api/dashboard/quick-stats
 exports.getQuickStats = async (req, res) => {
   try {
-    const totalPurchase = await Sale.countDocuments(); // or Purchase model if you have one
+    const pendingOrders = await Sale.countDocuments({ status: "pending" });
     const pendingDelivery = await Delivery.countDocuments({ status: "pending" });
     const expiredProducts = await Product.countDocuments({ expiryDate: { $lt: new Date() } });
 
     res.status(200).json({
       success: true,
       data: {
-        totalPurchase,
+        pendingOrders,
         pendingDelivery,
         expiredProducts
       }
@@ -55,13 +55,16 @@ exports.getQuickStats = async (req, res) => {
   }
 };
 
-// GET /api/dashboard/pending-orders
-exports.getPendingOrders = async (req, res) => {
+// GET /api/dashboard/overdue-payments (detailed list)
+exports.getOverduePayments = async (req, res) => {
   try {
-    const orders = await Order.find({ status: "pending" });
-    res.status(200).json({ success: true, data: orders });
+    const overdue = await Customer.find({ outstandingBalance: { $gt: 0 } })
+      .select("name outstandingBalance")
+      .sort({ outstandingBalance: -1 });
+
+    res.status(200).json({ success: true, data: overdue });
   } catch (err) {
-    console.error("Pending orders error:", err);
+    console.error("Overdue payments error:", err);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 };
@@ -108,5 +111,78 @@ exports.getUserInfo = async (req, res) => {
   } catch (err) {
     console.error("User info error:", err);
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// ================= SALES ANALYTICS ================= //
+// GET /api/dashboard/sales-analytics?view=daily|monthly|yearly
+exports.getSalesAnalytics = async (req, res) => {
+  try {
+    const view = req.query.view || "monthly"; // daily | monthly | yearly
+    let groupId;
+
+    if (view === "daily") {
+      groupId = {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" },
+        day: { $dayOfMonth: "$createdAt" }
+      };
+    } else if (view === "yearly") {
+      groupId = { year: { $year: "$createdAt" } };
+    } else {
+      groupId = {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" }
+      };
+    }
+
+    const analytics = await Sale.aggregate([
+      { $match: { status: "completed" } },
+      {
+        $group: {
+          _id: groupId,
+          totalSales: { $sum: "$amount" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
+    ]);
+
+    res.status(200).json({ success: true, data: analytics });
+  } catch (err) {
+    console.error("Sales analytics error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// ================= OVERDUE PAYMENTS ANALYTICS ================= //
+// GET /api/dashboard/overdue-analytics
+exports.getOverdueAnalytics = async (req, res) => {
+  try {
+    const overdueCustomers = await Customer.find({ outstandingBalance: { $gt: 0 } });
+
+    const totalOverdue = overdueCustomers.reduce(
+      (sum, c) => sum + (c.outstandingBalance || 0),
+      0
+    );
+
+    // Group overdue by ranges — requires a "daysOverdue" field or logic from dueDate
+    const ranges = {
+      "0-30": overdueCustomers.filter(c => c.daysOverdue && c.daysOverdue <= 30).length,
+      "31-60": overdueCustomers.filter(c => c.daysOverdue && c.daysOverdue > 30 && c.daysOverdue <= 60).length,
+      "60+": overdueCustomers.filter(c => c.daysOverdue && c.daysOverdue > 60).length,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalOverdue,
+        customerCount: overdueCustomers.length,
+        ranges,
+      },
+    });
+  } catch (err) {
+    console.error("Overdue analytics error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { getSettings, saveSettings } = require('../controllers/settingsController');
 
-// Route to get or save settings
+// GET current settings / POST to save settings
 router.route('/')
   .get(getSettings)
   .post(saveSettings);

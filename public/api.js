@@ -1,12 +1,12 @@
 // api.js
-// =================================================
+
 // CONFIG
-// =================================================
+
 const BASE_URL = "https://vephla-capstone-project-backend-and.onrender.com/api";
 
-// =================================================
+
 // HELPERS
-// =================================================
+
 async function handleFetch(res) {
   const text = await res.text();
 
@@ -77,9 +77,10 @@ export async function resetPassword(email, otp, newPassword) {
   return handleFetch(res);
 }
 
-// =================================================
-// DASHBOARD
-// =================================================
+
+// ===================== DASHBOARD APIs ===================== //
+
+// GET summary (totals: sales, owed, delivery)
 export async function getDashboardSummary() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/summary`, {
@@ -88,6 +89,7 @@ export async function getDashboardSummary() {
   return handleFetch(res);
 }
 
+// GET quick stats (pending delivery, pending orders, expired products)
 export async function getQuickStats() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/quick-stats`, {
@@ -96,16 +98,17 @@ export async function getQuickStats() {
   return handleFetch(res);
 }
 
-// dashboard pending orders
-export async function getPendingOrdersDashboard() {
+// GET overdue payments (customers owing money)
+export async function getOverduePayments() {
   const token = getAuthToken();
-  const res = await fetch(`${BASE_URL}/dashboard/pending-orders`, {
+  const res = await fetch(`${BASE_URL}/dashboard/overdue-payments`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleFetch(res);
 }
 
-export async function getDashboardLowStockProducts() {
+// GET low stock products
+export async function getLowStockProductsDashboard() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/low-stock`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -113,6 +116,7 @@ export async function getDashboardLowStockProducts() {
   return handleFetch(res);
 }
 
+// GET top customers
 export async function getTopCustomersDashboard() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/top-customers`, {
@@ -121,6 +125,7 @@ export async function getTopCustomersDashboard() {
   return handleFetch(res);
 }
 
+// GET user info (for greeting: name + business name)
 export async function getUserInfo() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/dashboard/user-info`, {
@@ -129,7 +134,6 @@ export async function getUserInfo() {
   return handleFetch(res);
 }
 
-/// ================= CUSTOMERS ==================
 
 // Get all customers
 export async function getCustomers() {
@@ -172,17 +176,76 @@ export async function deleteCustomer(id) {
   return handleFetch(res);
 }
 
-// Get overdue payments
+// Get overdue customers
 export async function getOverdueCustomers() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/customers/overdue`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return handleFetch(res);
+  const data = await handleFetch(res);
+
+  return data;
 }
+
+// ======= Utility: Toast Notification =======
+export function dueToast(message, type = 'success', duration = 4000) {
+  // Create toast container if it doesn't exist
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.style.position = 'fixed';
+    container.style.top = '20px';
+    container.style.right = '20px';
+    container.style.zIndex = '9999';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '10px';
+    document.body.appendChild(container);
+  }
+
+  // Create the toast
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+
+  // Toast styles
+  toast.style.minWidth = '200px';
+  toast.style.padding = '10px 15px';
+  toast.style.borderRadius = '6px';
+  toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+  toast.style.fontWeight = '500';
+  toast.style.color = type === 'warning' ? '#000' : '#fff';
+  toast.style.backgroundColor =
+    type === 'success' ? '#28a745' :
+    type === 'error' ? '#dc3545' :
+    type === 'warning' ? '#ffc107' : '#17a2b8';
+  
+  toast.style.opacity = '0';
+  toast.style.transform = 'translateX(100%)';
+  toast.style.transition = 'all 0.4s ease';
+
+  // Append to container
+  container.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(0)';
+  });
+
+  // Animate out
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+}
+
 // =================================================
-// INVENTORY
+// INVENTORY API
 // =================================================
+
 // Get all products
 export async function getProducts() {
   const token = getAuthToken();
@@ -245,7 +308,14 @@ export async function getLowStockProducts() {
   const res = await fetch(`${BASE_URL}/inventory/low-stock`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return handleFetch(res);
+  const data = await handleFetch(res);
+
+  // Optional: trigger toast if low-stock products exist
+  if (data.count > 0) {
+    showToast();
+  }
+
+  return data;
 }
 
 // Get expired products
@@ -254,8 +324,49 @@ export async function getExpiredProducts() {
   const res = await fetch(`${BASE_URL}/inventory/expired`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return handleFetch(res);
+  const data = await handleFetch(res);
+
+  // Optional: trigger toast if expired products exist
+  if (data.count > 0) {
+    showToast();
+  }
+
+  return data;
 }
+
+// Get out-of-stock products (optional endpoint if needed)
+export async function getOutOfStockProducts() {
+  const token = getAuthToken();
+  const res = await fetch(`${BASE_URL}/inventory/low-stock`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await handleFetch(res);
+
+  const outOfStock = data.data.filter(p => p.stockLevel === 0);
+  if (outOfStock.length > 0) {
+    showToast();
+  }
+
+  return { count: outOfStock.length, data: outOfStock };
+}
+
+// Utility: show toast notifications
+function showToast(message, duration = 4000) {
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("visible");
+  }, 100); // trigger CSS transition
+
+  setTimeout(() => {
+    toast.classList.remove("visible");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
 // =================================================
 // DELIVERIES API
 // =================================================
@@ -360,8 +471,7 @@ export async function addAgentAPI(agent) {
 }
 
 
-// SUPPLIERS API 
-does this make it possible?
+
 // ================= SUPPLIERS API =================
 const SUPPLIERS_URL = `${BASE_URL}/suppliers`;
 
@@ -612,23 +722,27 @@ export async function getPendingOrdersSales() {
 // =================================================
 // SETTINGS
 // =================================================
+
+// Get current settings
 export async function getSettings() {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/settings`, {
-    headers: { Authorization: `Bearer ${token}` },
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` }
   });
   return handleFetch(res);
 }
 
+// Save / update settings
 export async function saveSettings(settings) {
   const token = getAuthToken();
   const res = await fetch(`${BASE_URL}/settings`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify(settings),
+    body: JSON.stringify(settings)
   });
   return handleFetch(res);
 }

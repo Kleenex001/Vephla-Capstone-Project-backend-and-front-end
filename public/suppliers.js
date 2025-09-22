@@ -192,3 +192,11 @@ filterCategory.addEventListener("change", renderSuppliers);
 
 // --------------------- INITIALIZE ---------------------
 document.addEventListener("DOMContentLoaded", loadSuppliers);
+
+window.addEventListener('storage', (event) => {
+  if (event.key === 'logoutAll') {
+    showToast('👋 Logged out from another session', 'info');
+    window.location.href = 'sign in.html';
+  }
+});
+

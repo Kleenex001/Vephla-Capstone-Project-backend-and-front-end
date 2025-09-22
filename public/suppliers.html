@@ -90,10 +90,10 @@
                 <th>Supplier Name</th>
                 <th>Category</th>
                 <th>Lead Time</th>
-                <th>Purchase Status</th>
                 <th>Email</th>
-                <th>Phone</th>
+                <th>Phone No.</th>
                 <th>Address</th>
+                <th>Product status</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -134,7 +134,7 @@
         </select>
 
         <label>Lead Time</label>
-        <input type="number" id="leadTime" placeholder="e.g. 3" min="0" required />
+        <input type="number" id="leadTime" placeholder="e.g. 3 days" min="0" required />
 
         <label>Email</label>
         <input type="email" id="supplierEmail" placeholder="Enter supplier email" required />
@@ -150,8 +150,9 @@
       </form>
     </div>
   </div>
-
-  <script src="suppliers.js" defer></script>
+  <script src="config.js"></script>
+  <script type="module" src="api.js"></script>
+  <script type="module" src="suppliers.js" defer></script>
 
   <script>
   document.addEventListener("DOMContentLoaded", () => {

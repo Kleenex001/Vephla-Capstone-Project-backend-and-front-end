@@ -9,7 +9,7 @@ const {
   getOverduePayments
 } = require('../controllers/customerController');
 
-// Get overdue payments
+// Get customers with overdue payments
 router.get('/overdue', getOverduePayments);
 
 // Get all customers / Add a new customer

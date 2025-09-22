@@ -49,7 +49,11 @@
     <header class="topbar">
        <div>
         <br><br>
-        <h2 id="greetingHeader" class="greeting"></h2>
+        <div class="dashboard-header">
+        <h2 id="greetingName"></h2>
+        <p id="businessName"></p>
+        </div>
+
         <br><br>
         </div>
         <span class="spacer"></span>
@@ -128,8 +132,8 @@
             <ol id="quickStats"></ol>
           </div>
           <div class="card">
-            <h4>Pending Orders</h4>
-            <ol id="pendingOrdersList"></ol>
+            <h4>Overdue Payments</h4>
+            <ol id="overduePaymentLists"></ol>
           </div>
           <div class="card">
             <h4>Low Stock Products</h4>
@@ -145,7 +149,7 @@
   </main>
 
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script type="module" src="api.js"></script>
 
   <script type="module" src="dashboard.js" defer></script>
 

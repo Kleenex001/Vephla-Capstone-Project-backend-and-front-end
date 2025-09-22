@@ -3,19 +3,26 @@ const router = express.Router();
 const {
   getSummary,
   getQuickStats,
-  getPendingOrders,
+  getOverduePayments,   // keeps your existing endpoint
   getLowStockProducts,
   getTopCustomers,
-  getUserInfo
+  getUserInfo,
+  getSalesAnalytics,    // new
+  getOverdueAnalytics,  // new
 } = require('../controllers/dashboardController');
+
 const { protect } = require('../middleware/authMiddleware');
 
-// Protected dashboard routes
+// Dashboard routes
 router.get('/summary', protect, getSummary);
 router.get('/quick-stats', protect, getQuickStats);
-router.get('/pending-orders', protect, getPendingOrders);
+router.get('/overdue-payments', protect, getOverduePayments);
 router.get('/low-stock', protect, getLowStockProducts);
 router.get('/top-customers', protect, getTopCustomers);
 router.get('/user-info', protect, getUserInfo);
+
+// Analytics routes
+router.get('/sales-analytics', protect, getSalesAnalytics);
+router.get('/overdue-analytics', protect, getOverdueAnalytics);
 
 module.exports = router;

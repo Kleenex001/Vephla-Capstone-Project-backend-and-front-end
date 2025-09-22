@@ -42,112 +42,99 @@
 
   <!-- Main -->
   <main class="content">
-    <!-- Topbar -->
     <header class="topbar">
-        <div>
-          <strong>Settings</strong><br>
-        </div>
-        <span class="spacer"></span>
-        <img src="Assets/logo.png" alt="bizboost logo" width="70px;" />
+      <div><strong>Settings</strong></div>
+      <span class="spacer"></span>
+      <img src="Assets/logo.png" alt="BizBoost Logo" width="70"/>
     </header>
 
-    <!-- SETTINGS PAGE -->
     <section id="settings" class="page visible">
-      <h1></h1>
-
-      <!-- Account and Profile -->
-      <div class="card settings-card">
-        <h3>Account And Profile</h3>
-        <div class="form-grid">
-          <input type="text" placeholder="Business Name">
-          <input type="text" placeholder="Contact Person">
-          <input type="email" placeholder="Email Address">
-          <input type="text" placeholder="Phone Number">
-          <input type="text" placeholder="Business Category">
-          <select>
-            <option>Language</option>
-            <option>English</option>
-            <option>Spanish</option>
-            <option>French</option>
-            <option>German</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Subscription and Billing + Data and Backup -->
-      <div class="grid-two">
+      <form id="settingsForm">
+        <!-- Account and Profile -->
         <div class="card settings-card">
-          <h3>Subscription And Billing</h3>
-          <p>Current Plan</p>
-          <h4>Pro Plan</h4>
-          <div class="btn-group">
-            <button class="btn primary" onclick="openModal('upgradeModal')">Upgrade Plan</button>
-            <button class="btn secondary" onclick="openModal('receiptModal')">Download Receipt</button>
+          <h3>Account And Profile</h3>
+          <div class="form-grid">
+            <input type="text" name="businessName" placeholder="Business Name" required>
+            <input type="text" name="contactPerson" placeholder="Contact Person" required>
+            <input type="email" name="email" placeholder="Email Address" required>
+            <input type="text" name="phone" placeholder="Phone Number">
+            <input type="text" name="businessCategory" placeholder="Business Category">
+            <select name="language">
+              <option value="">Select Language</option>
+              <option value="English">English</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+            </select>
           </div>
         </div>
 
-        <div class="card settings-card">
-          <h3>Data And Backup</h3>
-          <p>Sync Status <strong id="syncStatus">Online</strong></p>
-          <br>
-          <div class="checkbox-group">
-            <label><input type="checkbox" id="exportCheck"> Export Data</label>
-            <label><input type="checkbox"> Cloud Backup</label>
+        <!-- Subscription and Billing + Data and Backup -->
+        <div class="grid-two">
+          <div class="card settings-card">
+            <h3>Subscription And Billing</h3>
+            <p>Current Plan</p>
+            <h4>Pro Plan</h4>
+            <div class="btn-group">
+              <button type="button" class="btn primary" onclick="openModal('upgradeModal')">Upgrade Plan</button>
+              <button type="button" class="btn secondary" onclick="openModal('receiptModal')">Download Receipt</button>
+            </div>
           </div>
-          <button class="btn small" onclick="openModal('exportModal')">Manual Sync</button>
-        </div>
-      </div>
 
-      <!-- App Preferences + Supports and Help -->
-      <div class="grid-two">
-        <div class="card settings-card">
-          <h3>App Preferences</h3>
-          <select>
-            <option>Currency</option>
-            <option>USD</option>
-            <option>EUR</option>
-            <option>GBP</option>
-            <option>JPY</option>
-          </select>
-          <select>
-            <option>Date Format</option>
-            <option>MM/DD/YYYY</option>
-            <option>DD/MM/YYYY</option>
-            <option>YYYY/MM/DD</option>
-          </select>
-          <br>
-          <label><input type="checkbox"> Notifications</label>
-          <select>
-            <option>Default Report Range</option>
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-            <option>This Month</option>
-            <option>Last Month</option>
-          </select>
+          <div class="card settings-card">
+            <h3>Data And Backup</h3>
+            <p>Sync Status <strong id="syncStatus">Online</strong></p>
+            <div class="checkbox-group">
+              <label><input type="checkbox" name="exportData"> Export Data</label>
+              <label><input type="checkbox" name="cloudBackup"> Cloud Backup</label>
+            </div>
+            <button type="button" class="btn small" onclick="openModal('exportModal')">Manual Sync</button>
+          </div>
         </div>
 
-        <div class="card settings-card">
-          <h3>Supports And Help</h3>
-          <ul class="support-links">
-            <li>❓ FAQs</li>
-            <li>📞 Contact Support</li>
-            <li>⚠ Report a problem</li>
-            <li>📑 Terms and Conditions</li>
-            <li>🔒 Privacy Policy</li>
-            <li>⬆ Version</li>
-          </ul>
-        </div>
-      </div>
+        <!-- App Preferences -->
+        <div class="grid-two">
+          <div class="card settings-card">
+            <h3>App Preferences</h3>
+            <select name="currency">
+              <option value="">Select Currency</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="JPY">JPY</option>
+            </select>
+            <select name="dateFormat">
+              <option value="">Select Date Format</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="YYYY/MM/DD">YYYY/MM/DD</option>
+            </select>
+            <label><input type="checkbox" name="notifications"> Enable Notifications</label>
+          </div>
 
-      <!-- Save + Logout -->
-      <div class="btn-row">
-        <button class="btn primary">Save Changes</button>
-        <button class="btn secondary">Logout</button>
-      </div>
+          <div class="card settings-card">
+            <h3>Support And Help</h3>
+            <ul class="support-links">
+              <li>❓ FAQs</li>
+              <li>📞 Contact Support</li>
+              <li>⚠ Report a problem</li>
+              <li>📑 Terms and Conditions</li>
+              <li>🔒 Privacy Policy</li>
+              <li>⬆ Version</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Save + Logout -->
+        <div class="btn-row">
+          <button type="submit" class="btn primary">Save Changes</button>
+          <button type="button" class="btn secondary" id="logoutBtn">Logout</button>
+        </div>
+      </form>
     </section>
   </main>
 
-  <!-- MODALS -->
+  <!-- Modals -->
   <div class="modal" id="upgradeModal">
     <div class="modal-content">
       <h2>Upgrade Plan</h2>
@@ -180,8 +167,19 @@
       </div>
     </div>
   </div>
+<div class="modal" id="logoutModal">
+  <div class="modal-content">
+    <h2>Confirm Logout</h2>
+    <p>Are you sure you want to log out?</p>
+    <div class="btn-row">
+      <button class="btn primary" id="confirmLogoutBtn">Yes, Logout</button>
+      <button class="btn secondary" id="cancelLogoutBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script type="module" src="api.js"></script>
 
   <script>
     // Sidebar navigation
@@ -191,11 +189,6 @@
       });
       document.querySelector(`.nav-link[data-target="${page}"]`).classList.add('active');
     }
-
-    // Go Back button
-    document.getElementById('goBackBtn').addEventListener('click', () => {
-      window.history.back();
-    });
 
     // Modal functions
     function openModal(id) {
@@ -214,7 +207,7 @@
       });
     });
   </script>
-    <script src="settings.js" defer></script>
+    <script type="module" src="settings.js" defer></script>
 
       <script>
   document.addEventListener("DOMContentLoaded", () => {

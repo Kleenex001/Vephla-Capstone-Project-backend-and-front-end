@@ -7,19 +7,22 @@ const {
   updateProduct,
   deleteProduct,
   getLowStockProducts,
-  getExpiredProducts
+  getOutOfStockProducts,
+  getExpiredProducts,
+  getNotificationProducts
 } = require('../controllers/inventoryController');
 
-// Routes for filtered views first to avoid conflicts with /products/:id
+// --- Notification/Filtered routes first to avoid conflicts ---
 router.get('/low-stock', getLowStockProducts);
+router.get('/out-of-stock', getOutOfStockProducts);
 router.get('/expired', getExpiredProducts);
+router.get('/notifications', getNotificationProducts);
 
-// Route for getting all products and adding a new product
+// --- CRUD routes ---
 router.route('/products')
   .get(getAllProducts)
   .post(addNewProduct);
 
-// Route for getting, updating, or deleting a specific product by ID
 router.route('/products/:id')
   .get(getProductById)
   .put(updateProduct)

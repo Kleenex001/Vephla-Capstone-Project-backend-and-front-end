@@ -51,6 +51,55 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
+// === Toast Container ===
+let toastContainer = document.getElementById('toastContainer');
+if (!toastContainer) {
+  toastContainer = document.createElement('div');
+  toastContainer.id = 'toastContainer';
+  toastContainer.style.position = 'fixed';
+  toastContainer.style.bottom = '20px';
+  toastContainer.style.right = '20px';
+  toastContainer.style.display = 'flex';
+  toastContainer.style.flexDirection = 'column-reverse'; // newest on top
+  toastContainer.style.gap = '10px';
+  toastContainer.style.zIndex = 9999;
+  document.body.appendChild(toastContainer);
+}
+
+// === Toast Notifications ===
+function showToast(message, type = 'success', duration = 4000) {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+
+  toast.style.backgroundColor = type === 'error' ? '#dc3545' :
+                               type === 'warning' ? '#ffc107' :
+                               '#28a745';
+  toast.style.color = '#fff';
+  toast.style.padding = '10px 15px';
+  toast.style.borderRadius = '5px';
+  toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+  toast.style.fontSize = '14px';
+  toast.style.opacity = '0';
+  toast.style.transition = 'opacity 0.3s, transform 0.3s';
+  toast.style.transform = 'translateX(100%)';
+
+  toastContainer.appendChild(toast);
+
+  // Animate in
+  setTimeout(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(0)';
+  }, 100);
+
+  // Animate out and remove
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
 // === Tabs ===
 const tabs = document.querySelectorAll('.tab-buttons a');
 const contents = document.querySelectorAll('.tab-content');
@@ -82,6 +131,7 @@ async function fetchProducts() {
 
     await fetchLowStockAndExpired();
     renderTables();
+    notifyLowStockAndExpired();
   } catch (err) {
     console.error('Failed to fetch products', err);
     products = [];
@@ -120,6 +170,17 @@ async function fetchLowStockAndExpired() {
     lowStockProducts = [];
     expiredProducts = [];
   }
+}
+
+// === Notify user for low stock & expired ===
+function notifyLowStockAndExpired() {
+  lowStockProducts.forEach(p => {
+    showToast(`Low stock alert: ${p.name} (${p.stock} left)`, 'warning', 5000);
+  });
+
+  expiredProducts.forEach(p => {
+    showToast(`Expired product alert: ${p.name}`, 'error', 5000);
+  });
 }
 
 // === Render Tables ===
@@ -215,18 +276,19 @@ addProductForm?.addEventListener('submit', async e => {
   const unitPrice = parseFloat(document.getElementById('unitPrice').value);
 
   if (!productName || isNaN(stockLevel) || isNaN(reorderLevel) || !category || isNaN(unitPrice) || !expiryDate) {
-    alert('Please fill in all required fields.');
+    showToast('Please fill in all required fields correctly', 'warning');
     return;
   }
 
   try {
     await addProduct({ productName, stockLevel, reorderLevel, expiryDate, category, unitPrice });
+    showToast(`Product "${productName}" added successfully`);
     addProductForm.reset();
     addProductModal.classList.remove('show');
     await fetchProducts();
   } catch (err) {
     console.error('Failed to add product', err);
-    alert(err?.message || 'Failed to add product');
+    showToast('Failed to add product', 'error');
   }
 });
 
@@ -261,17 +323,18 @@ editProductForm?.addEventListener('submit', async e => {
   };
 
   if (!updatedProduct.productName || isNaN(updatedProduct.stockLevel) || isNaN(updatedProduct.reorderLevel) || !updatedProduct.category || isNaN(updatedProduct.unitPrice)) {
-    alert('Please fill in all required fields correctly.');
+    showToast('Please fill in all required fields correctly', 'warning');
     return;
   }
 
   try {
     await updateProduct(selectedProductId, updatedProduct);
+    showToast(`Product "${updatedProduct.productName}" updated successfully`);
     editProductModal.classList.remove('show');
     await fetchProducts();
   } catch (err) {
     console.error('Failed to update product', err);
-    alert('Failed to update product');
+    showToast('Failed to update product', 'error');
   }
 });
 
@@ -286,11 +349,13 @@ cancelDelete?.addEventListener('click', () => deleteModal.classList.remove('show
 confirmDelete?.addEventListener('click', async () => {
   if (deleteIndex !== null) {
     try {
+      const deletedName = products[deleteIndex].name;
       await deleteProduct(products[deleteIndex].id);
+      showToast(`Product "${deletedName}" deleted successfully`);
       await fetchProducts();
     } catch (err) {
       console.error('Failed to delete product', err);
-      alert('Failed to delete product');
+      showToast('Failed to delete product', 'error');
     }
   }
   deleteModal.classList.remove('show');
@@ -298,3 +363,11 @@ confirmDelete?.addEventListener('click', async () => {
 
 // === Initial Fetch ===
 fetchProducts();
+
+window.addEventListener('storage', (event) => {
+  if (event.key === 'logoutAll') {
+    showToast('👋 Logged out from another session', 'info');
+    window.location.href = 'signin.html';
+  }
+});
+
