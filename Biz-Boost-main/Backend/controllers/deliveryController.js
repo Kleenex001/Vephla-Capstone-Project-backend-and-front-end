@@ -6,7 +6,7 @@ const Delivery = require('../models/Delivery');
 exports.getAllDeliveries = async (req, res) => {
   try {
     const { status } = req.query;
-    const query = { user: req.user._id }; // filter by user
+    const query = { userId: req.user._id }; // updated to match schema
     if (status) query.status = status.toLowerCase();
 
     const deliveries = await Delivery.find(query).sort({ date: -1 });
@@ -20,7 +20,7 @@ exports.getAllDeliveries = async (req, res) => {
 // @route   GET /api/deliveries/:id
 exports.getDeliveryById = async (req, res) => {
   try {
-    const delivery = await Delivery.findOne({ _id: req.params.id, user: req.user._id });
+    const delivery = await Delivery.findOne({ _id: req.params.id, userId: req.user._id });
     if (!delivery) {
       return res.status(404).json({ success: false, error: 'Delivery not found' });
     }
@@ -55,7 +55,7 @@ exports.addNewDelivery = async (req, res) => {
         deliveriesCompleted: 0
       },
       status: status ? status.toLowerCase() : 'pending',
-      user: req.user._id // attach logged-in user
+      userId: req.user._id // updated to match schema
     });
 
     res.status(201).json({ success: true, data: newDelivery });
@@ -86,7 +86,7 @@ exports.updateDelivery = async (req, res) => {
     }
 
     const delivery = await Delivery.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
+      { _id: req.params.id, userId: req.user._id }, // updated
       updateData,
       { new: true, runValidators: true }
     );
@@ -105,7 +105,7 @@ exports.updateDelivery = async (req, res) => {
 // @route   DELETE /api/deliveries/:id
 exports.deleteDelivery = async (req, res) => {
   try {
-    const delivery = await Delivery.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    const delivery = await Delivery.findOneAndDelete({ _id: req.params.id, userId: req.user._id }); // updated
 
     if (!delivery) {
       return res.status(404).json({ success: false, error: 'Delivery not found' });
@@ -122,7 +122,7 @@ exports.deleteDelivery = async (req, res) => {
 exports.getTopAgents = async (req, res) => {
   try {
     const topAgents = await Delivery.aggregate([
-      { $match: { user: req.user._id, status: "completed" } }, // filter by user
+      { $match: { userId: req.user._id, status: "completed" } }, // updated
       {
         $group: {
           _id: { name: "$agent.name", phone: "$agent.phone" },

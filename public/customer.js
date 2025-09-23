@@ -3,7 +3,7 @@ import {
   addCustomer as addCustomerAPI,
   updateCustomer as updateCustomerAPI,
   deleteCustomer as deleteCustomerAPI,
-  dueToast, // <-- updated toast
+  dueToast,
 } from './api.js';
 
 // ---------- State ----------
@@ -30,32 +30,16 @@ const custYearlyTab = document.getElementById("custYearlyTab");
 // ---------- Inject CSS ----------
 const styleEl = document.createElement('style');
 styleEl.textContent = `
-#toastContainer {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.toast { 
-  padding: 10px 14px; border-radius: 6px; 
-  opacity: 0; transform: translateX(100%); 
-  transition: transform 0.4s ease, opacity 0.4s ease; 
-  min-width: 200px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); 
-  color: #fff; 
-}
-.toast.show { 
-  opacity: 1; 
-  transform: translateX(0); 
-}
+#toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+.toast { padding: 10px 14px; border-radius: 6px; opacity: 0; transform: translateX(100%); transition: transform 0.4s ease, opacity 0.4s ease; min-width: 200px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); color: #fff; }
+.toast.show { opacity: 1; transform: translateX(0); }
 .toast.success { background-color: #28a745; }
 .toast.error { background-color: #dc3545; }
 .toast.warning { background-color: #ffc107; color: #000; }
 
 .status { padding: 4px 8px; border-radius: 4px; font-weight: 500; text-transform: capitalize; }
 .status.paid { background-color: rgba(40,167,69,0.2); color: #28a745; }
+.status.owed { background-color: rgba(255,193,7,0.2); color: #ffc107; }
 .status.overdue { background-color: rgba(220,53,69,0.2); color: #dc3545; }
 
 .btn-paid, .btn-delete { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; font-size: 0.6rem; transition: 0.3s; }
@@ -81,18 +65,18 @@ if (!toastContainer) {
   document.body.appendChild(toastContainer);
 }
 
-// ---------- Normalize Status ----------
-function normalizeStatus(status) {
-  if (!status) return "pending";
-  const s = status.toLowerCase();
-  if (["paid", "active"].includes(s)) return "paid";
-  if (["owed", "overdue"].includes(s)) return "overdue";
-  return "pending";
+// ---------- Status Calculation ----------
+function calcStatus(customer) {
+  if (customer.status === 'paid') return 'paid';
+  const today = new Date();
+  const payDate = new Date(customer.paymentDate);
+  if (payDate < today) return 'overdue';
+  return 'owed';
 }
 
 // ---------- Notify Overdue ----------
 function notifyOverdue() {
-  const overdueCustomers = customers.filter(c => c.status === 'overdue');
+  const overdueCustomers = customers.filter(c => calcStatus(c) === 'overdue');
   if (overdueCustomers.length === 0) return;
   const names = overdueCustomers.map(c => c.customerName).join(", ");
   dueToast(`⚠️ Overdue Payment: ${names}`, "warning", 6000);
@@ -102,7 +86,7 @@ function notifyOverdue() {
 async function fetchCustomers() {
   try {
     const res = await getCustomers();
-    customers = res.data.map(c => ({ ...c, status: normalizeStatus(c.status) }));
+    customers = res.data;
     renderCustomers();
     updateKPIs();
     updateTopCustomers();
@@ -115,10 +99,9 @@ async function fetchCustomers() {
 }
 
 async function addCustomer(newCustomer) {
-  newCustomer.status = normalizeStatus(newCustomer.status);
   try {
     const res = await addCustomerAPI(newCustomer);
-    customers.push({ ...res.data, status: normalizeStatus(res.data.status) });
+    customers.push(res.data);
     renderCustomers();
     updateKPIs();
     updateTopCustomers();
@@ -132,11 +115,10 @@ async function addCustomer(newCustomer) {
 }
 
 async function updateCustomer(id, data) {
-  if (data.status) data.status = normalizeStatus(data.status);
   try {
     const res = await updateCustomerAPI(id, data);
     const idx = customers.findIndex(c => c._id === id);
-    if (idx !== -1) customers[idx] = { ...res.data, status: normalizeStatus(res.data.status) };
+    if (idx !== -1) customers[idx] = res.data;
     renderCustomers();
     updateKPIs();
     updateTopCustomers();
@@ -171,12 +153,14 @@ function renderCustomers() {
   customerTableBody.innerHTML = '';
 
   const filtered = customers.filter(c => {
-    if (filter !== 'all' && c.status !== filter) return false;
+    const status = calcStatus(c);
+    if (filter !== 'all' && status !== filter) return false;
     if (search && !c.customerName.toLowerCase().includes(search)) return false;
     return true;
   });
 
   filtered.forEach((cust, index) => {
+    const status = calcStatus(cust);
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${index + 1}</td>
@@ -184,9 +168,9 @@ function renderCustomers() {
       <td>₦${cust.packageWorth.toLocaleString()}</td>
       <td>${cust.quantity}</td>
       <td>${new Date(cust.paymentDate).toLocaleDateString()}</td>
-      <td><span class="status ${cust.status}">${cust.status}</span></td>
+      <td><span class="status ${status}">${status}</span></td>
       <td>
-        ${cust.status === 'overdue' ? `<button class="btn-paid" onclick="markPaid('${cust._id}')">-Paid-</button>` : ''}
+        ${status === 'overdue' || status === 'owed' ? `<button class="btn-paid" onclick="markPaid('${cust._id}')">-Paid-</button>` : ''}
         <button class="btn-delete" onclick="deleteCustomer('${cust._id}')">Delete</button>
       </td>
     `;
@@ -197,16 +181,15 @@ function renderCustomers() {
 // ---------- KPIs ----------
 function updateKPIs() {
   let totalPaid = 0, totalOwed = 0, totalOverdue = 0;
-  const today = new Date();
-
   customers.forEach(c => {
-    if (c.status === 'paid') totalPaid += c.packageWorth;
-    else if (c.status === 'overdue') {
+    const status = calcStatus(c);
+    if (status === 'paid') totalPaid += c.packageWorth;
+    else if (status === 'owed') totalOwed += c.packageWorth;
+    else if (status === 'overdue') {
       totalOwed += c.packageWorth;
-      if (new Date(c.paymentDate) < today) totalOverdue += c.packageWorth;
+      totalOverdue += c.packageWorth;
     }
   });
-
   kpiPaid.textContent = "₦" + totalPaid.toLocaleString();
   kpiOwed.textContent = "₦" + totalOwed.toLocaleString();
   kpiOverdue.textContent = "₦" + totalOverdue.toLocaleString();
@@ -227,11 +210,13 @@ function updateTopCustomers() {
 const ctxCust = document.getElementById("customerOverdueChart")?.getContext("2d");
 const custMonthlyData = [];
 const custYearlyData = [];
+const monthsLabels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const lastYears = Array.from({length: 8}, (_,i)=> new Date().getFullYear() - 7 + i);
 
 const customerOverdueChart = new Chart(ctxCust, {
   type: "line",
   data: {
-    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"],
+    labels: monthsLabels,
     datasets: [{
       label: "Overdue Payment",
       data: custMonthlyData,
@@ -254,23 +239,32 @@ const customerOverdueChart = new Chart(ctxCust, {
 });
 
 function updateCharts() {
-  const monthly = Array(8).fill(0);
+  const monthly = Array(12).fill(0);
   const yearly = Array(8).fill(0);
   const currentYear = new Date().getFullYear();
 
   customers.forEach(c => {
-    if (c.status === 'overdue') {
+    const status = calcStatus(c);
+    if (status === 'overdue') {
       const date = new Date(c.paymentDate);
-      const month = date.getMonth();
-      const yearIndex = date.getFullYear() - currentYear + 7;
-      if (month >=0 && month < monthly.length) monthly[month] += c.packageWorth;
-      if (yearIndex >=0 && yearIndex < yearly.length) yearly[yearIndex] += c.packageWorth;
+      monthly[date.getMonth()] += c.packageWorth;
+
+      const yearIndex = date.getFullYear() - (currentYear - 7);
+      if (yearIndex >=0 && yearIndex < 8) yearly[yearIndex] += c.packageWorth;
     }
   });
 
   custMonthlyData.splice(0,custMonthlyData.length,...monthly);
   custYearlyData.splice(0,custYearlyData.length,...yearly);
-  customerOverdueChart.data.datasets[0].data = custMonthlyData;
+
+  if (custMonthlyTab.classList.contains("active")) {
+    customerOverdueChart.data.labels = monthsLabels;
+    customerOverdueChart.data.datasets[0].data = custMonthlyData;
+  } else {
+    customerOverdueChart.data.labels = lastYears;
+    customerOverdueChart.data.datasets[0].data = custYearlyData;
+  }
+
   customerOverdueChart.update();
 }
 
@@ -293,7 +287,7 @@ addCustomerForm.addEventListener('submit', e => {
     packageWorth: parseFloat(document.getElementById('packageWorth').value),
     quantity: parseInt(document.getElementById('quantity').value, 10),
     paymentDate: document.getElementById('paymentDate').value,
-    status: normalizeStatus(document.getElementById('Status').value)
+    status: 'owed'
   };
   addCustomer(newCustomer);
   addCustomerForm.reset();
@@ -306,6 +300,7 @@ searchInput.addEventListener('input', renderCustomers);
 
 // ---------- Tabs ----------
 custMonthlyTab.addEventListener("click", () => {
+  customerOverdueChart.data.labels = monthsLabels;
   customerOverdueChart.data.datasets[0].data = custMonthlyData;
   customerOverdueChart.update();
   custMonthlyTab.classList.add("active");
@@ -313,6 +308,7 @@ custMonthlyTab.addEventListener("click", () => {
 });
 
 custYearlyTab.addEventListener("click", () => {
+  customerOverdueChart.data.labels = lastYears;
   customerOverdueChart.data.datasets[0].data = custYearlyData;
   customerOverdueChart.update();
   custYearlyTab.classList.add("active");
@@ -328,7 +324,7 @@ document.getElementById("exportExcelBtn").addEventListener("click", () => {
     "Package Worth": c.packageWorth,
     "Quantity": c.quantity,
     "Payment Date": new Date(c.paymentDate).toLocaleDateString(),
-    "Status": c.status
+    "Status": calcStatus(c)
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Customers");
@@ -343,7 +339,7 @@ fetchCustomers();
 
 window.addEventListener('storage', (event) => {
   if (event.key === 'logoutAll') {
-    showToast('👋 Logged out from another session', 'info');
+    dueToast('👋 Logged out from another session', 'info');
     window.location.href = 'signin.html';
   }
 });

@@ -277,65 +277,109 @@ export async function getOutOfStockProducts() {
 // =================================================
 // DELIVERIES API
 // =================================================
+const DELIVERIES_URL = `${BASE_URL}/deliveries`;
+
+/**
+ * Fetch all deliveries, optionally filtered by status.
+ * @param {string} status - 'all' | 'pending' | 'completed' | 'cancelled'
+ */
 export async function getDeliveries(status = 'all') {
-  let url = `${BASE_URL}/deliveries`;
+  let url = DELIVERIES_URL;
   if (status !== 'all') url += `?status=${status}`;
   return fetchWithAuth(url);
 }
 
+/**
+ * Fetch a single delivery by ID
+ * @param {string} id
+ */
 export async function getDeliveryById(id) {
-  return fetchWithAuth(`${BASE_URL}/deliveries/${id}`);
+  return fetchWithAuth(`${DELIVERIES_URL}/${id}`);
 }
 
+/**
+ * Add a new delivery
+ * @param {Object} delivery
+ */
 export async function addDelivery(delivery) {
-  return fetchWithAuth(`${BASE_URL}/deliveries`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  return fetchWithAuth(DELIVERIES_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(delivery),
   });
 }
 
+/**
+ * Update an existing delivery by ID
+ * @param {string} id
+ * @param {Object} data
+ */
 export async function updateDelivery(id, data) {
-  return fetchWithAuth(`${BASE_URL}/deliveries/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
+  return fetchWithAuth(`${DELIVERIES_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
 }
 
+/**
+ * Delete a delivery by ID
+ * @param {string} id
+ */
 export async function deleteDelivery(id) {
-  return fetchWithAuth(`${BASE_URL}/deliveries/${id}`, { method: "DELETE" });
+  return fetchWithAuth(`${DELIVERIES_URL}/${id}`, { method: 'DELETE' });
 }
 
+/**
+ * Get top delivery agents for logged-in user
+ */
 export async function getTopDeliveryAgents() {
-  return fetchWithAuth(`${BASE_URL}/deliveries/top-agents`);
+  return fetchWithAuth(`${DELIVERIES_URL}/top-agents`);
 }
 
 // =================================================
 // AGENTS API
 // =================================================
+const AGENTS_URL = `${BASE_URL}/agents`;
+
+/**
+ * Fetch all agents
+ */
 export async function getAgents() {
-  return fetchWithAuth(`${BASE_URL}/agents`);
+  return fetchWithAuth(AGENTS_URL);
 }
 
+/**
+ * Add a new agent
+ * @param {Object} agent
+ */
 export async function addAgent(agent) {
-  return fetchWithAuth(`${BASE_URL}/agents`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  return fetchWithAuth(AGENTS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(agent),
   });
 }
 
+/**
+ * Update an agent by ID
+ * @param {string} id
+ * @param {Object} agent
+ */
 export async function updateAgent(id, agent) {
-  return fetchWithAuth(`${BASE_URL}/agents/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
+  return fetchWithAuth(`${AGENTS_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(agent),
   });
 }
 
+/**
+ * Delete an agent by ID
+ * @param {string} id
+ */
 export async function deleteAgent(id) {
-  return fetchWithAuth(`${BASE_URL}/agents/${id}`, { method: "DELETE" });
+  return fetchWithAuth(`${AGENTS_URL}/${id}`, { method: 'DELETE' });
 }
 
 // =================================================

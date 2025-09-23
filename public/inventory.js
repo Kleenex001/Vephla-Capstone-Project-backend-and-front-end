@@ -2,9 +2,7 @@ import {
   getProducts,
   addProduct,
   updateProduct,
-  deleteProduct,
-  getLowStockProducts,
-  getExpiredProducts
+  deleteProduct
 } from './api.js';
 
 // === DOM Elements ===
@@ -113,7 +111,7 @@ tabs.forEach(tab => {
   });
 });
 
-// === Fetch Products ===
+// === Fetch Products and categorize ===
 async function fetchProducts() {
   try {
     const resProducts = await getProducts();
@@ -129,7 +127,11 @@ async function fetchProducts() {
         }))
       : [];
 
-    await fetchLowStockAndExpired();
+    const today = new Date().toISOString().split('T')[0];
+
+    lowStockProducts = products.filter(p => p.stock <= p.reorder);
+    expiredProducts = products.filter(p => p.expiry && p.expiry < today);
+
     renderTables();
     notifyLowStockAndExpired();
   } catch (err) {
@@ -138,37 +140,6 @@ async function fetchProducts() {
     lowStockProducts = [];
     expiredProducts = [];
     renderTables();
-  }
-}
-
-// === Fetch Low Stock & Expired ===
-async function fetchLowStockAndExpired() {
-  try {
-    const resLow = await getLowStockProducts();
-    lowStockProducts = Array.isArray(resLow.data) ? resLow.data.map(p => ({
-      id: p._id,
-      name: p.productName,
-      stock: p.stockLevel,
-      reorder: p.reorderLevel,
-      price: p.unitPrice,
-      expiry: p.expiryDate,
-      category: p.category
-    })) : [];
-
-    const resExpired = await getExpiredProducts();
-    expiredProducts = Array.isArray(resExpired.data) ? resExpired.data.map(p => ({
-      id: p._id,
-      name: p.productName,
-      stock: p.stockLevel,
-      reorder: p.reorderLevel,
-      price: p.unitPrice,
-      expiry: p.expiryDate,
-      category: p.category
-    })) : [];
-  } catch (err) {
-    console.error('Failed to fetch low-stock or expired products', err);
-    lowStockProducts = [];
-    expiredProducts = [];
   }
 }
 
@@ -185,20 +156,18 @@ function notifyLowStockAndExpired() {
 
 // === Render Tables ===
 function renderTables() {
-  allProductsTable.innerHTML = '';
-  lowStockTable.innerHTML = '';
-  expiredTable.innerHTML = '';
-
   const today = new Date().toISOString().split('T')[0];
   const searchValue = searchInput.value.toLowerCase();
   const selectedCategory = categoryFilter.value;
 
-  const filtered = products.filter(p =>
+  // All Products
+  allProductsTable.innerHTML = '';
+  const filteredProducts = products.filter(p =>
     (selectedCategory === 'all' || p.category === selectedCategory) &&
     p.name.toLowerCase().includes(searchValue)
   );
 
-  filtered.forEach((p, i) => {
+  filteredProducts.forEach((p, i) => {
     let rowClass = '';
     const isLow = p.stock <= p.reorder;
     const isExpired = p.expiry && p.expiry < today;
@@ -220,14 +189,14 @@ function renderTables() {
         <button class="delete-btn" onclick="openDelete(${i})">Delete</button>
       </td>
     </tr>`;
-
     allProductsTable.insertAdjacentHTML('beforeend', row);
   });
 
   // Low Stock Table
+  lowStockTable.innerHTML = '';
   lowStockProducts
     .filter(p => (selectedCategory === 'all' || p.category === selectedCategory) &&
-      p.name.toLowerCase().includes(searchValue))
+                 p.name.toLowerCase().includes(searchValue))
     .forEach((p, i) => {
       const row = `<tr class="low-stock">
         <td>${i + 1}</td>
@@ -241,9 +210,10 @@ function renderTables() {
     });
 
   // Expired Table
+  expiredTable.innerHTML = '';
   expiredProducts
     .filter(p => (selectedCategory === 'all' || p.category === selectedCategory) &&
-      p.name.toLowerCase().includes(searchValue))
+                 p.name.toLowerCase().includes(searchValue))
     .forEach((p, i) => {
       const row = `<tr class="expired">
         <td>${i + 1}</td>
@@ -267,7 +237,6 @@ cancelAdd?.addEventListener('click', () => addProductModal.classList.remove('sho
 
 addProductForm?.addEventListener('submit', async e => {
   e.preventDefault();
-
   const productName = document.getElementById('productName').value.trim();
   const stockLevel = parseInt(document.getElementById('stockLevel').value, 10);
   const reorderLevel = parseInt(document.getElementById('reorderLevel').value, 10);
@@ -322,6 +291,7 @@ editProductForm?.addEventListener('submit', async e => {
     unitPrice: parseFloat(editProductForm.price.value)
   };
 
+ 
   if (!updatedProduct.productName || isNaN(updatedProduct.stockLevel) || isNaN(updatedProduct.reorderLevel) || !updatedProduct.category || isNaN(updatedProduct.unitPrice)) {
     showToast('Please fill in all required fields correctly', 'warning');
     return;
@@ -364,6 +334,7 @@ confirmDelete?.addEventListener('click', async () => {
 // === Initial Fetch ===
 fetchProducts();
 
+// === Listen for logout from other tabs ===
 window.addEventListener('storage', (event) => {
   if (event.key === 'logoutAll') {
     showToast('👋 Logged out from another session', 'info');

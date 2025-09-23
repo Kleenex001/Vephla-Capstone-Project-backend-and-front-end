@@ -1,5 +1,4 @@
 // routes/deliveryRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const {
@@ -13,6 +12,13 @@ const {
 
 const { protect } = require('../middleware/authMiddleware');
 
+// -------------------------
+// Delivery Routes
+// -------------------------
+
+// Get top delivery agents **before** :id route
+router.get('/top-agents', protect, getTopAgents);
+
 // Get all deliveries or add a new delivery
 router.route('/')
   .get(protect, getAllDeliveries)
@@ -23,9 +29,6 @@ router.route('/:id')
   .get(protect, getDeliveryById)
   .put(protect, updateDelivery)
   .delete(protect, deleteDelivery);
-
-// Get top delivery agents
-router.get('/top-agents', protect, getTopAgents);
 
 module.exports = router;
 
