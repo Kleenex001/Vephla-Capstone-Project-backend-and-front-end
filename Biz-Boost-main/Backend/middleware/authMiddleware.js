@@ -1,11 +1,12 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// Middleware to verify token
+// ===================== PROTECT MIDDLEWARE =====================
+// Verify JWT token and attach user to request
 exports.protect = async (req, res, next) => {
   let token;
 
-  // 1️⃣ Get token from headers
+  // 1️⃣ Get token from Authorization header
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1];
   }
@@ -20,7 +21,7 @@ exports.protect = async (req, res, next) => {
   if (!process.env.JWT_SECRET) {
     return res.status(500).json({
       status: "error",
-      message: "JWT secret is not set",
+      message: "JWT secret is not set in environment variables",
     });
   }
 
@@ -28,8 +29,10 @@ exports.protect = async (req, res, next) => {
     // 2️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 3️⃣ Attach user to request, exclude password
-    req.user = await User.findById(decoded.id).select("name businessName role");
+    // 3️⃣ Attach user to request (exclude password)
+    req.user = await User.findById(decoded.id).select(
+      "firstName lastName businessName role email"
+    );
 
     if (!req.user) {
       return res.status(401).json({
@@ -52,21 +55,24 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// Restrict roles
-exports.authorizeRoles = (...roles) => (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({
-      status: "fail",
-      message: "User not attached to request",
-    });
-  }
+// ===================== ROLE AUTHORIZATION =====================
+// Restrict access to specific roles
+exports.authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        status: "fail",
+        message: "User not attached to request",
+      });
+    }
 
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({
-      status: "fail",
-      message: "Forbidden: insufficient role permissions",
-    });
-  }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        status: "fail",
+        message: "Forbidden: insufficient role permissions",
+      });
+    }
 
-  next();
+    next();
+  };
 };
