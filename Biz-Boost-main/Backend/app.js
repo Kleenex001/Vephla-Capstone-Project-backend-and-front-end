@@ -1,11 +1,14 @@
 // app.js
+
+require('dotenv').config();
+
 const express = require('express');
-const dotenv = require('dotenv');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const path = require('path');
 
-require('dotenv').config();
+
+
 const app = express();
 
 // -------------------- MIDDLEWARE --------------------
@@ -14,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use(helmet());
 
-// -------------------- CORS --------------------
+// ------------------- CORS --------------------
 const allowedOrigins = [
   'https://bizboostcom.vercel.app',
   'http://localhost:3000',

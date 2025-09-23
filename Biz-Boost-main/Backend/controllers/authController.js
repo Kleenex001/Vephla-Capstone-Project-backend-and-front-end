@@ -3,14 +3,21 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sendMail = require('../utils/sendMail');
 
+// ------------------ Helper ------------------
+
 // Generate JWT Token
 const createToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not set in environment variables");
+  }
   return jwt.sign(
-    { id: user._id, role: user.role }, // 👈 id is critical for user-based filtering
-    `${process.env.JWT_SECRET_KEY}`,
+    { id: user._id, role: user.role }, // 👈 required for authMiddleware
+    process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );
 };
+
+// ------------------ Controllers ------------------
 
 // @desc   Register a new user
 exports.signUp = async (req, res) => {
@@ -32,7 +39,7 @@ exports.signUp = async (req, res) => {
     }
 
     const user = await User.create({
-      firstName, 
+      firstName,
       lastName,
       businessName,
       phoneNumber,
@@ -47,7 +54,7 @@ exports.signUp = async (req, res) => {
       email: user.email,
       businessName: user.businessName,
       phoneNumber: user.phoneNumber,
-      token: createToken(user) // 👈 token with userId
+      token: createToken(user)
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -72,7 +79,7 @@ exports.signIn = async (req, res) => {
       email: user.email,
       businessName: user.businessName,
       phoneNumber: user.phoneNumber,
-      token: createToken(user) // 👈 token with userId
+      token: createToken(user)
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -95,6 +102,7 @@ exports.requestPasswordReset = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     await sendMail(user.email, 'OTP for Password Reset', `Your OTP is: ${otp}`, otp);
+
     res.json({ message: "OTP sent to email" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -132,6 +140,6 @@ exports.resetPassword = async (req, res) => {
 
 // @desc   Logout user
 exports.logout = (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token'); // optional if cookie used
   res.status(200).json({ message: 'Logout successful' });
 };
