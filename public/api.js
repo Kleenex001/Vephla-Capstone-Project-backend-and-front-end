@@ -340,7 +340,7 @@ export async function getTopDeliveryAgents() {
 // =================================================
 // AGENTS API
 // =================================================
-const AGENTS_URL = `${BASE_URL}/agents`;
+const AGENTS_URL = `${BASE_URL}/deliveries`;
 
 /**
  * Fetch all agents

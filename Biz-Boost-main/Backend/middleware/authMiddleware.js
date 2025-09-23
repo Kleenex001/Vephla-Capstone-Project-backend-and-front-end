@@ -17,7 +17,6 @@ exports.protect = async (req, res, next) => {
     });
   }
 
-  // 2️⃣ Ensure JWT secret exists
   if (!process.env.JWT_SECRET) {
     return res.status(500).json({
       status: "error",
@@ -26,14 +25,11 @@ exports.protect = async (req, res, next) => {
   }
 
   try {
-    // 3️⃣ Verify token
+    // 2️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Optional: log decoded payload for debugging
-    // console.log("Decoded JWT:", decoded);
-
-    // 4️⃣ Attach user to request, excluding password
-    req.user = await User.findById(decoded.id).select("-password");
+    // 3️⃣ Fetch user and explicitly select necessary fields
+    req.user = await User.findById(decoded.id).select("name businessName role email -password");
 
     if (!req.user) {
       return res.status(401).json({
@@ -42,15 +38,15 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Optional: debug log
+    // console.log("Authenticated user:", req.user);
+
     next();
   } catch (error) {
     let message = "Not authorized, token failed";
 
-    if (error.name === "TokenExpiredError") {
-      message = "Token expired, please log in again";
-    } else if (error.name === "JsonWebTokenError") {
-      message = "Invalid token";
-    }
+    if (error.name === "TokenExpiredError") message = "Token expired, please log in again";
+    else if (error.name === "JsonWebTokenError") message = "Invalid token";
 
     return res.status(401).json({
       status: "error",

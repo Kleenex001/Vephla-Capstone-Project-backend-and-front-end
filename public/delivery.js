@@ -114,7 +114,7 @@ async function loadAgents() {
     if (res && Array.isArray(res.data)) {
       agents = res.data.map(a => ({ name: a.name, agentType: a.type || "other", phone: a.phone || "" }));
     }
-  } catch (err) { /* fallback to local storage */ }
+  } catch { /* fallback */ }
   if (!agents.length) agents = loadAgentsFromStorage();
   populateAgentDropdown();
   updateTopAgentsUI();
@@ -137,7 +137,7 @@ async function addAgent(name, type, phone) {
       showToast("Agent added", "success");
       return true;
     }
-  } catch { /* fallback to local */ }
+  } catch { /* fallback */ }
 
   agents.push(agentObj);
   persistAgents();
@@ -209,10 +209,10 @@ function renderDeliveries() {
           <td class="actions-cell">
             ${d.status === "pending" 
               ? `<button class="btn-confirm small" data-id="${d._id}">Confirm</button>
-                 <button class="btn-cancel small" data-id="${d._id}">Cancel</button>`
+                 <button class="btn-cancel small" data-id="${d._id}">Cancel</button>` 
               : `<button class="btn-delete small" data-id="${d._id}">Delete</button>`}
           </td>
-        </tr>`;
+        </tr>`; 
       }).join('')
     : `<tr><td colspan="7" style="text-align:center;opacity:.7">No deliveries</td></tr>`;
 }
@@ -229,19 +229,18 @@ function updateTopAgentsUI() {
   deliveries.forEach(d => {
     const name = d.agent?.name;
     if (!name) return;
-    counts[name] = counts[name] || { count: 0, phone: d.agent?.phone || "" };
-    if (d.status === "completed") counts[name].count++;
-    if (!counts[name].phone && d.agent?.phone) counts[name].phone = d.agent.phone;
+    counts[name] = counts[name] || { count:0, phone: d.agent?.phone || "" };
+    if(d.status==="completed") counts[name].count++;
+    if(!counts[name].phone && d.agent?.phone) counts[name].phone = d.agent.phone;
   });
-  agents.forEach(a => { if (!counts[a.name]) counts[a.name] = { count:0, phone:a.phone || "" }; });
+  agents.forEach(a => { if(!counts[a.name]) counts[a.name]={count:0,phone:a.phone||""}; });
   const top5 = Object.entries(counts)
-    .map(([name, {count, phone}]) => ({ name, count, phone }))
-    .sort((a,b) => b.count - a.count)
+    .map(([name,{count,phone}])=>({name,count,phone}))
+    .sort((a,b)=>b.count-a.count)
     .slice(0,5);
-
-  if (!topAgentsList) return;
+  if(!topAgentsList) return;
   topAgentsList.innerHTML = top5.length
-    ? top5.map((a,i) => `<li><strong>#${i+1}</strong> ${a.name} <span class="muted">(${a.phone || "no phone"})</span> — ${a.count} deliveries</li>`).join('')
+    ? top5.map((a,i)=>`<li><strong>#${i+1}</strong> ${a.name} <span class="muted">(${a.phone||"no phone"})</span> — ${a.count} deliveries</li>`).join('')
     : "<li style='opacity:.7'>No agents yet</li>";
 }
 
@@ -251,35 +250,36 @@ function updateTopAgentsUI() {
 const ctx = document.getElementById("deliveryOverviewChart")?.getContext("2d");
 let deliveryChart = null;
 function updateChart() {
-  if (!ctx) return;
-  const counts = { pending:0, completed:0, cancelled:0 };
-  deliveries.forEach(d => counts[d.status]++);
-  if (deliveryChart) deliveryChart.destroy();
-  deliveryChart = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Pending","Completed","Cancelled"],
-      datasets: [{ data: [counts.pending, counts.completed, counts.cancelled], backgroundColor:["#ffc107","#28a745","#dc3545"] }]
-    },
-    options: { responsive:true, plugins:{ legend:{ position:"bottom" } } }
+  if(!ctx) return;
+  const counts={pending:0,completed:0,cancelled:0};
+  deliveries.forEach(d=>counts[d.status]++);
+  if(deliveryChart) deliveryChart.destroy();
+  deliveryChart=new Chart(ctx,{
+    type:"doughnut",
+    data:{labels:["Pending","Completed","Cancelled"],datasets:[{data:[counts.pending,counts.completed,counts.cancelled],backgroundColor:["#ffc107","#28a745","#dc3545"]}]},
+    options:{responsive:true,plugins:{legend:{position:"bottom"}}}
   });
 }
 
 /* -------------------------
    Event handlers
 ------------------------- */
-addDeliveryBtn?.addEventListener("click", () => deliveryModal?.classList.add("show"));
-closeDeliveryModalBtn?.addEventListener("click", () => deliveryModal?.classList.remove("show"));
+// Open/close modals
+addDeliveryBtn?.addEventListener("click", () => deliveryModal.style.display = "block");
+closeDeliveryModalBtn?.addEventListener("click", () => deliveryModal.style.display = "none");
 
-addAgentBtn?.addEventListener("click", () => agentModal?.classList.add("show"));
-closeAgentModalBtn?.addEventListener("click", () => agentModal?.classList.remove("show"));
+addAgentBtn?.addEventListener("click", () => agentModal.style.display = "block");
+closeAgentModalBtn?.addEventListener("click", () => agentModal.style.display = "none");
 
+// Save agent
 saveAgentBtn?.addEventListener("click", async () => {
   const added = await addAgent(agentNameInput.value, agentMethodSelect.value, agentPhoneInput.value);
-  if (added) agentModal.classList.remove("show");
-  agentNameInput.value = ""; agentPhoneInput.value = "";
+  if (added) agentModal.style.display = "none";
+  agentNameInput.value = "";
+  agentPhoneInput.value = "";
 });
 
+// Save delivery
 saveDeliveryBtn?.addEventListener("click", async () => {
   const customer = customerInput.value.trim();
   const pkg = packageInput.value.trim();
@@ -296,42 +296,50 @@ saveDeliveryBtn?.addEventListener("click", async () => {
     customer,
     package: pkg,
     date,
-    agent: { name: agent.name, type: agent.agentType || "other", phone: agent.phone || "" },
+    agentName: agent.name,
+    agentType: agent.agentType || "other",
+    agentPhone: agent.phone || "",
     status: "pending"
   };
 
   try {
     await addDelivery(payload);
     showToast("Delivery added", "success");
-    deliveryModal.classList.remove("show");
-    customerInput.value = ""; packageInput.value = ""; dateInput.value = ""; deliveryAgentSelect.value = "";
+    deliveryModal.style.display = "none";
+    customerInput.value = "";
+    packageInput.value = "";
+    dateInput.value = "";
+    deliveryAgentSelect.value = "";
     loadDeliveries();
-  } catch (err) { showToast(err.message || "Failed to add delivery", "error"); }
+  } catch (err) {
+    showToast(err.message || "Failed to add delivery", "error");
+  }
 });
 
-filterSelect?.addEventListener("change", () => loadDeliveries(filterSelect.value));
-searchInput?.addEventListener("input", renderDeliveries);
+filterSelect?.addEventListener("change",()=>loadDeliveries(filterSelect.value));
+searchInput?.addEventListener("input",renderDeliveries);
 
-deliveryTableBody?.addEventListener("click", async (e) => {
-  const id = e.target.dataset.id;
-  if (!id) return;
-
-  if (e.target.classList.contains("btn-delete")) {
-    if (confirm("Delete this delivery?")) {
-      try { await deleteDelivery(id); showToast("Delivery deleted", "success"); loadDeliveries(); }
-      catch (err) { showToast(err.message || "Failed to delete", "error"); }
+deliveryTableBody?.addEventListener("click",async(e)=>{
+  const id=e.target.dataset.id;
+  if(!id) return;
+  if(e.target.classList.contains("btn-delete")){
+    if(confirm("Delete this delivery?")){
+      try{await deleteDelivery(id);showToast("Delivery deleted","success");loadDeliveries();}
+      catch(err){showToast(err.message||"Failed to delete","error");}
     }
-  } else if (e.target.classList.contains("btn-confirm")) {
-    try { await updateDelivery(id, { status: "completed" }); showToast("Delivery marked completed", "success"); loadDeliveries(); }
-    catch (err) { showToast(err.message || "Failed to update", "error"); }
-  } else if (e.target.classList.contains("btn-cancel")) {
-    try { await updateDelivery(id, { status: "cancelled" }); showToast("Delivery cancelled", "info"); loadDeliveries(); }
-    catch (err) { showToast(err.message || "Failed to update", "error"); }
+  } else if(e.target.classList.contains("btn-confirm")){
+    try{await updateDelivery(id,{status:"completed"});showToast("Delivery marked completed","success");loadDeliveries();}
+    catch(err){showToast(err.message||"Failed to update","error");}
+  } else if(e.target.classList.contains("btn-cancel")){
+    try{await updateDelivery(id,{status:"cancelled"});showToast("Delivery cancelled","info");loadDeliveries();}
+    catch(err){showToast(err.message||"Failed to update","error");}
   }
 });
 
 /* -------------------------
    Initialize
 ------------------------- */
-loadAgents();
-loadDeliveries();
+document.addEventListener("DOMContentLoaded",()=>{
+  loadAgents();
+  loadDeliveries();
+});
