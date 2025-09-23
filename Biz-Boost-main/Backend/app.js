@@ -16,8 +16,12 @@ app.use(helmet());
 
 // -------------------- CORS --------------------
 const allowedOrigins = [
-  'https://bizboostcom.vercel.app', 'http://localhost:3000', 'http://localhost:5500'
+  'https://bizboostcom.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
 ];
+
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
