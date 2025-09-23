@@ -114,24 +114,20 @@ exports.getTopCustomers = async (req, res) => {
 // GET /api/dashboard/user-info
 exports.getUserInfo = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not authenticated",
-      });
-    }
-
-    const { name, businessName, email, role } = req.user;
-
+    const user = req.user; // already attached by protect middleware
     res.status(200).json({
       success: true,
-      data: { name, businessName, email, role }
+      data: {
+        name: user.name,
+        businessName: user.businessName
+      }
     });
   } catch (err) {
     console.error("User info error:", err);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 };
+
 
 
 // ================= SALES ANALYTICS ================= //

@@ -84,25 +84,21 @@ function showToast(message, type = "info", duration = 3000) {
 // ----------------- Load User Info -----------------
 async function loadUserInfo() {
   try {
-    const res = await getUserInfo();
-    console.log("getUserInfo response:", res);
-
-    const user = res?.data || {};
-    const userName = user.name || "User";
-    const businessName = user.businessName || "Your Business";
-
+    const res = await getUserInfo(); // API call
+    const user = res?.data;          // get data property
     const nameEl = document.getElementById("greetingName");
     const businessEl = document.getElementById("businessName");
 
-    if (nameEl) nameEl.textContent = `Hello, ${userName}`;
-    if (businessEl) businessEl.textContent = businessName;
+    if (nameEl) nameEl.textContent = `Hello, ${user?.name || "User"}`;
+    if (businessEl) businessEl.textContent = user?.businessName || "Your Business";
 
-    showToast(`Welcome back, ${userName} of ${businessName}!`, "success", 4000);
+    showToast(`Welcome back, ${user?.name} of ${user?.businessName}!`, "success", 4000);
   } catch (err) {
-    console.error("Failed to load user info:", err);
+    console.error("Failed to load user info", err);
     showToast("Unable to fetch user info", "error");
   }
 }
+
 
 // ----------------- Sales Dashboard -----------------
 let salesChartInstance = null;

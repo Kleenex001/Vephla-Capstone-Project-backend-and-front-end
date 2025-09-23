@@ -1,11 +1,11 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// --- Middleware to verify token ---
+// Middleware to verify token
 exports.protect = async (req, res, next) => {
   let token;
 
-  // 1️⃣ Extract token from Authorization header
+  // 1️⃣ Get token from headers
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1];
   }
@@ -20,7 +20,7 @@ exports.protect = async (req, res, next) => {
   if (!process.env.JWT_SECRET) {
     return res.status(500).json({
       status: "error",
-      message: "JWT secret is not set in environment variables",
+      message: "JWT secret is not set",
     });
   }
 
@@ -28,8 +28,8 @@ exports.protect = async (req, res, next) => {
     // 2️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 3️⃣ Fetch user and explicitly select necessary fields
-    req.user = await User.findById(decoded.id).select("name businessName role email -password");
+    // 3️⃣ Attach user to request, exclude password
+    req.user = await User.findById(decoded.id).select("name businessName role");
 
     if (!req.user) {
       return res.status(401).json({
@@ -38,13 +38,9 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    // Optional: debug log
-    // console.log("Authenticated user:", req.user);
-
     next();
   } catch (error) {
     let message = "Not authorized, token failed";
-
     if (error.name === "TokenExpiredError") message = "Token expired, please log in again";
     else if (error.name === "JsonWebTokenError") message = "Invalid token";
 
@@ -56,23 +52,21 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// --- Middleware to restrict access to specific roles ---
-exports.authorizeRoles = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        status: "fail",
-        message: "User not attached to request",
-      });
-    }
+// Restrict roles
+exports.authorizeRoles = (...roles) => (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      status: "fail",
+      message: "User not attached to request",
+    });
+  }
 
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        status: "fail",
-        message: "Forbidden: insufficient role permissions",
-      });
-    }
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({
+      status: "fail",
+      message: "Forbidden: insufficient role permissions",
+    });
+  }
 
-    next();
-  };
+  next();
 };
