@@ -7,7 +7,7 @@ const sendMail = require('../utils/sendMail');
 const createToken = (user) => {
   return jwt.sign(
     { id: user._id, role: user.role }, // 👈 id is critical for user-based filtering
-    process.env.SECRET_KEY,
+    `${process.env.JWT_SECRET_KEY}`,
     { expiresIn: '1h' }
   );
 };
