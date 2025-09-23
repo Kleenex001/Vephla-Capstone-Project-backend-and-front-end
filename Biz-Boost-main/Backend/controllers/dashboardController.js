@@ -112,21 +112,35 @@ exports.getTopCustomers = async (req, res) => {
 };
 
 // GET /api/dashboard/user-info
+// GET /api/dashboard/user-info
 exports.getUserInfo = async (req, res) => {
   try {
-    const user = req.user; // already attached by protect middleware
+    const user = req.user; // from protect middleware
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    // Combine firstName and lastName
+    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+
     res.status(200).json({
       success: true,
       data: {
-        name: user.name,
-        businessName: user.businessName
+        name: fullName || "User",
+        businessName: user.businessName || "Your Business",
+        email: user.email || ""
       }
     });
   } catch (err) {
     console.error("User info error:", err);
-    res.status(500).json({ success: false, error: 'Server error' });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
+
 
 
 
