@@ -1,11 +1,11 @@
 // controllers/inventoryController.js
 const Product = require('../models/Inventory');
 
-// @desc    Get all products (only user's products)
+// @desc    Get all products for the logged-in user
 // @route   GET /api/inventory/products
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({ user: req.user._id });
+    const products = await Product.find({ userId: req.user._id });
     res.status(200).json({
       status: 'success',
       count: products.length,
@@ -21,8 +21,8 @@ const getAllProducts = async (req, res) => {
 const getLowStockProducts = async (req, res) => {
   try {
     const products = await Product.find({ 
-      user: req.user._id,
-      $expr: { $lt: ['$stockLevel', '$reorderLevel'] }, 
+      userId: req.user._id,
+      $expr: { $lt: ['$stockLevel', '$reorderLevel'] },
       stockLevel: { $gt: 0 }
     });
     res.status(200).json({
@@ -39,7 +39,7 @@ const getLowStockProducts = async (req, res) => {
 // @route   GET /api/inventory/out-of-stock
 const getOutOfStockProducts = async (req, res) => {
   try {
-    const products = await Product.find({ user: req.user._id, stockLevel: { $lte: 0 } });
+    const products = await Product.find({ userId: req.user._id, stockLevel: { $lte: 0 } });
     res.status(200).json({
       status: 'success',
       count: products.length,
@@ -55,7 +55,7 @@ const getOutOfStockProducts = async (req, res) => {
 const getExpiredProducts = async (req, res) => {
   try {
     const today = new Date();
-    const products = await Product.find({ user: req.user._id, expiryDate: { $lt: today } });
+    const products = await Product.find({ userId: req.user._id, expiryDate: { $lt: today } });
     res.status(200).json({
       status: 'success',
       count: products.length,
@@ -73,12 +73,14 @@ const getNotificationProducts = async (req, res) => {
     const today = new Date();
 
     const lowStock = await Product.find({ 
-      user: req.user._id,
+      userId: req.user._id,
       $expr: { $lt: ['$stockLevel', '$reorderLevel'] }, 
       stockLevel: { $gt: 0 }
     });
-    const outOfStock = await Product.find({ user: req.user._id, stockLevel: { $lte: 0 } });
-    const expired = await Product.find({ user: req.user._id, expiryDate: { $lt: today } });
+
+    const outOfStock = await Product.find({ userId: req.user._id, stockLevel: { $lte: 0 } });
+
+    const expired = await Product.find({ userId: req.user._id, expiryDate: { $lt: today } });
 
     res.status(200).json({
       status: 'success',
@@ -98,7 +100,7 @@ const getNotificationProducts = async (req, res) => {
 // @route   GET /api/inventory/products/:id
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findOne({ _id: req.params.id, user: req.user._id });
+    const product = await Product.findOne({ _id: req.params.id, userId: req.user._id });
     if (!product) return res.status(404).json({ status: 'fail', message: 'Product not found' });
     res.status(200).json({ status: 'success', data: product });
   } catch (error) {
@@ -111,8 +113,12 @@ const getProductById = async (req, res) => {
 const addNewProduct = async (req, res) => {
   const { productName, stockLevel, reorderLevel, expiryDate, category, unitPrice } = req.body;
 
-  if (!productName || stockLevel == null || reorderLevel == null || !category || unitPrice == null) {
-    return res.status(400).json({ status: 'fail', message: 'Please fill in all required fields.' });
+  if (!productName || stockLevel == null || reorderLevel == null || !expiryDate || !category || unitPrice == null) {
+    return res.status(400).json({ 
+      status: 'fail', 
+      message: 'Please fill in all required fields.',
+      body: req.body // <-- show what was sent for debugging
+    });
   }
 
   try {
@@ -123,12 +129,17 @@ const addNewProduct = async (req, res) => {
       expiryDate, 
       category, 
       unitPrice,
-      user: req.user._id // attach logged-in user
+      userId: req.user._id
     });
     const savedProduct = await newProduct.save();
     res.status(201).json({ status: 'success', data: savedProduct });
   } catch (error) {
-    res.status(400).json({ status: 'error', message: 'Error adding new product', error: error.message });
+    console.error('Error saving product:', error);
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ status: 'fail', message: 'Validation failed', errors: messages });
+    }
+    res.status(500).json({ status: 'error', message: 'Error adding new product', error: error.message });
   }
 };
 
@@ -137,14 +148,18 @@ const addNewProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
+      { _id: req.params.id, userId: req.user._id },
       req.body,
       { new: true, runValidators: true }
     );
     if (!product) return res.status(404).json({ status: 'fail', message: 'Product not found' });
     res.status(200).json({ status: 'success', data: product });
   } catch (error) {
-    res.status(400).json({ status: 'error', message: 'Error updating product', error: error.message });
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ status: 'fail', message: 'Validation failed', errors: messages });
+    }
+    res.status(500).json({ status: 'error', message: 'Error updating product', error: error.message });
   }
 };
 
@@ -152,7 +167,7 @@ const updateProduct = async (req, res) => {
 // @route   DELETE /api/inventory/products/:id
 const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    const product = await Product.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!product) return res.status(404).json({ status: 'fail', message: 'Product not found' });
     res.status(200).json({ status: 'success', message: 'Product deleted successfully' });
   } catch (error) {

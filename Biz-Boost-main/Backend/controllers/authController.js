@@ -143,3 +143,19 @@ exports.logout = (req, res) => {
   res.clearCookie('token'); // optional if cookie used
   res.status(200).json({ message: 'Logout successful' });
 };
+
+// @desc   Get logged-in user info
+exports.getMe = async (req, res) => {
+  try {
+    // req.user is already populated by your auth middleware
+    const user = req.user;
+    res.status(200).json({
+      name: `${user.firstName} ${user.lastName}`,
+      businessName: user.businessName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

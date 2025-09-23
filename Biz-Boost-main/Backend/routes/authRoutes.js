@@ -5,7 +5,8 @@ const {
   signIn,
   logout,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
+  getMe
 } = require('../controllers/authController'); 
 const { protect } = require('../middleware/authMiddleware');
 
@@ -20,6 +21,9 @@ router.post('/request-password-reset', requestPasswordReset);
 
 // Verify OTP and reset password
 router.post('/reset-password', resetPassword);
+
+// Route to get logged-in user info
+router.get('/me', protect, getMe);
 
 // Logout user (requires JWT)
 router.post('/logout', protect, logout);

@@ -60,7 +60,7 @@ if (!toastContainer) {
   toastContainer.style.bottom = '20px';
   toastContainer.style.right = '20px';
   toastContainer.style.display = 'flex';
-  toastContainer.style.flexDirection = 'column-reverse'; // newest on top
+  toastContainer.style.flexDirection = 'column-reverse';
   toastContainer.style.gap = '10px';
   toastContainer.style.zIndex = 9999;
   document.body.appendChild(toastContainer);
@@ -288,7 +288,7 @@ addProductForm?.addEventListener('submit', async e => {
     await fetchProducts();
   } catch (err) {
     console.error('Failed to add product', err);
-    showToast('Failed to add product', 'error');
+    showToast(err.message || 'Failed to add product', 'error');
   }
 });
 
@@ -334,7 +334,7 @@ editProductForm?.addEventListener('submit', async e => {
     await fetchProducts();
   } catch (err) {
     console.error('Failed to update product', err);
-    showToast('Failed to update product', 'error');
+    showToast(err.message || 'Failed to update product', 'error');
   }
 });
 
@@ -367,7 +367,6 @@ fetchProducts();
 window.addEventListener('storage', (event) => {
   if (event.key === 'logoutAll') {
     showToast('👋 Logged out from another session', 'info');
-    window.location.href = 'signin.html';
+    window.location.href = 'sign in.html';
   }
 });
-

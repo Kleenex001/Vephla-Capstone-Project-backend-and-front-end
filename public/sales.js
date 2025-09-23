@@ -10,6 +10,7 @@ import {
   getPendingOrdersSales as fetchPendingOrders,
 } from "./api.js";
 
+// ================= Helpers =================
 function parseServerError(err) {
   try {
     if (!err) return { message: "Unknown error" };
@@ -32,28 +33,58 @@ async function safeCall(apiFn, ...args) {
   }
 }
 
+// ================= Animate Numbers =================
 function animateValue(el, start, end, duration = 800) {
   if (!el) return;
   let startTimestamp = null;
+  let valueEl = el.querySelector(".amount-value");
+  if (!valueEl) {
+    valueEl = document.createElement("span");
+    valueEl.classList.add("amount-value");
+    el.textContent = "₦"; 
+    el.appendChild(valueEl);
+  }
+
   const step = timestamp => {
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    el.textContent = `₦${Math.floor(progress * (end - start) + start)}`;
+    valueEl.textContent = Math.floor(progress * (end - start) + start);
     if (progress < 1) window.requestAnimationFrame(step);
   };
   window.requestAnimationFrame(step);
 }
 
+// ================= Sales Analytics =================
 let salesChart;
 let salesData = [];
 let currentAnalyticsView = "monthly";
 
-function renderSalesChart(labels, values) {
-  const ctx = document.getElementById("salesAnalyticsChart").getContext("2d");
+async function initSalesAnalytics(view = "monthly", animate = true) {
+  currentAnalyticsView = view;
+  const res = await safeCall(getSalesAnalytics, view);
+  if (!res || !res.analytics) return;
+
+  let labels, values;
+  if (view === "monthly") {
+    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    values = res.analytics || Array(12).fill(0);
+  } else {
+    labels = Object.keys(res.analytics).sort();
+    values = Object.values(res.analytics);
+  }
+
+  const canvas = document.getElementById("salesAnalyticsChart");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
   if (salesChart) {
     salesChart.data.labels = labels;
     salesChart.data.datasets[0].data = values;
-    salesChart.update();
+    salesChart.update({
+      duration: animate ? 500 : 0,
+      lazy: false,
+      easing: 'easeOutQuart'
+    });
   } else {
     salesChart = new Chart(ctx, {
       type: "line",
@@ -65,151 +96,148 @@ function renderSalesChart(labels, values) {
           borderColor: "#007bff",
           backgroundColor: "rgba(0,123,255,0.1)",
           fill: true,
-          tension: 0.4,
+          tension: 0.4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 0 },
+        animation: { duration: animate ? 500 : 0, easing: 'easeOutQuart' },
         scales: { y: { beginAtZero: true } },
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: false } }
       }
     });
   }
 }
 
-async function initSalesAnalytics(view = "monthly") {
-  currentAnalyticsView = view;
-  const data = await safeCall(getSalesAnalytics, view);
-  if (!data) return;
-  let labels, values;
-  if (view === "monthly") {
-    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    values = data.analytics || Array(12).fill(0);
-  } else {
-    labels = Object.keys(data.analytics || {}).sort();
-    values = Object.values(data.analytics || {});
-  }
-  renderSalesChart(labels, values);
-}
-
+// ================= Load Sales Table =================
 async function loadSalesTable() {
-  const sales = await safeCall(getSales);
-  if (!sales) return;
-  salesData = sales;
+  const res = await safeCall(getSales);
   const tbody = document.getElementById("productTableBody");
-  tbody.innerHTML = "";
+  if (!tbody) return;
 
-  sales.forEach((sale, i) => {
-    let customerName = "Unknown";
-    if (sale.customer && sale.customer.name) customerName = sale.customer.name;
-    else if (sale.customerName) customerName = sale.customerName;
+  if (!res || !Array.isArray(res.data) || !res.data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No sales found</td></tr>`;
+    salesData = [];
+    return;
+  }
 
-    let statusStyled = "";
-    if (sale.status.toLowerCase() === "completed") statusStyled = `<span class="status-btn completed">Completed</span>`;
-    else if (sale.status.toLowerCase() === "pending") statusStyled = `<span class="status-btn pending">Pending</span>`;
-    else statusStyled = `<span class="status-btn cancelled">Cancelled</span>`;
+  salesData = res.data;
 
-    const completeBtn = sale.status.toLowerCase() === "completed" ? "" :
+  tbody.innerHTML = salesData.map((sale, i) => {
+    const customerName = sale.customer?.name || sale.customerName || "Unknown";
+    const statusClass = sale.status?.toLowerCase() === "completed" ? "completed" :
+                        sale.status?.toLowerCase() === "pending" ? "pending" : "cancelled";
+    const completeBtn = sale.status?.toLowerCase() === "completed" ? "" :
       `<button class="action-btn complete-btn" data-action="complete" data-id="${sale._id}">Complete</button>`;
 
+    return `
+      <tr data-id="${sale._id}">
+        <td>${i + 1}</td>
+        <td>${sale.productName}</td>
+        <td class="amount-cell">₦<span class="amount-value">${sale.amount}</span></td>
+        <td>${sale.paymentType}</td>
+        <td>${customerName}</td>
+        <td><span class="status-btn ${statusClass}">${statusClass.charAt(0).toUpperCase() + statusClass.slice(1)}</span></td>
+        <td>${completeBtn} <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">Delete</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  if (window.applyFilters) window.applyFilters();
+}
+
+// ================= Side Tables =================
+async function loadTopProducts() {
+  const res = await safeCall(fetchTopProducts);
+  const tbody = document.getElementById("topSellingProducts");
+  if (!tbody || !res || !Array.isArray(res.data)) return;
+
+  tbody.innerHTML = "";
+  res.data.forEach((p, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${i + 1}</td>
-      <td>${sale.productName}</td>
-      <td>₦${sale.amount}</td>
-      <td>${sale.paymentType}</td>
-      <td>${customerName}</td>
-      <td>${statusStyled}</td>
-      <td>
-        ${completeBtn}
-        <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">Delete</button>
-      </td>
+      <td>${p[0]}</td>
+      <td class="amount-cell">₦<span class="amount-value">${p[1]}</span></td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-async function loadSummary() {
-  const data = await safeCall(getSalesSummary);
-  if (!data) return;
-  animateValue(document.getElementById("totalSales"), 0, Number(data.totalSales) || 0);
-  animateValue(document.getElementById("cashSales"), 0, Number(data.cashSales) || 0);
-  animateValue(document.getElementById("mobileSales"), 0, Number(data.mobileSales) || 0);
-  document.getElementById("completedOrders").textContent = Number(data.completedOrders) || 0;
-}
-
-async function loadTopProducts() {
-  const data = await safeCall(fetchTopProducts);
-  if (!data) return;
-  const tbody = document.getElementById("topSellingProducts");
-  tbody.innerHTML = "";
-  data.topProducts?.forEach((p, i) => {
-    const tr = document.createElement("tr");
-    const amountTd = document.createElement("td");
-    tr.innerHTML = `<td>${i+1}</td><td>${p[0]}</td>`;
-    tr.appendChild(amountTd);
-    tbody.appendChild(tr);
-    animateValue(amountTd, 0, p[1] || 0);
-  });
-}
-
 async function loadTopCustomers() {
-  const data = await safeCall(fetchTopCustomers);
-  if (!data) return;
+  const res = await safeCall(fetchTopCustomers);
   const ul = document.getElementById("topCustomers");
+  if (!ul || !res || !Array.isArray(res.data)) return;
+
   ul.innerHTML = "";
-  data.topCustomers?.forEach(c => {
+  res.data.forEach(c => {
     const li = document.createElement("li");
+    const name = c[0]?.name || c[0] || "Unknown";
+    li.innerHTML = `${name} - ₦<span class="amount-value">${c[1]}</span>`;
     ul.appendChild(li);
-    const name = (c[0] && c[0].name) || c[0] || "Unknown";
-    li.textContent = `${name} - ₦${c[1]}`;
   });
 }
 
 async function loadPendingOrders() {
-  const data = await safeCall(fetchPendingOrders);
-  if (!data) return;
+  const res = await safeCall(fetchPendingOrders);
   const ol = document.getElementById("pendingOrdersList");
+  if (!ol || !res || !Array.isArray(res.data)) return;
+
   ol.innerHTML = "";
-  data.pending?.forEach(o => {
-    const customerName = (o.customer && o.customer.name) || o.customerName || "Anonymous";
+  res.data.forEach(o => {
+    const customerName = o.customer?.name || o.customerName || "Anonymous";
     const li = document.createElement("li");
     li.textContent = `${o.productName} (${customerName})`;
     ol.appendChild(li);
   });
 }
 
+// ================= Refresh Dashboard =================
 async function refreshAll() {
-  await loadSummary();
   await loadSalesTable();
   await loadTopProducts();
   await loadTopCustomers();
   await loadPendingOrders();
-  await initSalesAnalytics();
+
+  const summary = await safeCall(getSalesSummary);
+  if (summary && summary.data) {
+    animateValue(document.getElementById("totalSales"), 0, Number(summary.data.totalSales) || 0);
+    animateValue(document.getElementById("cashSales"), 0, Number(summary.data.cashSales) || 0);
+    animateValue(document.getElementById("mobileSales"), 0, Number(summary.data.mobileSales) || 0);
+    const completedEl = document.getElementById("completedOrders");
+    if (completedEl) completedEl.textContent = Number(summary.data.completedOrders) || 0;
+  }
+
+  await initSalesAnalytics(currentAnalyticsView, false); // update chart
+
+  if (window.applyFilters) window.applyFilters();
 }
 
+// ================= Event Handlers =================
 function setupAddSaleModal() {
   const modal = document.getElementById("addSaleModal");
   const btn = document.getElementById("addSaleBtn");
-  const close = modal.querySelector(".close");
-  btn.onclick = () => modal.style.display = "block";
-  close.onclick = () => modal.style.display = "none";
-  window.onclick = e => { if(e.target === modal) modal.style.display = "none"; };
+  const close = modal?.querySelector(".close");
+  if (!modal || !btn || !close) return;
+
+  btn.onclick = () => (modal.style.display = "block");
+  close.onclick = () => (modal.style.display = "none");
+  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
   const form = document.getElementById("addSaleForm");
+  if (!form) return;
   form.onsubmit = async e => {
     e.preventDefault();
     const sale = {
-      productName: document.getElementById("productName").value,
-      amount: parseFloat(document.getElementById("amount").value),
-      paymentType: document.getElementById("paymentType").value,
-      customerName: document.getElementById("customerName").value || null,
-      status: document.getElementById("status").value,
+      productName: document.getElementById("productName")?.value || "",
+      amount: parseFloat(document.getElementById("amount")?.value || 0),
+      paymentType: document.getElementById("paymentType")?.value || "",
+      customerName: document.getElementById("customerName")?.value || "",
+      status: document.getElementById("status")?.value || "pending",
     };
     const newSale = await safeCall(addSale, sale);
-    if(newSale){
+    if (newSale) {
       modal.style.display = "none";
       form.reset();
       refreshAll();
@@ -218,76 +246,85 @@ function setupAddSaleModal() {
 }
 
 function setupTableActions() {
-  document.getElementById("productTableBody").addEventListener("click", async e => {
+  const tbody = document.getElementById("productTableBody");
+  if (!tbody) return;
+  tbody.addEventListener("click", async e => {
     const btn = e.target.closest("button");
-    if(!btn) return;
+    if (!btn) return;
     const id = btn.dataset.id;
     const action = btn.dataset.action;
-    if(action === "complete") await safeCall(completeSale, id);
-    else if(action === "delete") await safeCall(deleteSaleAPI, id);
+
+    if (action === "complete") await safeCall(completeSale, id);
+    else if (action === "delete") await safeCall(deleteSaleAPI, id);
+
     refreshAll();
   });
 }
 
+// ================= Filters =================
 function setupFilters() {
   const searchInput = document.getElementById("searchInput");
   const filterSelect = document.getElementById("filterSelect");
+  if (!searchInput || !filterSelect) return;
 
-  function applyFilters() {
+  window.applyFilters = function() {
+    if (!salesData.length) return;
     const term = searchInput.value.toLowerCase();
     const filter = filterSelect.value.toLowerCase();
-    const filteredLabels = [];
-    const filteredValues = [];
-    document.querySelectorAll("#productTableBody tr").forEach((row, index)=>{
-      const sale = salesData[index];
-      const customerName = (sale.customer && sale.customer.name) || sale.customerName || "Unknown";
-      const matchesSearch = sale.productName.toLowerCase().includes(term) ||
+
+    document.querySelectorAll("#productTableBody tr").forEach(row => {
+      const id = row.dataset.id;
+      const sale = salesData.find(s => s._id === id);
+      if (!sale) return;
+
+      const customerName = sale.customer?.name || sale.customerName || "Unknown";
+      const matchesSearch =
+        sale.productName.toLowerCase().includes(term) ||
         customerName.toLowerCase().includes(term) ||
         sale.paymentType.toLowerCase().includes(term);
-      const matchesFilter = !filter || sale.paymentType.toLowerCase() === filter || sale.status.toLowerCase() === filter;
-      if(matchesSearch && matchesFilter){
-        row.style.display = "";
-        filteredLabels.push(sale.productName);
-        filteredValues.push(sale.amount);
-      } else row.style.display = "none";
+
+      const matchesFilter =
+        filter === "all" ||
+        sale.paymentType.toLowerCase() === filter ||
+        sale.status.toLowerCase() === filter;
+
+      row.style.display = matchesSearch && matchesFilter ? "" : "none";
     });
-    if(filteredLabels.length && filteredValues.length) renderSalesChart(filteredLabels, filteredValues);
-    else if(salesChart){ salesChart.destroy(); salesChart=null; }
-  }
+  };
 
-  searchInput.addEventListener("input", applyFilters);
-  filterSelect.addEventListener("change", applyFilters);
+  searchInput.addEventListener("input", window.applyFilters);
+  filterSelect.addEventListener("change", window.applyFilters);
 }
 
+// ================= Analytics Tabs =================
 function setupAnalyticsTabs() {
-  document.getElementById("monthlyTab").onclick = () => initSalesAnalytics("monthly");
-  document.getElementById("yearlyTab").onclick = () => initSalesAnalytics("yearly");
+  document.getElementById("monthlyTab")?.addEventListener("click", () => initSalesAnalytics("monthly"));
+  document.getElementById("yearlyTab")?.addEventListener("click", () => initSalesAnalytics("yearly"));
 }
 
+// ================= Inject Button Styles =================
 function injectStyles() {
   const style = document.createElement("style");
   style.textContent = `
-    .action-btn{padding:6px 10px;border:none;border-radius:6px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s ease;}
-    .complete-btn{background:#28a745;color:#fff;}
-    .complete-btn:hover{background:#218838;}
-    .delete-btn{background:#dc3545;color:#fff;}
-    .delete-btn:hover{background:#c82333;}
+    .action-btn { padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease; }
+    .complete-btn { background: #28a745; color: #fff; font-size:0.7rem; margin-bottom:2px; padding: 6px 6px }
+    .complete-btn:hover { background: #218838; }
+    .delete-btn { background: #dc3545; color: #fff; padding: 6px 10px }
+    .delete-btn:hover { background: #c82333; }
   `;
   document.head.appendChild(style);
 }
 
-document.addEventListener("DOMContentLoaded", ()=>{
+// ================= Init =================
+document.addEventListener("DOMContentLoaded", () => {
   injectStyles();
-  refreshAll();
   setupAddSaleModal();
   setupTableActions();
   setupFilters();
   setupAnalyticsTabs();
-});
 
-window.addEventListener('storage', (event) => {
-  if (event.key === 'logoutAll') {
-    showToast('👋 Logged out from another session', 'info');
-    window.location.href = 'sign in.html';
-  }
+  const tbody = document.getElementById("productTableBody");
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading sales...</td></tr>`;
+
+  setTimeout(() => refreshAll(), 50);
 });
