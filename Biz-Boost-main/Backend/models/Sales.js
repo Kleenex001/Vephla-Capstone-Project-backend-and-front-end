@@ -15,16 +15,21 @@ const SaleSchema = new mongoose.Schema({
     required: true 
   },
   customer: { 
-    type: mongoose.Schema.Types.ObjectId, // reference to Customer
+    type: mongoose.Schema.Types.ObjectId, 
     ref: 'Customer'
   },
   customerName: { 
-    type: String // store customer name for fallback or legacy data
+    type: String 
   },
   status: { 
     type: String, 
     enum: ['completed', 'pending'], 
     default: 'pending' 
+  },
+  userId: { // 👈 assign owner
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   createdAt: { 
     type: Date, 

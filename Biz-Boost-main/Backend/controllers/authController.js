@@ -6,8 +6,8 @@ const sendMail = require('../utils/sendMail');
 // Generate JWT Token
 const createToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
-    `${process.env.SECRET_KEY}`,
+    { id: user._id, role: user.role }, // 👈 id is critical for user-based filtering
+    process.env.SECRET_KEY,
     { expiresIn: '1h' }
   );
 };
@@ -47,7 +47,7 @@ exports.signUp = async (req, res) => {
       email: user.email,
       businessName: user.businessName,
       phoneNumber: user.phoneNumber,
-      token: createToken(user)
+      token: createToken(user) // 👈 token with userId
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -72,7 +72,7 @@ exports.signIn = async (req, res) => {
       email: user.email,
       businessName: user.businessName,
       phoneNumber: user.phoneNumber,
-      token: createToken(user)
+      token: createToken(user) // 👈 token with userId
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -94,7 +94,7 @@ exports.requestPasswordReset = async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    await sendMail(user.email, 'OTP for Password Reset', `Your OTP is: ${otp}`,otp);
+    await sendMail(user.email, 'OTP for Password Reset', `Your OTP is: ${otp}`, otp);
     res.json({ message: "OTP sent to email" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -129,11 +129,9 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 // @desc   Logout user
 exports.logout = (req, res) => {
   res.clearCookie('token');
   res.status(200).json({ message: 'Logout successful' });
 };
-
-
-

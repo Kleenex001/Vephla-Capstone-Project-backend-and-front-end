@@ -8,15 +8,20 @@ const Customer = require('../models/Customer');
 // GET /api/dashboard/summary
 exports.getSummary = async (req, res) => {
   try {
+    const userId = req.user._id;
+
     const totalSales = await Sale.aggregate([
+      { $match: { user: userId } },
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
 
     const totalOwed = await Customer.aggregate([
+      { $match: { user: userId } },
       { $group: { _id: null, total: { $sum: "$outstandingBalance" } } }
     ]);
 
     const totalDelivery = await Delivery.aggregate([
+      { $match: { user: userId } },
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
 
@@ -37,9 +42,11 @@ exports.getSummary = async (req, res) => {
 // GET /api/dashboard/quick-stats
 exports.getQuickStats = async (req, res) => {
   try {
-    const pendingOrders = await Sale.countDocuments({ status: "pending" });
-    const pendingDelivery = await Delivery.countDocuments({ status: "pending" });
-    const expiredProducts = await Product.countDocuments({ expiryDate: { $lt: new Date() } });
+    const userId = req.user._id;
+
+    const pendingOrders = await Sale.countDocuments({ user: userId, status: "pending" });
+    const pendingDelivery = await Delivery.countDocuments({ user: userId, status: "pending" });
+    const expiredProducts = await Product.countDocuments({ user: userId, expiryDate: { $lt: new Date() } });
 
     res.status(200).json({
       success: true,
@@ -55,10 +62,12 @@ exports.getQuickStats = async (req, res) => {
   }
 };
 
-// GET /api/dashboard/overdue-payments (detailed list)
+// GET /api/dashboard/overdue-payments
 exports.getOverduePayments = async (req, res) => {
   try {
-    const overdue = await Customer.find({ outstandingBalance: { $gt: 0 } })
+    const userId = req.user._id;
+
+    const overdue = await Customer.find({ user: userId, outstandingBalance: { $gt: 0 } })
       .select("name outstandingBalance")
       .sort({ outstandingBalance: -1 });
 
@@ -72,7 +81,10 @@ exports.getOverduePayments = async (req, res) => {
 // GET /api/dashboard/low-stock
 exports.getLowStockProducts = async (req, res) => {
   try {
+    const userId = req.user._id;
+
     const lowStock = await Product.find({
+      user: userId,
       $expr: { $lt: ["$stockLevel", "$reorderLevel"] }
     }).limit(10);
 
@@ -86,7 +98,9 @@ exports.getLowStockProducts = async (req, res) => {
 // GET /api/dashboard/top-customers
 exports.getTopCustomers = async (req, res) => {
   try {
-    const topCustomers = await Customer.find()
+    const userId = req.user._id;
+
+    const topCustomers = await Customer.find({ user: userId })
       .sort({ totalPurchases: -1 })
       .limit(5);
 
@@ -97,10 +111,10 @@ exports.getTopCustomers = async (req, res) => {
   }
 };
 
-// GET /api/dashboard/user-info (for greeting header)
+// GET /api/dashboard/user-info
 exports.getUserInfo = async (req, res) => {
   try {
-    const user = req.user; // populated by protect middleware
+    const user = req.user; // from protect middleware
     res.status(200).json({
       success: true,
       data: {
@@ -115,9 +129,9 @@ exports.getUserInfo = async (req, res) => {
 };
 
 // ================= SALES ANALYTICS ================= //
-// GET /api/dashboard/sales-analytics?view=daily|monthly|yearly
 exports.getSalesAnalytics = async (req, res) => {
   try {
+    const userId = req.user._id;
     const view = req.query.view || "monthly"; // daily | monthly | yearly
     let groupId;
 
@@ -137,7 +151,7 @@ exports.getSalesAnalytics = async (req, res) => {
     }
 
     const analytics = await Sale.aggregate([
-      { $match: { status: "completed" } },
+      { $match: { user: userId, status: "completed" } },
       {
         $group: {
           _id: groupId,
@@ -156,17 +170,17 @@ exports.getSalesAnalytics = async (req, res) => {
 };
 
 // ================= OVERDUE PAYMENTS ANALYTICS ================= //
-// GET /api/dashboard/overdue-analytics
 exports.getOverdueAnalytics = async (req, res) => {
   try {
-    const overdueCustomers = await Customer.find({ outstandingBalance: { $gt: 0 } });
+    const userId = req.user._id;
+
+    const overdueCustomers = await Customer.find({ user: userId, outstandingBalance: { $gt: 0 } });
 
     const totalOverdue = overdueCustomers.reduce(
       (sum, c) => sum + (c.outstandingBalance || 0),
       0
     );
 
-    // Group overdue by ranges — requires a "daysOverdue" field or logic from dueDate
     const ranges = {
       "0-30": overdueCustomers.filter(c => c.daysOverdue && c.daysOverdue <= 30).length,
       "31-60": overdueCustomers.filter(c => c.daysOverdue && c.daysOverdue > 30 && c.daysOverdue <= 60).length,

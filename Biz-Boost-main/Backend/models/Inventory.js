@@ -29,6 +29,11 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Please add a unit price'],
     min: 0,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, // ensures every product belongs to a specific user
+  },
 }, {
   timestamps: true,
 });

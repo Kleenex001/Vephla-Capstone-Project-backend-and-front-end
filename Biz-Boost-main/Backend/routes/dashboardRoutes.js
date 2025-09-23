@@ -26,3 +26,43 @@ router.get('/sales-analytics', protect, getSalesAnalytics);
 router.get('/overdue-analytics', protect, getOverdueAnalytics);
 
 module.exports = router;
+
+/**
+ * @swagger
+ * tags:
+ *   name: Dashboard
+ *   description: Dashboard KPIs and analytics
+ */
+
+/**
+ * @swagger
+ * /dashboard/summary:
+ *   get:
+ *     summary: Get dashboard summary
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Summary data
+ */
+
+/**
+ * @swagger
+ * /dashboard/sales-analytics:
+ *   get:
+ *     summary: Get sales analytics
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: view
+ *         schema:
+ *           type: string
+ *           enum: [monthly, yearly]
+ *         description: View type
+ *     responses:
+ *       200:
+ *         description: Analytics data
+ */

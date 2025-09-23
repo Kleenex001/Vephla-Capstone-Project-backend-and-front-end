@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const supplierSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true, // tie supplier to logged-in user
+    },
     name: {
       type: String,
       required: [true, "Supplier name is required"],
@@ -23,8 +28,6 @@ const supplierSchema = new mongoose.Schema(
       enum: ["Pending", "Completed", "Cancelled"],
       default: "Pending",
     },
-
-    // ✅ Contact info
     email: {
       type: String,
       required: [true, "Supplier email is required"],

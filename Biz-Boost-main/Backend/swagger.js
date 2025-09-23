@@ -1,4 +1,4 @@
-// swaggger.js
+// swagger.js
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -8,12 +8,10 @@ const options = {
     info: {
       title: 'Biz Boost API',
       version: '1.0.0',
-      description: 'API documentation for authentication endpoints for signup, login, request password reset and password reset.',
+      description: 'Comprehensive API documentation for Biz Boost backend',
     },
     servers: [
-      {
-        url: 'http://localhost:5000/api',
-      },
+      { url: 'http://localhost:5500/api' }, {url: 'https://bizboostcom.vercel.app'}
     ],
     components: {
       securitySchemes: {
@@ -24,20 +22,25 @@ const options = {
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
+    security: [{ bearerAuth: [] }],
   },
-  apis: ['./routes/*.js'], // <-- This tells swagger-jsdoc where to look for annotations
-  
+  // Path to all route files with Swagger annotations
+  apis: [
+    './routes/authRoutes.js',
+    './routes/dashboardRoutes.js',
+    './routes/customerRoutes.js',
+    './routes/inventoryRoutes.js',
+    './routes/salesRoutes.js',
+    './routes/deliveryRoutes.js',
+    './routes/supplierRoutes.js',
+    './routes/settingsRoutes.js',
+  ],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
 
-module.exports = {
-  swaggerUi,
-  swaggerSpec,
+const setupSwagger = (app) => {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
 
+module.exports = setupSwagger;

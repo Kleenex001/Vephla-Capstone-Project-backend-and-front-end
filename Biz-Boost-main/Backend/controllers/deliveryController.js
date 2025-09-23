@@ -1,13 +1,13 @@
 // controllers/deliveryController.js
-
 const Delivery = require('../models/Delivery');
 
-// @desc    Get all deliveries, optional status filter
+// @desc    Get all deliveries, optional status filter (only for logged-in user)
 // @route   GET /api/deliveries
 exports.getAllDeliveries = async (req, res) => {
   try {
     const { status } = req.query;
-    const query = status ? { status: status.toLowerCase() } : {};
+    const query = { user: req.user._id }; // filter by user
+    if (status) query.status = status.toLowerCase();
 
     const deliveries = await Delivery.find(query).sort({ date: -1 });
     res.status(200).json({ success: true, data: deliveries });
@@ -16,11 +16,11 @@ exports.getAllDeliveries = async (req, res) => {
   }
 };
 
-// @desc    Get a single delivery by ID
+// @desc    Get a single delivery by ID (only if owned by user)
 // @route   GET /api/deliveries/:id
 exports.getDeliveryById = async (req, res) => {
   try {
-    const delivery = await Delivery.findById(req.params.id);
+    const delivery = await Delivery.findOne({ _id: req.params.id, user: req.user._id });
     if (!delivery) {
       return res.status(404).json({ success: false, error: 'Delivery not found' });
     }
@@ -54,7 +54,8 @@ exports.addNewDelivery = async (req, res) => {
         phone: agentPhone,
         deliveriesCompleted: 0
       },
-      status: status ? status.toLowerCase() : 'pending'
+      status: status ? status.toLowerCase() : 'pending',
+      user: req.user._id // attach logged-in user
     });
 
     res.status(201).json({ success: true, data: newDelivery });
@@ -63,7 +64,7 @@ exports.addNewDelivery = async (req, res) => {
   }
 };
 
-// @desc    Update a delivery by ID
+// @desc    Update a delivery by ID (only if owned by user)
 // @route   PUT /api/deliveries/:id
 exports.updateDelivery = async (req, res) => {
   try {
@@ -84,10 +85,11 @@ exports.updateDelivery = async (req, res) => {
       delete updateData.agentPhone;
     }
 
-    const delivery = await Delivery.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-      runValidators: true
-    });
+    const delivery = await Delivery.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      updateData,
+      { new: true, runValidators: true }
+    );
 
     if (!delivery) {
       return res.status(404).json({ success: false, error: 'Delivery not found' });
@@ -99,11 +101,11 @@ exports.updateDelivery = async (req, res) => {
   }
 };
 
-// @desc    Delete a delivery by ID
+// @desc    Delete a delivery by ID (only if owned by user)
 // @route   DELETE /api/deliveries/:id
 exports.deleteDelivery = async (req, res) => {
   try {
-    const delivery = await Delivery.findByIdAndDelete(req.params.id);
+    const delivery = await Delivery.findOneAndDelete({ _id: req.params.id, user: req.user._id });
 
     if (!delivery) {
       return res.status(404).json({ success: false, error: 'Delivery not found' });
@@ -115,12 +117,12 @@ exports.deleteDelivery = async (req, res) => {
   }
 };
 
-// @desc    Get top delivery agents by number of completed deliveries
+// @desc    Get top delivery agents by number of completed deliveries (per user)
 // @route   GET /api/deliveries/top-agents
 exports.getTopAgents = async (req, res) => {
   try {
     const topAgents = await Delivery.aggregate([
-      { $match: { status: "completed" } },
+      { $match: { user: req.user._id, status: "completed" } }, // filter by user
       {
         $group: {
           _id: { name: "$agent.name", phone: "$agent.phone" },

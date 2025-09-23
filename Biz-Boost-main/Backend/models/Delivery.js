@@ -1,5 +1,3 @@
-// models/Delivery.js
-
 const mongoose = require('mongoose');
 
 // Agent sub-schema
@@ -24,7 +22,7 @@ const agentSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-}, { _id: false }); // prevent creating a separate _id for agent sub-doc
+}, { _id: false });
 
 // Delivery schema
 const deliverySchema = new mongoose.Schema({
@@ -43,7 +41,7 @@ const deliverySchema = new mongoose.Schema({
     required: [true, "Delivery date is required"],
   },
   agent: {
-    type: agentSchema, // Embed agent directly inside delivery
+    type: agentSchema,
     required: [true, "Delivery agent is required"],
   },
   status: {
@@ -51,6 +49,11 @@ const deliverySchema = new mongoose.Schema({
     enum: ["pending", "completed", "cancelled"],
     default: "pending",
     set: v => v.toLowerCase(),
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true, // ensures each delivery belongs to a specific user
   },
 }, { timestamps: true });
 
