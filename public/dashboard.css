@@ -537,16 +537,21 @@ footer {
     width: 130%;
 }
 .kpis h2 {
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   width: 100%;
+  margin-left: -0.05rem;
 }
 .kpis p {
-  font-size: 0.67rem;
+  font-size: 0.5rem;
+  margin-left: -0.05rem;
 }
 .kpi i {
   font-size: 1rem;
   color: #10b981;
   display: none;
+}
+#totalDeliveries {
+  font-size: 0.6rem;
 }
 
 .grid-two {
@@ -557,10 +562,18 @@ footer {
   height: 150px;
 }
 .topbar {
-  font-size: 13px;
-  padding: 14px;
+  font-size: 10px;
+  padding: 2rem;
 }
 .topbar img {
  display: block;
+}
+
+.dashboard-header {
+  font-size: 0.5rem;
+  margin-left: 0px;
+}
+.logout-btn {
+  display: none;
 }
 }

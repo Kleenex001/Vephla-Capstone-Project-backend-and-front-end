@@ -383,8 +383,8 @@ footer {
 
 .modal .modal-content{
     position: relative;
-    top: 5%;
-    left: 20%;
+    top: 0%;
+    left: 50%;
   width: 65%;
   max-width: 95vw;
   background:#fff;
