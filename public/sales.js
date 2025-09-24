@@ -54,12 +54,12 @@ function animateValue(el, start, end, duration = 800) {
   window.requestAnimationFrame(step);
 }
 
-// ================= Sales Analytics =================
-// ================= Sales Analytics =================
-// Global state for sales
+// ================= Global State =================
 let salesData = [];
 let salesChart;
 let currentAnalyticsView = "monthly";
+
+// ================= Sales Analytics =================
 
 async function initSalesAnalytics(view = "monthly") {
   currentAnalyticsView = view;
@@ -68,15 +68,18 @@ async function initSalesAnalytics(view = "monthly") {
   const res = await safeCall(getSalesAnalytics, view);
   if (!res) return;
 
+  console.log("Sales Analytics API response:", res);
+
   let analyticsData = res.analytics || [];
 
   // 2️⃣ Ensure proper format
   if (view === "monthly") {
     if (!Array.isArray(analyticsData) || analyticsData.length !== 12) {
-      console.warn("Analytics array invalid, using fallback zeros");
+      console.warn("Analytics array invalid, defaulting to zeros");
       analyticsData = Array(12).fill(0);
     }
   } else {
+    // yearly: convert object values to array
     analyticsData = Object.values(analyticsData).map(v => Number(v) || 0);
   }
 
@@ -86,19 +89,20 @@ async function initSalesAnalytics(view = "monthly") {
     : Object.keys(res.analytics || {});
 
   // 4️⃣ Target values (numbers only)
-  let targetValues = analyticsData.map(v => Number(v) || 0);
+  const targetValues = analyticsData.map(v => Number(v) || 0);
 
-  
+  console.log("Sales Analytics Labels:", labels);
+  console.log("Sales Analytics Target Values:", targetValues);
 
-  // 6️⃣ Get canvas and create gradient
+  // 5️⃣ Chart.js setup
   const canvas = document.getElementById("salesAnalyticsChart");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
+
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, "rgba(0,123,255,0.4)");
   gradient.addColorStop(1, "rgba(0,123,255,0)");
 
-  // 7️⃣ Initialize or update chart
   if (!salesChart) {
     salesChart = new Chart(ctx, {
       type: "line",
@@ -138,7 +142,7 @@ async function initSalesAnalytics(view = "monthly") {
     }
   }
 
-  // 8️⃣ Animate chart smoothly
+  // 6️⃣ Animate chart smoothly
   const duration = 1200; // ms
   const frameRate = 60;  // fps
   const totalFrames = Math.round(duration / (1000 / frameRate));
@@ -345,13 +349,7 @@ function setupFilters() {
   searchInput.addEventListener("input", window.applyFilters);
   filterSelect.addEventListener("change", window.applyFilters);
 }
-/*
-// ================= Analytics Tabs =================
-function setupAnalyticsTabs() {
-  document.getElementById("monthlyTab")?.addEventListener("click", () => initSalesAnalytics("monthly"));
-  document.getElementById("yearlyTab")?.addEventListener("click", () => initSalesAnalytics("yearly"));
-}
-*/
+
 // ================= Inject Button Styles =================
 function injectStyles() {
   const style = document.createElement("style");

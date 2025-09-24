@@ -52,25 +52,32 @@ exports.getSalesAnalytics = async (req, res) => {
       analytics = Array(12).fill(0);
 
       sales.forEach(s => {
-        if (!s.date) return; // skip if no date
-        const date = new Date(s.date);
-        if (isNaN(date)) return; // skip invalid dates
+        // Use 'date' if present, else fallback to 'createdAt'
+        const rawDate = s.date || s.createdAt;
+        if (!rawDate) return;
+
+        const date = new Date(rawDate);
+        if (isNaN(date)) return;
 
         const month = date.getMonth(); // 0 = Jan, 11 = Dec
         analytics[month] += Number(s.amount || 0);
-        console.log(`Adding ${s.amount} to month ${month} for sale on ${s.date}`);
+
+        console.log(`Adding ${s.amount} to month ${month} for sale on ${date}`);
       });
 
     } else {
       analytics = {};
       sales.forEach(s => {
-        if (!s.date) return;
-        const date = new Date(s.date);
+        const rawDate = s.date || s.createdAt;
+        if (!rawDate) return;
+
+        const date = new Date(rawDate);
         if (isNaN(date)) return;
 
         const year = date.getFullYear();
         analytics[year] = (analytics[year] || 0) + Number(s.amount || 0);
-        console.log(`Adding ${s.amount} to year ${year} for sale on ${s.date}`);
+
+        console.log(`Adding ${s.amount} to year ${year} for sale on ${date}`);
       });
     }
 
