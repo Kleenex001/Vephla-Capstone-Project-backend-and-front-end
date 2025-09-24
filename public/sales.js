@@ -36,78 +36,132 @@ async function safeCall(apiFn, ...args) {
 // ================= Animate Numbers =================
 function animateValue(el, start, end, duration = 800) {
   if (!el) return;
-  let startTimestamp = null;
-  let valueEl = el.querySelector(".amount-value");
-  if (!valueEl) {
-    valueEl = document.createElement("span");
-    valueEl.classList.add("amount-value");
-    el.textContent = "₦"; 
-    el.appendChild(valueEl);
-  }
+  const valueEl = el.querySelector(".amount-value") || (() => {
+    const span = document.createElement("span");
+    span.classList.add("amount-value");
+    el.textContent = "₦";
+    el.appendChild(span);
+    return span;
+  })();
 
+  let startTimestamp = null;
   const step = timestamp => {
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    valueEl.textContent = Math.floor(progress * (end - start) + start);
+    valueEl.textContent = Math.floor(progress * (end - start) + start).toLocaleString();
     if (progress < 1) window.requestAnimationFrame(step);
   };
   window.requestAnimationFrame(step);
 }
 
 // ================= Sales Analytics =================
-let salesChart;
+// ================= Sales Analytics =================
+// Global state for sales
 let salesData = [];
+let salesChart;
 let currentAnalyticsView = "monthly";
 
-async function initSalesAnalytics(view = "monthly", animate = true) {
+async function initSalesAnalytics(view = "monthly") {
   currentAnalyticsView = view;
-  const res = await safeCall(getSalesAnalytics, view);
-  if (!res || !res.analytics) return;
 
-  let labels, values;
+  // 1️⃣ Fetch analytics from backend
+  const res = await safeCall(getSalesAnalytics, view);
+  if (!res) return;
+
+  let analyticsData = res.analytics || [];
+
+  // 2️⃣ Ensure proper format
   if (view === "monthly") {
-    labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    values = res.analytics || Array(12).fill(0);
+    if (!Array.isArray(analyticsData) || analyticsData.length !== 12) {
+      console.warn("Analytics array invalid, using fallback zeros");
+      analyticsData = Array(12).fill(0);
+    }
   } else {
-    labels = Object.keys(res.analytics).sort();
-    values = Object.values(res.analytics);
+    analyticsData = Object.values(analyticsData).map(v => Number(v) || 0);
   }
 
+  // 3️⃣ Prepare labels
+  const labels = view === "monthly"
+    ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    : Object.keys(res.analytics || {});
+
+  // 4️⃣ Target values (numbers only)
+  let targetValues = analyticsData.map(v => Number(v) || 0);
+
+  
+
+  // 6️⃣ Get canvas and create gradient
   const canvas = document.getElementById("salesAnalyticsChart");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "rgba(0,123,255,0.4)");
+  gradient.addColorStop(1, "rgba(0,123,255,0)");
 
-  if (salesChart) {
-    salesChart.data.labels = labels;
-    salesChart.data.datasets[0].data = values;
-    salesChart.update({
-      duration: animate ? 500 : 0,
-      lazy: false,
-      easing: 'easeOutQuart'
-    });
-  } else {
+  // 7️⃣ Initialize or update chart
+  if (!salesChart) {
     salesChart = new Chart(ctx, {
       type: "line",
       data: {
         labels,
         datasets: [{
           label: "Sales",
-          data: values,
+          data: Array(targetValues.length).fill(0),
           borderColor: "#007bff",
-          backgroundColor: "rgba(0,123,255,0.1)",
+          backgroundColor: gradient,
           fill: true,
-          tension: 0.4
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: "#007bff"
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: animate ? 500 : 0, easing: 'easeOutQuart' },
-        scales: { y: { beginAtZero: true } },
-        plugins: { legend: { display: false } }
+        animation: { duration: 0 },
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
       }
     });
+  } else {
+    salesChart.data.labels = labels;
+    if (!salesChart.data.datasets[0]) {
+      salesChart.data.datasets[0] = {
+        data: Array(targetValues.length).fill(0),
+        borderColor: "#007bff",
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#007bff"
+      };
+    }
   }
+
+  // 8️⃣ Animate chart smoothly
+  const duration = 1200; // ms
+  const frameRate = 60;  // fps
+  const totalFrames = Math.round(duration / (1000 / frameRate));
+  let frame = 0;
+  const startValues = salesChart.data.datasets[0].data.map(v => Number(v) || 0);
+
+  const animate = () => {
+    frame++;
+    salesChart.data.datasets[0].data = startValues.map((start, i) => {
+      const target = targetValues[i] || 0;
+      return start + (target - start) * (frame / totalFrames);
+    });
+    salesChart.update('none');
+    if (frame < totalFrames) requestAnimationFrame(animate);
+  };
+
+  animate();
+}
+
+// ================= Analytics Tabs =================
+function setupAnalyticsTabs() {
+  document.getElementById("monthlyTab")?.addEventListener("click", () => initSalesAnalytics("monthly"));
+  document.getElementById("yearlyTab")?.addEventListener("click", () => initSalesAnalytics("yearly"));
 }
 
 // ================= Load Sales Table =================
@@ -124,24 +178,22 @@ async function loadSalesTable() {
 
   salesData = res.data;
 
-  tbody.innerHTML = salesData.map((sale, i) => {
+  tbody.innerHTML = salesData.map((sale,i) => {
     const customerName = sale.customer?.name || sale.customerName || "Unknown";
     const statusClass = sale.status?.toLowerCase() === "completed" ? "completed" :
                         sale.status?.toLowerCase() === "pending" ? "pending" : "cancelled";
     const completeBtn = sale.status?.toLowerCase() === "completed" ? "" :
       `<button class="action-btn complete-btn" data-action="complete" data-id="${sale._id}">Complete</button>`;
 
-    return `
-      <tr data-id="${sale._id}">
-        <td>${i + 1}</td>
-        <td>${sale.productName}</td>
-        <td class="amount-cell">₦<span class="amount-value">${sale.amount}</span></td>
-        <td>${sale.paymentType}</td>
-        <td>${customerName}</td>
-        <td><span class="status-btn ${statusClass}">${statusClass.charAt(0).toUpperCase() + statusClass.slice(1)}</span></td>
-        <td>${completeBtn} <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">Delete</button></td>
-      </tr>
-    `;
+    return `<tr data-id="${sale._id}">
+      <td>${i+1}</td>
+      <td>${sale.productName}</td>
+      <td class="amount-cell">₦<span class="amount-value">${sale.amount}</span></td>
+      <td>${sale.paymentType}</td>
+      <td>${customerName}</td>
+      <td><span class="status-btn ${statusClass}">${statusClass.charAt(0).toUpperCase()+statusClass.slice(1)}</span></td>
+      <td>${completeBtn} <button class="action-btn delete-btn" data-action="delete" data-id="${sale._id}">Delete</button></td>
+    </tr>`;
   }).join("");
 
   if (window.applyFilters) window.applyFilters();
@@ -154,13 +206,9 @@ async function loadTopProducts() {
   if (!tbody || !res || !Array.isArray(res.data)) return;
 
   tbody.innerHTML = "";
-  res.data.forEach((p, i) => {
+  res.data.forEach((p,i) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${p[0]}</td>
-      <td class="amount-cell">₦<span class="amount-value">${p[1]}</span></td>
-    `;
+    tr.innerHTML = `<td>${i+1}</td><td>${p[0]}</td><td class="amount-cell">₦<span class="amount-value">${p[1]}</span></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -202,14 +250,16 @@ async function refreshAll() {
 
   const summary = await safeCall(getSalesSummary);
   if (summary && summary.data) {
-    animateValue(document.getElementById("totalSales"), 0, Number(summary.data.totalSales) || 0);
+    const totalSalesEl = document.getElementById("totalSales");
+    const currentTotal = parseInt(totalSalesEl.querySelector(".amount-value")?.textContent.replace(/,/g,'') || 0);
+    animateValue(totalSalesEl, currentTotal, Number(summary.data.totalSales) || 0);
     animateValue(document.getElementById("cashSales"), 0, Number(summary.data.cashSales) || 0);
     animateValue(document.getElementById("mobileSales"), 0, Number(summary.data.mobileSales) || 0);
     const completedEl = document.getElementById("completedOrders");
     if (completedEl) completedEl.textContent = Number(summary.data.completedOrders) || 0;
   }
 
-  await initSalesAnalytics(currentAnalyticsView, false); // update chart
+  await initSalesAnalytics(currentAnalyticsView);
 
   if (window.applyFilters) window.applyFilters();
 }
@@ -295,13 +345,13 @@ function setupFilters() {
   searchInput.addEventListener("input", window.applyFilters);
   filterSelect.addEventListener("change", window.applyFilters);
 }
-
+/*
 // ================= Analytics Tabs =================
 function setupAnalyticsTabs() {
   document.getElementById("monthlyTab")?.addEventListener("click", () => initSalesAnalytics("monthly"));
   document.getElementById("yearlyTab")?.addEventListener("click", () => initSalesAnalytics("yearly"));
 }
-
+*/
 // ================= Inject Button Styles =================
 function injectStyles() {
   const style = document.createElement("style");
@@ -327,4 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading sales...</td></tr>`;
 
   setTimeout(() => refreshAll(), 50);
+
+  // Auto-refresh every 60s
+  setInterval(refreshAll, 60000);
 });

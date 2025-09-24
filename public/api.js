@@ -527,3 +527,49 @@ export async function saveSettings(settings) {
     body: JSON.stringify(settings),
   });
 }
+
+
+// api.js
+export function showToast(message, type = "info", duration = 3000) {
+  let container = document.getElementById("toastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    Object.assign(container.style, {
+      position: "fixed",
+      top: "20px",
+      right: "20px",
+      zIndex: 9999,
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+    });
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  Object.assign(toast.style, {
+    padding: "8px 12px",
+    borderRadius: "6px",
+    color: "#fff",
+    background: type === "success" ? "#28a745" :
+                type === "error" ? "#dc3545" :
+                type === "info" ? "#17a2b8" : "#ffc107",
+    opacity: 0,
+    transform: "translateX(12px)",
+    transition: "all .3s ease",
+  });
+
+  container.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateX(0)";
+  });
+
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    toast.style.transform = "translateX(12px)";
+    toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+  }, duration);
+}

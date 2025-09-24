@@ -82,7 +82,7 @@
           <i class="fa fa-sack-dollar"></i>
           <div>
             <p>Total Delivery</p>
-            <h2 id="totalDelivery"></h2>
+            <div id="totalDeliveries" style="font-size: 2rem;"></div>
           </div>
         </div>
       </div>
@@ -123,7 +123,7 @@
         <!-- Right Stats -->
         <aside class="stats">
           <div class="card">
-            <h4>Quick Stats</h4>
+            <h4>Expired Products</h4>
             <ol id="quickStats"></ol>
           </div>
           <div class="card">
@@ -146,7 +146,8 @@
   <script src="config.js"></script>
   <script type="module" src="api.js"></script>
   <script type="module" src="dashboard.js" defer></script>
-
+ <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     // Highlight active nav link
     document.addEventListener("DOMContentLoaded", () => {

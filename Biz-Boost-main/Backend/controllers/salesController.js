@@ -32,30 +32,57 @@ exports.getSalesSummary = async (req, res) => {
 exports.getSalesAnalytics = async (req, res) => {
   try {
     const { view = "monthly" } = req.query;
+
+    // Fetch all sales for this user
     const sales = await Sale.find({ userId: req.user.id });
+    console.log("Total sales fetched:", sales.length);
+
+    if (!sales.length) {
+      return res.status(200).json({
+        status: "success",
+        view,
+        analytics: view === "monthly" ? Array(12).fill(0) : {},
+        message: "No sales found for this user"
+      });
+    }
 
     let analytics;
+
     if (view === "monthly") {
       analytics = Array(12).fill(0);
+
       sales.forEach(s => {
-        if (s.date) {
-          const month = new Date(s.date).getMonth();
-          analytics[month] += Number(s.amount || 0);
-        }
+        if (!s.date) return; // skip if no date
+        const date = new Date(s.date);
+        if (isNaN(date)) return; // skip invalid dates
+
+        const month = date.getMonth(); // 0 = Jan, 11 = Dec
+        analytics[month] += Number(s.amount || 0);
+        console.log(`Adding ${s.amount} to month ${month} for sale on ${s.date}`);
       });
+
     } else {
       analytics = {};
       sales.forEach(s => {
-        if (s.date) {
-          const year = new Date(s.date).getFullYear();
-          analytics[year] = (analytics[year] || 0) + Number(s.amount || 0);
-        }
+        if (!s.date) return;
+        const date = new Date(s.date);
+        if (isNaN(date)) return;
+
+        const year = date.getFullYear();
+        analytics[year] = (analytics[year] || 0) + Number(s.amount || 0);
+        console.log(`Adding ${s.amount} to year ${year} for sale on ${s.date}`);
       });
     }
 
     res.status(200).json({ status: "success", view, analytics });
+
   } catch (error) {
-    res.status(500).json({ status: "error", message: "Failed to fetch analytics", error: error.message });
+    console.error("Error in getSalesAnalytics:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch analytics",
+      error: error.message
+    });
   }
 };
 
