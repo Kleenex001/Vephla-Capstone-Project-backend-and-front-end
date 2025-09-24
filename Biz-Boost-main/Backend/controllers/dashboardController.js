@@ -145,43 +145,68 @@ exports.getUserInfo = async (req, res) => {
 
 
 // ================= SALES ANALYTICS ================= //
+// Sales analytics
 exports.getSalesAnalytics = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const view = req.query.view || "monthly"; // daily | monthly | yearly
-    let groupId;
+    const { view = "monthly" } = req.query;
 
-    if (view === "daily") {
-      groupId = {
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" },
-        day: { $dayOfMonth: "$createdAt" }
-      };
-    } else if (view === "yearly") {
-      groupId = { year: { $year: "$createdAt" } };
-    } else {
-      groupId = {
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" }
-      };
+    // Fetch all sales for this user
+    const sales = await Sale.find({ userId: req.user.id });
+    console.log("Total sales fetched:", sales.length);
+
+    if (!sales.length) {
+      return res.status(200).json({
+        status: "success",
+        view,
+        analytics: view === "monthly" ? Array(12).fill(0) : {},
+        message: "No sales found for this user"
+      });
     }
 
-    const analytics = await Sale.aggregate([
-      { $match: { user: userId, status: "completed" } },
-      {
-        $group: {
-          _id: groupId,
-          totalSales: { $sum: "$amount" },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
-    ]);
+    let analytics;
 
-    res.status(200).json({ success: true, data: analytics });
-  } catch (err) {
-    console.error("Sales analytics error:", err);
-    res.status(500).json({ success: false, error: "Server error" });
+    if (view === "monthly") {
+      analytics = Array(12).fill(0);
+
+      sales.forEach(s => {
+        // Use 'date' if present, else fallback to 'createdAt'
+        const rawDate = s.date || s.createdAt;
+        if (!rawDate) return;
+
+        const date = new Date(rawDate);
+        if (isNaN(date)) return;
+
+        const month = date.getMonth(); // 0 = Jan, 11 = Dec
+        analytics[month] += Number(s.amount || 0);
+
+        console.log(`Adding ${s.amount} to month ${month} for sale on ${date}`);
+      });
+
+    } else {
+      analytics = {};
+      sales.forEach(s => {
+        const rawDate = s.date || s.createdAt;
+        if (!rawDate) return;
+
+        const date = new Date(rawDate);
+        if (isNaN(date)) return;
+
+        const year = date.getFullYear();
+        analytics[year] = (analytics[year] || 0) + Number(s.amount || 0);
+
+        console.log(`Adding ${s.amount} to year ${year} for sale on ${date}`);
+      });
+    }
+
+    res.status(200).json({ status: "success", view, analytics });
+
+  } catch (error) {
+    console.error("Error in getSalesAnalytics:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch analytics",
+      error: error.message
+    });
   }
 };
 

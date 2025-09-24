@@ -9,9 +9,10 @@
 body {
   background: #f8fafc;
   color: #1f2937;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
-  overflow: hidden;
+  width: 100vw;
+  overflow-x: hidden;
 }
 
 
@@ -70,7 +71,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 

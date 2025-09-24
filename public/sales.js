@@ -100,7 +100,7 @@ async function initSalesAnalytics(view = "monthly") {
   const ctx = canvas.getContext("2d");
 
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "rgba(0,123,255,0.4)");
+  gradient.addColorStop(0, "rgba(0, 255, 149, 0.54)");
   gradient.addColorStop(1, "rgba(0,123,255,0)");
 
   if (!salesChart) {
@@ -111,12 +111,12 @@ async function initSalesAnalytics(view = "monthly") {
         datasets: [{
           label: "Sales",
           data: Array(targetValues.length).fill(0),
-          borderColor: "#007bff",
+          borderColor: "#1d916ab0",
           backgroundColor: gradient,
           fill: true,
           tension: 0.4,
-          pointRadius: 4,
-          pointBackgroundColor: "#007bff"
+          pointRadius: 0,
+          pointBackgroundColor: "#00ffb3a1"
         }]
       },
       options: {

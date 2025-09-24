@@ -35,16 +35,16 @@ styleEl.textContent = `
 .toast.show { opacity: 1; transform: translateX(0); }
 .toast.success { background-color: #28a745; }
 .toast.error { background-color: #dc3545; }
-.toast.warning { background-color: #ffc107; color: #000; }
+.toast.warning { background-color: #0e8a70; color: #000; }
 
 .status { padding: 4px 8px; border-radius: 4px; font-weight: 500; text-transform: capitalize; }
-.status.paid { background-color: rgba(40,167,69,0.2); color: #28a745; }
+.status.paid { background-color: rgba(40,167,69,0.2); color: #0e8a70; }
 .status.owed { background-color: rgba(255,193,7,0.2); color: #ffc107; }
 .status.overdue { background-color: rgba(220,53,69,0.2); color: #dc3545; }
 
 .btn-paid, .btn-delete { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; font-size: 0.6rem; transition: 0.3s; }
-.btn-paid { background-color: #28a745; color: #fff; }
-.btn-paid:hover { background-color: #218838; }
+.btn-paid { background-color: #0e8a70; color: #fff; }
+.btn-paid:hover { background-color: #0e8a70; }
 .btn-delete { background-color: #dc3545; color: #fff; }
 .btn-delete:hover { background-color: #c82333; }
 `;
@@ -79,7 +79,7 @@ function notifyOverdue() {
   const overdueCustomers = customers.filter(c => calcStatus(c) === 'overdue');
   if (overdueCustomers.length === 0) return;
   const names = overdueCustomers.map(c => c.customerName).join(", ");
-  dueToast(`⚠️ Overdue Payment: ${names}`, "warning", 6000);
+  dueToast(`Overdue Payment: ${names}`, "warning", 6000);
 }
 
 // ---------- API Calls ----------
@@ -220,12 +220,12 @@ const customerOverdueChart = new Chart(ctxCust, {
     datasets: [{
       label: "Overdue Payment",
       data: custMonthlyData,
-      borderColor: "rgba(220,53,69,0.7)",
+      borderColor: "rgba(231, 54, 23, 0.79)",
       backgroundColor: "rgba(220,53,69,0.2)",
       fill: true,
       tension: 0.4,
-      pointRadius: 4,
-      pointBackgroundColor: "rgba(220,53,69,0.8)"
+      pointRadius: 0,
+      pointBackgroundColor: "rgba(247, 232, 23, 0.92)"
     }]
   },
   options: {
@@ -271,7 +271,7 @@ function updateCharts() {
 // ---------- Mark Paid ----------
 window.markPaid = function(id) {
   updateCustomer(id, { status: 'paid' });
-  dueToast("💰 Customer marked as Paid!", "success");
+  dueToast("Customer marked as Paid!", "success");
 };
 
 // ---------- Modal ----------
@@ -339,7 +339,7 @@ fetchCustomers();
 
 window.addEventListener('storage', (event) => {
   if (event.key === 'logoutAll') {
-    dueToast('👋 Logged out from another session', 'info');
+    dueToast('Logged out from another session', 'info');
     window.location.href = 'signin.html';
   }
 });

@@ -43,6 +43,13 @@ function animateValue(el, start, end, duration = 800, prefix = "₦") {
 }
 
 // ================= User Info =================
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  return "Good Evening";
+}
+
 async function loadUserInfo() {
   try {
     const res = await getUserInfo();
@@ -53,7 +60,7 @@ async function loadUserInfo() {
     const userName = user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
     const businessName = user.businessName || "Your Business";
 
-    if (nameEl) nameEl.textContent = `Hello, ${userName}`;
+    if (nameEl) nameEl.textContent = `${getGreeting()}, ${userName}`;
     if (businessEl) businessEl.textContent = businessName;
 
     showToast(`Welcome back, ${userName} of ${businessName}!`, "success", 4000);
@@ -90,7 +97,12 @@ async function loadCustomerKPIs() {
       }
     });
 
-    animateValue(document.getElementById("totalSales"), 0, totalPaid);
+    // totalPaid replaced by actual sales total
+    const analyticsRes = await getSalesAnalytics("monthly");
+    const salesValues = analyticsRes?.analytics || Array(12).fill(0);
+    const totalSales = salesValues.reduce((sum, val) => sum + val, 0);
+
+    animateValue(document.getElementById("totalSales"), 0, totalSales);
     animateValue(document.getElementById("totalOwed"), 0, totalOwed);
     animateValue(document.getElementById("totalOverdue"), 0, totalOverdue);
 
@@ -124,11 +136,20 @@ let currentAnalyticsView = "monthly";
 async function refreshSalesDashboard(view = currentAnalyticsView) {
   currentAnalyticsView = view;
   try {
-    const res = await getSalesAnalytics(view);
-    const data = res?.data || {};
-    if (!data.labels || !data.values) return;
+    const res = await getSalesAnalytics(view); // real-time sales analytics
+    const data = res?.analytics || [];
+    if (!data) return;
 
-    const totalSales = data.values.reduce((sum, val) => sum + val, 0);
+    const labels = view === "monthly"
+      ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+      : Object.keys(data);
+
+    const values = view === "monthly"
+      ? data
+      : Object.values(data);
+
+    // Animate total sales
+    const totalSales = values.reduce((sum, val) => sum + val, 0);
     animateValue(document.getElementById("totalSales"), 0, totalSales);
 
     const ctxEl = document.getElementById("salesChart");
@@ -136,37 +157,50 @@ async function refreshSalesDashboard(view = currentAnalyticsView) {
     const ctx = ctxEl.getContext("2d");
 
     const gradient = ctx.createLinearGradient(0, 0, 0, ctxEl.height);
-    gradient.addColorStop(0, "rgba(76, 175, 239, 0.4)");
-    gradient.addColorStop(1, "rgba(76, 175, 239, 0)");
+    gradient.addColorStop(0, "rgba(76, 239, 176, 0.6)");
+    gradient.addColorStop(1, "rgba(76, 239, 190, 0)");
 
     if (salesChartInstance) {
-      salesChartInstance.data.labels = data.labels;
-      salesChartInstance.data.datasets[0].data = data.values;
+      salesChartInstance.data.labels = labels;
+      salesChartInstance.data.datasets[0].data = values;
       salesChartInstance.data.datasets[0].backgroundColor = gradient;
       salesChartInstance.update();
     } else {
-      salesChartInstance = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: data.labels,
-          datasets: [{
-            label: "Sales",
-            data: data.values,
-            borderColor: "#4cafef",
-            backgroundColor: gradient,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 4,
-            pointBackgroundColor: "#4cafef"
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
-        }
-      });
+     salesChartInstance = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [{
+      label: "Sales",
+      data: values,
+      borderColor: "rgba(76, 175, 239, 0.6)",
+      backgroundColor: gradient,
+      fill: true,
+      tension: 0.4,        // smooth curves
+      pointRadius: 0       // remove point markers
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { 
+      legend: { display: false } 
+    },
+    scales: { 
+      y: { 
+        beginAtZero: true, 
+        grid: { color: "rgba(0,0,0,0.05)" }  // subtle horizontal grid
+      }, 
+      x: { 
+        grid: { color: "rgba(0,0,0,0.05)" }  // subtle vertical grid
+      } 
+    },
+    elements: {
+      line: { borderWidth: 2 }, // thinner line
+    }
+  }
+});
+
     }
   } catch (err) {
     console.error("Failed to refresh sales dashboard", err);
@@ -196,7 +230,6 @@ function refreshOverdueDashboard(view = "monthly") {
   overdueCustomers.forEach(c => {
     const date = new Date(c.paymentDate);
     monthly[date.getMonth()] += c.packageWorth;
-
     const yearIndex = date.getFullYear() - (currentYear - 7);
     if (yearIndex >= 0 && yearIndex < 8) yearly[yearIndex] += c.packageWorth;
   });
@@ -214,10 +247,33 @@ function refreshOverdueDashboard(view = "monthly") {
     overdueChartInstance.update();
   } else {
     overdueChartInstance = new Chart(ctx, {
-      type: "line",
-      data: { labels, datasets: [{ label: "Overdue Payments", data: dataSet, borderColor: "#dc3545", backgroundColor: "rgba(220,53,69,0.2)", fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: "#dc3545" }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-    });
+  type: "line",
+  data: {
+    labels,
+    datasets: [{
+      label: "Overdue Payments",
+      data: dataSet,
+      borderColor: "rgba(220, 53, 69, 0.6)",
+      backgroundColor: "rgba(220,53,69,0.15)",
+      fill: true,
+      tension: 0.4,
+      pointRadius: 0  // remove points
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" } },
+      x: { grid: { color: "rgba(0,0,0,0.05)" } }
+    },
+    elements: { line: { borderWidth: 2 } }
+  }
+});
+
   }
 }
 
@@ -227,23 +283,31 @@ async function loadExtraKPIs() {
     const expiredRes = await getExpiredProducts();
     const expired = expiredRes?.data || [];
     const expiredEl = document.getElementById("quickStats");
-    if (expiredEl) expiredEl.innerHTML = expired.length ? expired.map(p => `<li>${p.productName} (expired ${p.expiryDate})</li>`).join("") : "<li>No expired products 🎉</li>";
+    if (expiredEl) expiredEl.innerHTML = expired.length
+      ? expired.map(p => `<li>${p.productName} (expired ${p.expiryDate})</li>`).join("")
+      : "<li>No expired products 🎉</li>";
 
     const overdueEl = document.getElementById("overduePaymentLists");
     if (overdueEl) {
       const overdue = getOverdueCustomers();
-      overdueEl.innerHTML = overdue.length ? overdue.map(o => `<li>${o.customerName} - ₦${o.packageWorth}</li>`).join("") : "<li>No overdue payments 🎉</li>";
+      overdueEl.innerHTML = overdue.length
+        ? overdue.map(o => `<li>${o.customerName || o.name} - ₦${o.packageWorth}</li>`).join("")
+        : "<li>No overdue payments 🎉</li>";
     }
 
     const lowStockRes = await getLowStockProducts();
     const lowStock = lowStockRes?.data || [];
     const lowStockEl = document.getElementById("lowStockList");
-    if (lowStockEl) lowStockEl.innerHTML = lowStock.length ? lowStock.map(p => `<li>${p.productName} (${p.stockLevel} left)</li>`).join("") : "<li>All stock levels are fine ✅</li>";
+    if (lowStockEl) lowStockEl.innerHTML = lowStock.length
+      ? lowStock.map(p => `<li>${p.productName} (${p.stockLevel} left)</li>`).join("")
+      : "<li>All stock levels are fine ✅</li>";
 
     const topCustomersRes = await getTopCustomersSales();
     const topCustomers = topCustomersRes?.data || [];
     const topCustomersEl = document.getElementById("topCustomers");
-    if (topCustomersEl) topCustomersEl.innerHTML = topCustomers.length ? topCustomers.map(c => `<li>${c.name} - ₦${c.totalSpent}</li>`).join("") : "<li>No customer data yet</li>";
+    if (topCustomersEl) topCustomersEl.innerHTML = topCustomers.length
+      ? topCustomers.map(c => `<li>${c.customerName || c.name} - ₦${c.totalSpent}</li>`).join("")
+      : "<li>No customer data yet</li>";
   } catch (err) {
     console.error("Failed to load side tables", err);
     showToast("Some side data could not be loaded", "error");
@@ -284,12 +348,12 @@ function setupAnalyticsTabs() {
 
 // ================= Init =================
 async function initDashboard() {
-  loadUserInfo();
+  await loadUserInfo();
   await loadCustomerKPIs();
   await loadDeliveryKPIs();
-  refreshSalesDashboard();
-  refreshOverdueDashboard();
-  loadExtraKPIs();
+  await refreshSalesDashboard();
+  await refreshOverdueDashboard();
+  await loadExtraKPIs();
   setupAnalyticsTabs();
 }
 

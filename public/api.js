@@ -573,3 +573,20 @@ export function showToast(message, type = "info", duration = 3000) {
     toast.addEventListener("transitionend", () => toast.remove(), { once: true });
   }, duration);
 }
+
+// ================== Contact Form API ==================
+export async function submitContactForm(data) {
+  try {
+    const res = await fetch(`${BASE_URL}/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await handleFetch(res); // reuse your centralized fetch handler
+    return result;
+  } catch (err) {
+    console.error("Contact form submission failed:", err.message);
+    throw err;
+  }
+}

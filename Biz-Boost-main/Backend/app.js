@@ -50,11 +50,13 @@ const salesRoutes = require('./routes/salesRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const supplierRoutes = require('./routes/supplierRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 
 // Public routes
 app.use('/api/auth', authRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Protected routes
 app.use('/api/dashboard', protect, dashboardRoutes);

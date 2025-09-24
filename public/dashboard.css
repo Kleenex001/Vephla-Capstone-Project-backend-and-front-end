@@ -94,7 +94,11 @@ body::-webkit-scrollbar {
   background: #009879;
   color: #fff;
 }
-
+.dashboard-header {
+  margin-left: 1rem;
+  font-size: 0.9rem;
+  color: #009879;
+}
 .spacer {
   flex: 1;
 }
@@ -142,12 +146,15 @@ body::-webkit-scrollbar {
 .kpi p {
   font-size: 14px;
   color: #777;
+  margin-left: 0.7rem;
 }
 
-.kpi h2 {
-  font-size: 24px;
+.kpi h2, #totalDeliveries {
+  font-size: 20px;
   font-weight: 700;
   color: #333;
+  margin-left: 0.7rem;
+  margin-top: 2px;
 }
 
 
