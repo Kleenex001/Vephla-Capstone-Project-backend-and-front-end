@@ -302,17 +302,27 @@ async function loadExtraKPIs() {
       ? lowStock.map(p => `<li>${p.productName} (${p.stockLevel} left)</li>`).join("")
       : "<li>All stock levels are fine ✅</li>";
 
-    const topCustomersRes = await getTopCustomersSales();
-    const topCustomers = topCustomersRes?.data || [];
-    const topCustomersEl = document.getElementById("topCustomers");
-    if (topCustomersEl) topCustomersEl.innerHTML = topCustomers.length
-      ? topCustomers.map(c => `<li>${c.customerName || c.name} - ₦${c.totalSpent}</li>`).join("")
-      : "<li>No customer data yet</li>";
-  } catch (err) {
-    console.error("Failed to load side tables", err);
-    showToast("Some side data could not be loaded", "error");
+   const topCustomersRes = await getTopCustomersSales();
+const topCustomers = topCustomersRes?.data || [];
+const topCustomersEl = document.getElementById("topCustomers");
+
+if (topCustomersEl) {
+  if (topCustomers.length) {
+    topCustomersEl.innerHTML = topCustomers.map(c => {
+      const customer = c[0];        // first element = customer object
+      const total = c[1] || 0;      // second element = totalSpent
+      const name = customer?.name || customer || "Unknown";
+      return `<li>${name} - ₦${total.toLocaleString()}</li>`;
+    }).join("");
+  } else {
+    topCustomersEl.innerHTML = "<li>No customer data yet</li>";
   }
 }
+}catch (error) {
+  // Code to handle the error
+  console.error("An error occurred:", error);
+}}
+
 
 // ================= Logout =================
 document.getElementById("logoutBtn")?.addEventListener("click", async () => {
