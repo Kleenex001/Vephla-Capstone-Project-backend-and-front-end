@@ -132,6 +132,7 @@ exports.getAllSales = async (req, res) => {
 };
 
 // Create a sale with inventory sync
+// Create a sale with inventory sync
 exports.createSale = async (req, res) => {
   try {
     const { productId, quantity, paymentType, customerName, status, date } = req.body;
@@ -156,7 +157,7 @@ exports.createSale = async (req, res) => {
     }
 
     // ensure price is valid
-    const price = Number(product.price);
+    const price = Number(product.unitPrice); // ✅ corrected
     if (isNaN(price) || price < 0) return res.status(400).json({ status: "fail", message: "Invalid product price" });
 
     // reduce stock
@@ -221,7 +222,7 @@ exports.updateSale = async (req, res) => {
     }
 
     // Ensure price is valid
-    const price = Number(product.price);
+    const price = Number(product.unitPrice); // ✅ corrected
     if (isNaN(price) || price < 0) return res.status(400).json({ status: "fail", message: "Invalid product price" });
 
     // Recalculate amount
@@ -232,7 +233,7 @@ exports.updateSale = async (req, res) => {
       productId: product._id,
       productName: product.productName,
       quantity: qty,
-      amount: updatedAmount, // ✅ always numeric
+      amount: updatedAmount, // always numeric
       paymentType: paymentType?.toLowerCase() || existingSale.paymentType,
       customerName: customerName || existingSale.customerName,
       status: status?.toLowerCase() || existingSale.status
