@@ -1,5 +1,6 @@
-const sendMail = require('../utils/sendMail'); // make sure the path is correct
-const ContactMessage = require('../models/ContactMessage'); // if you save to DB
+// controllers/contactController.js
+const ContactMessage = require('../models/ContactMessage'); // optional if you save messages
+const sendContactMail = require('../utils/sendContactMail');
 
 const submitContactForm = async (req, res) => {
   try {
@@ -13,15 +14,14 @@ const submitContactForm = async (req, res) => {
       });
     }
 
-    // Optional: Save to DB
+    // Optional: Save to database
     await ContactMessage.create({ name, email, message });
 
     // Send email to support inbox
-    await sendMail(
-      "vsen15024520ajoel@gmail.com", // support email
+    await sendContactMail(
+      "vsen15024520ajoel@gmail.com", // your support email
       `New Contact Form Submission from ${name}`,
-      message,
-      null // OTP not needed for contact form
+      `Name: ${name}\nEmail: ${email}\nMessage: ${message}`
     );
 
     return res.status(200).json({

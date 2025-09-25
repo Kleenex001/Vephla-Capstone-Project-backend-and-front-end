@@ -580,13 +580,13 @@ export function showToast(message, type = "info", duration = 3000) {
 // ================== Contact Form API ==================
 export async function submitContactForm(data) {
   try {
-    const res = await fetch(`${BASE_URL}/contact`, {
+    const res = await fetch(`${BASE_URL}/contact`, { // ✅ matches above route
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
-    const result = await handleFetch(res); // reuse your centralized fetch handler
+    const result = await handleFetch(res);
     return result;
   } catch (err) {
     console.error("Contact form submission failed:", err.message);

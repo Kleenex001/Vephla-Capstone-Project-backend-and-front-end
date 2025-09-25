@@ -1,4 +1,4 @@
-// routes/contact.js
+// routes/contactRoutes.js
 const express = require('express');
 const { submitContactForm } = require('../controllers/contactController');
 
