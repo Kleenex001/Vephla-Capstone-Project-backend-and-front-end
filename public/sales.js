@@ -294,10 +294,6 @@ function setupAddSaleModal() {
   const close = modal?.querySelector(".close");
   if (!modal || !btn || !close) return;
 
-  btn.onclick = () => (modal.style.display = "block");
-  close.onclick = () => (modal.style.display = "none");
-  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
-
   const form = document.getElementById("addSaleForm");
   const productSelect = document.getElementById("productId");
   const quantityInput = document.getElementById("quantity");
@@ -307,19 +303,22 @@ function setupAddSaleModal() {
 
   // 🔹 Load products into dropdown
   async function loadProducts() {
-    try {
-      products = await safeCall(getProducts);
-      if (!products || !Array.isArray(products)) return;
+    const res = await safeCall(getProducts);
+    if (!res || !Array.isArray(res.data)) return;
+    products = res.data;
 
-      productSelect.innerHTML = products.map(
-        p => `<option value="${p._id}" data-price="${p.price}" data-stock="${p.quantity}">
-                ${p.name} (₦${p.price}, Stock: ${p.quantity})
-              </option>`
-      ).join("");
+    productSelect.innerHTML = products.map(p => {
+      const price = p.unitPrice ?? p.price ?? 0; // adjust based on your API
+      const stock = p.stockLevel ?? 0;
+      return `<option value="${p._id}" 
+                      data-price="${price}" 
+                      data-stock="${stock}"
+                      data-name="${p.productName}">
+                ${p.productName} (₦${price}, Stock: ${stock})
+              </option>`;
+    }).join("");
 
-    } catch (err) {
-      console.error("Failed to load products:", err);
-    }
+    updateAmount();
   }
 
   // 🔹 Update amount dynamically
@@ -327,26 +326,25 @@ function setupAddSaleModal() {
     const selected = productSelect.options[productSelect.selectedIndex];
     if (!selected) return;
 
-    const price = Number(selected.dataset.price);
-    const stock = Number(selected.dataset.stock);
-    const qty = Number(quantityInput.value);
+    const price = parseFloat(selected.dataset.price) || 0;
+    const stock = parseInt(selected.dataset.stock) || 0;
+    let qty = parseInt(quantityInput.value) || 1;
 
     if (qty > stock) {
       alert("Not enough stock available!");
+      qty = stock;
       quantityInput.value = stock;
     }
 
-    amountInput.value = (price * (quantityInput.value || 0)).toFixed(2);
+    amountInput.value = (price * qty).toFixed(2);
   }
 
   productSelect.addEventListener("change", updateAmount);
   quantityInput.addEventListener("input", updateAmount);
 
-  // 🔹 Submit form
-  if (!form) return;
+  // 🔹 Submit sale
   form.onsubmit = async e => {
     e.preventDefault();
-
     const selected = productSelect.options[productSelect.selectedIndex];
     if (!selected) {
       alert("Please select a product");
@@ -354,9 +352,10 @@ function setupAddSaleModal() {
     }
 
     const sale = {
-      productId: productSelect.value,
+      productId: selected.value,
+      productName: selected.dataset.name,   // ✅ include productName
       quantity: parseInt(quantityInput.value, 10) || 1,
-      amount: parseFloat(amountInput.value || 0),
+      amount: parseFloat(amountInput.value || 0), // ✅ ensure number
       paymentType: document.getElementById("paymentType")?.value || "",
       customerName: document.getElementById("customerName")?.value || "",
       status: document.getElementById("status")?.value || "pending",
@@ -368,6 +367,40 @@ function setupAddSaleModal() {
       form.reset();
       await refreshAll();
       await loadProducts(); // reload stocks after sale
+    }
+  };
+
+  // 🔹 Open/close modal
+  btn.onclick = () => {
+    modal.style.display = "block";
+    loadProducts();
+  };
+  close.onclick = () => (modal.style.display = "none");
+  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+
+
+
+  // ---------------- Submit Form ----------------
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const selected = productSelect.options[productSelect.selectedIndex];
+    if (!selected) return alert("Please select a product");
+
+    const saleData = {
+      productId: selected.value,
+      productName: selected.textContent.split("(")[0].trim(),
+      quantity: parseInt(quantityInput.value) || 1,
+      amount: parseFloat(amountInput.value) || 0,
+      paymentType: document.getElementById("paymentType").value,
+      customerName: document.getElementById("customerName").value,
+      status: document.getElementById("status").value,
+    };
+
+    const newSale = await safeCall(addSale, saleData);
+    if (newSale) {
+      modal.style.display = "none";
+      form.reset();
+      await refreshAll();
     }
   };
 

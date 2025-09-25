@@ -136,27 +136,30 @@ exports.createSale = async (req, res) => {
   try {
     const { productId, quantity, paymentType, customerName, status, date } = req.body;
 
+    // fetch product
     const product = await Inventory.findOne({ _id: productId, userId: req.user.id });
-    if (!product) {
-      return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
-    }
+    if (!product) return res.status(404).json({ status: "fail", message: "Product not found" });
 
+    // check expiry
     if (product.expiryDate && new Date(product.expiryDate) < new Date()) {
       return res.status(400).json({ status: "fail", message: "Product is expired, cannot sell" });
     }
 
-    if (product.quantity < quantity) {
+    // check stock
+    if (product.stockLevel < quantity) {
       return res.status(400).json({ status: "fail", message: "Not enough stock available" });
     }
 
-    product.quantity -= quantity;
+    // reduce stock
+    product.stockLevel -= quantity;
     await product.save();
 
+    // create sale
     const sale = await Sale.create({
       productId,
-      productName: product.name,
+      productName: product.productName,         // ✅ correct field
       quantity,
-      amount: Number(product.price) * quantity,
+      amount: Number(product.price) * quantity, // ✅ calculate backend
       paymentType: paymentType?.toLowerCase(),
       customerName,
       status: status?.toLowerCase() || "pending",
@@ -169,7 +172,6 @@ exports.createSale = async (req, res) => {
     res.status(400).json({ status: "error", message: "Failed to create sale", error: error.message });
   }
 };
-
 // Update a sale with inventory sync
 exports.updateSale = async (req, res) => {
   try {
