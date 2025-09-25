@@ -172,44 +172,50 @@ exports.createSale = async (req, res) => {
     res.status(400).json({ status: "error", message: "Failed to create sale", error: error.message });
   }
 };
-// Update a sale with inventory sync
+// Update a sale with inventory sync and automatic amount calculation
 exports.updateSale = async (req, res) => {
   try {
-    const { quantity, productId } = req.body;
+    const { quantity, productId, paymentType, customerName, status } = req.body;
     const existingSale = await Sale.findOne({ _id: req.params.id, userId: req.user.id });
     if (!existingSale) {
       return res.status(404).json({ status: "fail", message: "Sale not found" });
     }
 
+    // Determine which product to use (updated or existing)
+    const productToUseId = productId || existingSale.productId;
+    const product = await Inventory.findOne({ _id: productToUseId, userId: req.user.id });
+    if (!product) return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
+
+    // Restore old stock if quantity or product changed
     if (quantity || productId) {
-      // Restore old stock
       const oldProduct = await Inventory.findOne({ _id: existingSale.productId, userId: req.user.id });
       if (oldProduct) {
-        oldProduct.quantity += existingSale.quantity;
+        oldProduct.stockLevel += existingSale.quantity;
         await oldProduct.save();
       }
 
-      const newProduct = await Inventory.findOne({ _id: productId || existingSale.productId, userId: req.user.id });
-      if (!newProduct) {
-        return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
-      }
-
-      if (newProduct.expiryDate && new Date(newProduct.expiryDate) < new Date()) {
-        return res.status(400).json({ status: "fail", message: "Product is expired, cannot sell" });
-      }
-
-      if (newProduct.quantity < quantity) {
+      // Check new stock availability
+      if (product.stockLevel < quantity) {
         return res.status(400).json({ status: "fail", message: "Not enough stock for update" });
       }
 
-      newProduct.quantity -= quantity;
-      await newProduct.save();
+      product.stockLevel -= quantity;
+      await product.save();
     }
 
-    const updates = { ...req.body };
-    if (updates.paymentType) updates.paymentType = updates.paymentType.toLowerCase();
-    if (updates.status) updates.status = updates.status.toLowerCase();
-    if (updates.amount) updates.amount = Number(updates.amount);
+    // Recalculate amount
+    const updatedAmount = Number(product.price) * (quantity || existingSale.quantity);
+
+    // Prepare updates
+    const updates = {
+      productId: product._id,
+      productName: product.productName,
+      quantity: quantity || existingSale.quantity,
+      amount: updatedAmount,
+      paymentType: paymentType?.toLowerCase() || existingSale.paymentType,
+      customerName: customerName || existingSale.customerName,
+      status: status?.toLowerCase() || existingSale.status
+    };
 
     const updatedSale = await Sale.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
