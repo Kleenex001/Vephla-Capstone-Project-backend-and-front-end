@@ -519,28 +519,17 @@ export async function getPendingOrdersSales() {
 // GET current user's settings
 export async function getSettings() {
   const res = await fetchWithAuth(`${BASE_URL}/settings`);
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-  const json = await res.json();
-  // Always return raw settings object
-  return json.data || json;
+  return res.data || res;   // <- unwrap .data if backend returns {status, data}
 }
 
-// SAVE or UPDATE current user's settings
 export async function saveSettings(settings) {
   const res = await fetchWithAuth(`${BASE_URL}/settings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(settings),
   });
-
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-  const json = await res.json();
-  // Always return raw settings object
-  return json.data || json;
+  return res.data || res;   // <- unwrap .data too
 }
-
 
 
 // api.js

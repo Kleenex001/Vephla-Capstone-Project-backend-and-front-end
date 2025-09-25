@@ -5,6 +5,7 @@ import {
   completeSale,
   getSalesSummary,
   getSalesAnalytics,
+  getProducts,
   getTopCustomersSales as fetchTopCustomers,
   getTopProductsSales as fetchTopProducts,
   getPendingOrdersSales as fetchPendingOrders,

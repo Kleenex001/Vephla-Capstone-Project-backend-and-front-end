@@ -1,5 +1,6 @@
 // controllers/salesController.js
 const Sale = require("../models/Sales");
+const Inventory = require("../models/Inventory");
 
 // ----------------- DASHBOARD ENDPOINTS -----------------
 
@@ -32,10 +33,7 @@ exports.getSalesSummary = async (req, res) => {
 exports.getSalesAnalytics = async (req, res) => {
   try {
     const { view = "monthly" } = req.query;
-
-    // Fetch all sales for this user
     const sales = await Sale.find({ userId: req.user.id });
-    console.log("Total sales fetched:", sales.length);
 
     if (!sales.length) {
       return res.status(200).json({
@@ -47,49 +45,31 @@ exports.getSalesAnalytics = async (req, res) => {
     }
 
     let analytics;
-
     if (view === "monthly") {
       analytics = Array(12).fill(0);
-
       sales.forEach(s => {
-        // Use 'date' if present, else fallback to 'createdAt'
         const rawDate = s.date || s.createdAt;
         if (!rawDate) return;
-
         const date = new Date(rawDate);
         if (isNaN(date)) return;
-
-        const month = date.getMonth(); // 0 = Jan, 11 = Dec
+        const month = date.getMonth();
         analytics[month] += Number(s.amount || 0);
-
-        console.log(`Adding ${s.amount} to month ${month} for sale on ${date}`);
       });
-
     } else {
       analytics = {};
       sales.forEach(s => {
         const rawDate = s.date || s.createdAt;
         if (!rawDate) return;
-
         const date = new Date(rawDate);
         if (isNaN(date)) return;
-
         const year = date.getFullYear();
         analytics[year] = (analytics[year] || 0) + Number(s.amount || 0);
-
-        console.log(`Adding ${s.amount} to year ${year} for sale on ${date}`);
       });
     }
 
     res.status(200).json({ status: "success", view, analytics });
-
   } catch (error) {
-    console.error("Error in getSalesAnalytics:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Failed to fetch analytics",
-      error: error.message
-    });
+    res.status(500).json({ status: "error", message: "Failed to fetch analytics", error: error.message });
   }
 };
 
@@ -98,16 +78,13 @@ exports.getTopCustomers = async (req, res) => {
   try {
     const sales = await Sale.find({ userId: req.user.id });
     const customers = {};
-
     sales.forEach(s => {
       const name = s.customerName || "Unknown";
       customers[name] = (customers[name] || 0) + Number(s.amount || 0);
     });
-
     const topCustomers = Object.entries(customers)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
-
     res.status(200).json({ status: "success", data: topCustomers });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Failed to fetch top customers", error: error.message });
@@ -119,16 +96,13 @@ exports.getTopProducts = async (req, res) => {
   try {
     const sales = await Sale.find({ userId: req.user.id });
     const products = {};
-
     sales.forEach(s => {
       const name = s.productName || "Unnamed";
       products[name] = (products[name] || 0) + Number(s.amount || 0);
     });
-
     const topProducts = Object.entries(products)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
-
     res.status(200).json({ status: "success", data: topProducts });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Failed to fetch top products", error: error.message });
@@ -147,7 +121,7 @@ exports.getPendingOrders = async (req, res) => {
 
 // ----------------- CRUD OPERATIONS -----------------
 
-// Get all sales (only for this user)
+// Get all sales
 exports.getAllSales = async (req, res) => {
   try {
     const sales = await Sale.find({ userId: req.user.id });
@@ -157,14 +131,37 @@ exports.getAllSales = async (req, res) => {
   }
 };
 
-// Create a sale
+// Create a sale with inventory sync
 exports.createSale = async (req, res) => {
   try {
-    const { productName, amount, paymentType, customerName, status, date } = req.body;
+    const { productId, quantity, paymentType, customerName, status, date } = req.body;
 
+    // Find product in inventory
+    const product = await Inventory.findOne({ _id: productId, userId: req.user.id });
+    if (!product) {
+      return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
+    }
+
+    // Check expiry
+    if (product.expiryDate && new Date(product.expiryDate) < new Date()) {
+      return res.status(400).json({ status: "fail", message: "Product is expired, cannot sell" });
+    }
+
+    // Check stock
+    if (product.quantity < quantity) {
+      return res.status(400).json({ status: "fail", message: "Not enough stock available" });
+    }
+
+    // Deduct stock
+    product.quantity -= quantity;
+    await product.save();
+
+    // Create sale
     const sale = new Sale({
-      productName,
-      amount: Number(amount),
+      productId,
+      productName: product.name,
+      quantity,
+      amount: Number(product.price) * quantity,
       paymentType: paymentType?.toLowerCase(),
       customerName,
       status: status?.toLowerCase() || "pending",
@@ -179,9 +176,40 @@ exports.createSale = async (req, res) => {
   }
 };
 
-// Update a sale
+// Update a sale with inventory + expiry check
 exports.updateSale = async (req, res) => {
   try {
+    const { quantity, productId } = req.body;
+    const existingSale = await Sale.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!existingSale) {
+      return res.status(404).json({ status: "fail", message: "Sale not found" });
+    }
+
+    if (quantity || productId) {
+      // Restore old stock
+      const oldProduct = await Inventory.findOne({ _id: existingSale.productId, userId: req.user.id });
+      if (oldProduct) {
+        oldProduct.quantity += existingSale.quantity;
+        await oldProduct.save();
+      }
+
+      // Deduct new stock
+      const newProduct = await Inventory.findOne({ _id: productId || existingSale.productId, userId: req.user.id });
+      if (!newProduct) return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
+
+      // Check expiry
+      if (newProduct.expiryDate && new Date(newProduct.expiryDate) < new Date()) {
+        return res.status(400).json({ status: "fail", message: "Product is expired, cannot sell" });
+      }
+
+      if (newProduct.quantity < quantity) {
+        return res.status(400).json({ status: "fail", message: "Not enough stock for update" });
+      }
+
+      newProduct.quantity -= quantity;
+      await newProduct.save();
+    }
+
     const updates = { ...req.body };
     if (updates.paymentType) updates.paymentType = updates.paymentType.toLowerCase();
     if (updates.status) updates.status = updates.status.toLowerCase();
@@ -192,8 +220,6 @@ exports.updateSale = async (req, res) => {
       updates,
       { new: true, runValidators: true }
     );
-
-    if (!sale) return res.status(404).json({ status: "fail", message: "Sale not found" });
 
     res.status(200).json({ status: "success", data: sale });
   } catch (error) {
@@ -209,21 +235,25 @@ exports.completeSale = async (req, res) => {
       { status: "completed" },
       { new: true }
     );
-
     if (!sale) return res.status(404).json({ status: "fail", message: "Sale not found" });
-
     res.status(200).json({ status: "success", data: sale });
   } catch (error) {
     res.status(400).json({ status: "error", message: "Failed to complete sale", error: error.message });
   }
 };
 
-// Delete a sale
+// Delete a sale + restore stock
 exports.deleteSale = async (req, res) => {
   try {
     const sale = await Sale.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-
     if (!sale) return res.status(404).json({ status: "fail", message: "Sale not found" });
+
+    // Restore stock
+    const product = await Inventory.findOne({ _id: sale.productId, userId: req.user.id });
+    if (product) {
+      product.quantity += sale.quantity;
+      await product.save();
+    }
 
     res.status(200).json({ status: "success", message: "Sale deleted successfully" });
   } catch (error) {

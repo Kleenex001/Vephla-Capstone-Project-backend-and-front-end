@@ -179,7 +179,7 @@ async function refreshSalesDashboard(view = currentAnalyticsView) {
     datasets: [{
       label: "Sales",
       data: values,
-      borderColor: "rgba(76, 175, 239, 0.6)",
+      borderColor: "rgba(76, 239, 190, 0.6)",
       backgroundColor: gradient,
       fill: true,
       tension: 0.4,        // smooth curves
@@ -291,14 +291,14 @@ async function loadExtraKPIs() {
     const expiredEl = document.getElementById("quickStats");
     if (expiredEl) expiredEl.innerHTML = expired.length
       ? expired.map(p => `<li>${p.productName} (expired ${p.expiryDate})</li>`).join("")
-      : "<li>No expired products 🎉</li>";
+      : "<li>No expired products </li>";
 
     const overdueEl = document.getElementById("overduePaymentLists");
     if (overdueEl) {
       const overdue = getOverdueCustomers();
       overdueEl.innerHTML = overdue.length
         ? overdue.map(o => `<li>${o.customerName || o.name} - ₦${o.packageWorth}</li>`).join("")
-        : "<li>No overdue payments 🎉</li>";
+        : "<li>No overdue payments </li>";
     }
 
     const lowStockRes = await getLowStockProducts();
@@ -306,7 +306,7 @@ async function loadExtraKPIs() {
     const lowStockEl = document.getElementById("lowStockList");
     if (lowStockEl) lowStockEl.innerHTML = lowStock.length
       ? lowStock.map(p => `<li>${p.productName} (${p.stockLevel} left)</li>`).join("")
-      : "<li>All stock levels are fine ✅</li>";
+      : "<li>All stock levels are fine </li>";
 
    const topCustomersRes = await getTopCustomersSales();
 const topCustomers = topCustomersRes?.data || [];
