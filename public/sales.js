@@ -190,16 +190,27 @@ async function loadSalesTable() {
 
   salesData = res.data;
 
+  // 🔹 Load products for mapping
+  // 🔹 Load products for mapping
+const productsRes = await safeCall(getProducts);
+const products = (productsRes && Array.isArray(productsRes.data)) ? productsRes.data : [];
+const productMap = {};
+products.forEach(p => productMap[p._id] = p.name);
+
   tbody.innerHTML = salesData.map((sale,i) => {
     const customerName = sale.customer?.name || sale.customerName || "Unknown";
     const statusClass = sale.status?.toLowerCase() === "completed" ? "completed" :
                         sale.status?.toLowerCase() === "pending" ? "pending" : "cancelled";
+
     const completeBtn = sale.status?.toLowerCase() === "completed" ? "" :
       `<button class="action-btn complete-btn" data-action="complete" data-id="${sale._id}">Complete</button>`;
 
+    // 🔹 Resolve product name from inventory OR fallback
+    const productName = productMap[sale.productId] || sale.productName || "Unknown Product";
+
     return `<tr data-id="${sale._id}">
       <td>${i+1}</td>
-      <td>${sale.productName}</td>
+      <td>${productName}</td>
       <td class="amount-cell">₦<span class="amount-value">${sale.amount}</span></td>
       <td>${sale.paymentType}</td>
       <td>${customerName}</td>
@@ -288,23 +299,80 @@ function setupAddSaleModal() {
   window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
   const form = document.getElementById("addSaleForm");
+  const productSelect = document.getElementById("productId");
+  const quantityInput = document.getElementById("quantity");
+  const amountInput = document.getElementById("amount");
+
+  let products = [];
+
+  // 🔹 Load products into dropdown
+  async function loadProducts() {
+    try {
+      products = await safeCall(getProducts);
+      if (!products || !Array.isArray(products)) return;
+
+      productSelect.innerHTML = products.map(
+        p => `<option value="${p._id}" data-price="${p.price}" data-stock="${p.quantity}">
+                ${p.name} (₦${p.price}, Stock: ${p.quantity})
+              </option>`
+      ).join("");
+
+    } catch (err) {
+      console.error("Failed to load products:", err);
+    }
+  }
+
+  // 🔹 Update amount dynamically
+  function updateAmount() {
+    const selected = productSelect.options[productSelect.selectedIndex];
+    if (!selected) return;
+
+    const price = Number(selected.dataset.price);
+    const stock = Number(selected.dataset.stock);
+    const qty = Number(quantityInput.value);
+
+    if (qty > stock) {
+      alert("Not enough stock available!");
+      quantityInput.value = stock;
+    }
+
+    amountInput.value = (price * (quantityInput.value || 0)).toFixed(2);
+  }
+
+  productSelect.addEventListener("change", updateAmount);
+  quantityInput.addEventListener("input", updateAmount);
+
+  // 🔹 Submit form
   if (!form) return;
   form.onsubmit = async e => {
     e.preventDefault();
+
+    const selected = productSelect.options[productSelect.selectedIndex];
+    if (!selected) {
+      alert("Please select a product");
+      return;
+    }
+
     const sale = {
-      productName: document.getElementById("productName")?.value || "",
-      amount: parseFloat(document.getElementById("amount")?.value || 0),
+      productId: productSelect.value,
+      quantity: parseInt(quantityInput.value, 10) || 1,
+      amount: parseFloat(amountInput.value || 0),
       paymentType: document.getElementById("paymentType")?.value || "",
       customerName: document.getElementById("customerName")?.value || "",
       status: document.getElementById("status")?.value || "pending",
     };
+
     const newSale = await safeCall(addSale, sale);
     if (newSale) {
       modal.style.display = "none";
       form.reset();
-      refreshAll();
+      await refreshAll();
+      await loadProducts(); // reload stocks after sale
     }
   };
+
+  // Load products when modal opens
+  btn.addEventListener("click", loadProducts);
 }
 
 function setupTableActions() {

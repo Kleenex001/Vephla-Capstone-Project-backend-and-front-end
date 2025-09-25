@@ -22,7 +22,7 @@ exports.getSalesSummary = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: { totalSales, cashSales, mobileSales, completedOrders, pendingOrders }
+      data: { totalSales, cashSales, mobileSales, completedOrders, pendingOrders },
     });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Failed to fetch KPIs", error: error.message });
@@ -40,7 +40,7 @@ exports.getSalesAnalytics = async (req, res) => {
         status: "success",
         view,
         analytics: view === "monthly" ? Array(12).fill(0) : {},
-        message: "No sales found for this user"
+        message: "No sales found for this user",
       });
     }
 
@@ -136,28 +136,23 @@ exports.createSale = async (req, res) => {
   try {
     const { productId, quantity, paymentType, customerName, status, date } = req.body;
 
-    // Find product in inventory
     const product = await Inventory.findOne({ _id: productId, userId: req.user.id });
     if (!product) {
       return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
     }
 
-    // Check expiry
     if (product.expiryDate && new Date(product.expiryDate) < new Date()) {
       return res.status(400).json({ status: "fail", message: "Product is expired, cannot sell" });
     }
 
-    // Check stock
     if (product.quantity < quantity) {
       return res.status(400).json({ status: "fail", message: "Not enough stock available" });
     }
 
-    // Deduct stock
     product.quantity -= quantity;
     await product.save();
 
-    // Create sale
-    const sale = new Sale({
+    const sale = await Sale.create({
       productId,
       productName: product.name,
       quantity,
@@ -169,14 +164,13 @@ exports.createSale = async (req, res) => {
       userId: req.user.id,
     });
 
-    const savedSale = await sale.save();
-    res.status(201).json({ status: "success", data: savedSale });
+    res.status(201).json({ status: "success", data: sale });
   } catch (error) {
     res.status(400).json({ status: "error", message: "Failed to create sale", error: error.message });
   }
 };
 
-// Update a sale with inventory + expiry check
+// Update a sale with inventory sync
 exports.updateSale = async (req, res) => {
   try {
     const { quantity, productId } = req.body;
@@ -193,11 +187,11 @@ exports.updateSale = async (req, res) => {
         await oldProduct.save();
       }
 
-      // Deduct new stock
       const newProduct = await Inventory.findOne({ _id: productId || existingSale.productId, userId: req.user.id });
-      if (!newProduct) return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
+      if (!newProduct) {
+        return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
+      }
 
-      // Check expiry
       if (newProduct.expiryDate && new Date(newProduct.expiryDate) < new Date()) {
         return res.status(400).json({ status: "fail", message: "Product is expired, cannot sell" });
       }
@@ -215,13 +209,13 @@ exports.updateSale = async (req, res) => {
     if (updates.status) updates.status = updates.status.toLowerCase();
     if (updates.amount) updates.amount = Number(updates.amount);
 
-    const sale = await Sale.findOneAndUpdate(
+    const updatedSale = await Sale.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       updates,
       { new: true, runValidators: true }
     );
 
-    res.status(200).json({ status: "success", data: sale });
+    res.status(200).json({ status: "success", data: updatedSale });
   } catch (error) {
     res.status(400).json({ status: "error", message: "Failed to update sale", error: error.message });
   }
@@ -248,7 +242,6 @@ exports.deleteSale = async (req, res) => {
     const sale = await Sale.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     if (!sale) return res.status(404).json({ status: "fail", message: "Sale not found" });
 
-    // Restore stock
     const product = await Inventory.findOne({ _id: sale.productId, userId: req.user.id });
     if (product) {
       product.quantity += sale.quantity;
