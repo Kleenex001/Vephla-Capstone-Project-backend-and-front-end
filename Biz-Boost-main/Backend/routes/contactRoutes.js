@@ -5,6 +5,6 @@ const { submitContactForm } = require('../controllers/contactController');
 const router = express.Router();
 
 // POST /api/contact
-router.post('/contact', submitContactForm);
+router.post('/', submitContactForm);
 
 module.exports = router;
