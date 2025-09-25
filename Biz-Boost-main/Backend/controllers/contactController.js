@@ -1,5 +1,4 @@
 // controllers/contactController.js
-const ContactMessage = require('../models/ContactMessage'); // optional if you save messages
 const sendContactMail = require('../utils/sendContactMail');
 
 const submitContactForm = async (req, res) => {
@@ -14,10 +13,7 @@ const submitContactForm = async (req, res) => {
       });
     }
 
-    // Optional: Save to database
-    await ContactMessage.create({ name, email, message });
-
-    // Send email to support inbox
+    // Send email to support inbo
     await sendContactMail(
       "vsen15024520ajoel@gmail.com", // your support email
       `New Contact Form Submission from ${name}`,
