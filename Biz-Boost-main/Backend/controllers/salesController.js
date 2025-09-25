@@ -136,6 +136,11 @@ exports.createSale = async (req, res) => {
   try {
     const { productId, quantity, paymentType, customerName, status, date } = req.body;
 
+    if (!productId) return res.status(400).json({ status: "fail", message: "Product ID is required" });
+
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) return res.status(400).json({ status: "fail", message: "Quantity must be a positive number" });
+
     // fetch product
     const product = await Inventory.findOne({ _id: productId, userId: req.user.id });
     if (!product) return res.status(404).json({ status: "fail", message: "Product not found" });
@@ -146,22 +151,28 @@ exports.createSale = async (req, res) => {
     }
 
     // check stock
-    if (product.stockLevel < quantity) {
+    if (product.stockLevel < qty) {
       return res.status(400).json({ status: "fail", message: "Not enough stock available" });
     }
 
+    // ensure price is valid
+    const price = Number(product.price);
+    if (isNaN(price) || price < 0) return res.status(400).json({ status: "fail", message: "Invalid product price" });
+
     // reduce stock
-    product.stockLevel -= quantity;
+    product.stockLevel -= qty;
     await product.save();
 
     // create sale
+    const amount = price * qty;
+
     const sale = await Sale.create({
       productId,
-      productName: product.productName,         // ✅ correct field
-      quantity,
-      amount: Number(product.price) * quantity, // ✅ calculate backend
-      paymentType: paymentType?.toLowerCase(),
-      customerName,
+      productName: product.productName,
+      quantity: qty,
+      amount, // always numeric
+      paymentType: paymentType?.toLowerCase() || "",
+      customerName: customerName || "",
       status: status?.toLowerCase() || "pending",
       date: date || new Date(),
       userId: req.user.id,
@@ -169,24 +180,29 @@ exports.createSale = async (req, res) => {
 
     res.status(201).json({ status: "success", data: sale });
   } catch (error) {
-    res.status(400).json({ status: "error", message: "Failed to create sale", error: error.message });
+    console.error("Error creating sale:", error);
+    res.status(500).json({ status: "error", message: "Failed to create sale", error: error.message });
   }
 };
+
 // Update a sale with inventory sync and automatic amount calculation
 exports.updateSale = async (req, res) => {
   try {
     const { quantity, productId, paymentType, customerName, status } = req.body;
-    const existingSale = await Sale.findOne({ _id: req.params.id, userId: req.user.id });
-    if (!existingSale) {
-      return res.status(404).json({ status: "fail", message: "Sale not found" });
-    }
 
-    // Determine which product to use (updated or existing)
+    const existingSale = await Sale.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!existingSale) return res.status(404).json({ status: "fail", message: "Sale not found" });
+
+    // Determine product to use
     const productToUseId = productId || existingSale.productId;
     const product = await Inventory.findOne({ _id: productToUseId, userId: req.user.id });
     if (!product) return res.status(404).json({ status: "fail", message: "Product not found in inventory" });
 
-    // Restore old stock if quantity or product changed
+    // Validate quantity
+    const qty = parseInt(quantity || existingSale.quantity, 10);
+    if (isNaN(qty) || qty <= 0) return res.status(400).json({ status: "fail", message: "Quantity must be a positive number" });
+
+    // Restore old stock if changing product or quantity
     if (quantity || productId) {
       const oldProduct = await Inventory.findOne({ _id: existingSale.productId, userId: req.user.id });
       if (oldProduct) {
@@ -195,23 +211,28 @@ exports.updateSale = async (req, res) => {
       }
 
       // Check new stock availability
-      if (product.stockLevel < quantity) {
+      if (product.stockLevel < qty) {
         return res.status(400).json({ status: "fail", message: "Not enough stock for update" });
       }
 
-      product.stockLevel -= quantity;
+      // Deduct new quantity
+      product.stockLevel -= qty;
       await product.save();
     }
 
+    // Ensure price is valid
+    const price = Number(product.price);
+    if (isNaN(price) || price < 0) return res.status(400).json({ status: "fail", message: "Invalid product price" });
+
     // Recalculate amount
-    const updatedAmount = Number(product.price) * (quantity || existingSale.quantity);
+    const updatedAmount = price * qty;
 
     // Prepare updates
     const updates = {
       productId: product._id,
       productName: product.productName,
-      quantity: quantity || existingSale.quantity,
-      amount: updatedAmount,
+      quantity: qty,
+      amount: updatedAmount, // ✅ always numeric
       paymentType: paymentType?.toLowerCase() || existingSale.paymentType,
       customerName: customerName || existingSale.customerName,
       status: status?.toLowerCase() || existingSale.status
@@ -225,7 +246,8 @@ exports.updateSale = async (req, res) => {
 
     res.status(200).json({ status: "success", data: updatedSale });
   } catch (error) {
-    res.status(400).json({ status: "error", message: "Failed to update sale", error: error.message });
+    console.error("Error updating sale:", error);
+    res.status(500).json({ status: "error", message: "Failed to update sale", error: error.message });
   }
 };
 

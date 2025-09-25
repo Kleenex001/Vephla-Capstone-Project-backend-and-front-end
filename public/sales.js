@@ -298,21 +298,21 @@ function setupAddSaleModal() {
   const productSelect = document.getElementById("productId");
   const quantityInput = document.getElementById("quantity");
   const amountInput = document.getElementById("amount");
-
   let products = [];
 
-  // 🔹 Load products into dropdown
+  // ---------------- Load products into dropdown ----------------
   async function loadProducts() {
     const res = await safeCall(getProducts);
     if (!res || !Array.isArray(res.data)) return;
+
     products = res.data;
 
     productSelect.innerHTML = products.map(p => {
-      const price = p.unitPrice ?? p.price ?? 0; // adjust based on your API
+      const price = p.unitPrice ?? p.price ?? 0;
       const stock = p.stockLevel ?? 0;
       return `<option value="${p._id}" 
                       data-price="${price}" 
-                      data-stock="${stock}"
+                      data-stock="${stock}" 
                       data-name="${p.productName}">
                 ${p.productName} (₦${price}, Stock: ${stock})
               </option>`;
@@ -321,14 +321,19 @@ function setupAddSaleModal() {
     updateAmount();
   }
 
-  // 🔹 Update amount dynamically
+  // ---------------- Update amount dynamically ----------------
   function updateAmount() {
     const selected = productSelect.options[productSelect.selectedIndex];
     if (!selected) return;
 
-    const price = parseFloat(selected.dataset.price) || 0;
-    const stock = parseInt(selected.dataset.stock) || 0;
-    let qty = parseInt(quantityInput.value) || 1;
+    const price = parseFloat(selected.dataset.price);
+    const stock = parseInt(selected.dataset.stock, 10);
+
+    if (isNaN(price)) return alert("Invalid product price!");
+    if (isNaN(stock)) return alert("Invalid stock value!");
+
+    let qty = parseInt(quantityInput.value, 10);
+    if (isNaN(qty) || qty <= 0) qty = 1;
 
     if (qty > stock) {
       alert("Not enough stock available!");
@@ -336,30 +341,36 @@ function setupAddSaleModal() {
       quantityInput.value = stock;
     }
 
-    amountInput.value = (price * qty).toFixed(2);
+    const amount = price * qty;
+    amountInput.value = amount.toFixed(2); // numeric string for display
   }
 
   productSelect.addEventListener("change", updateAmount);
   quantityInput.addEventListener("input", updateAmount);
 
-  // 🔹 Submit sale
+  // ---------------- Submit form ----------------
   form.onsubmit = async e => {
     e.preventDefault();
     const selected = productSelect.options[productSelect.selectedIndex];
-    if (!selected) {
-      alert("Please select a product");
-      return;
-    }
+    if (!selected) return alert("Please select a product");
+
+    const qty = parseInt(quantityInput.value, 10);
+    if (isNaN(qty) || qty <= 0) return alert("Quantity must be a valid number");
+
+    let amount = parseFloat(amountInput.value.replace(/,/g, ""));
+    if (isNaN(amount) || amount < 0) return alert("Amount is invalid");
 
     const sale = {
       productId: selected.value,
-      productName: selected.dataset.name,   // ✅ include productName
-      quantity: parseInt(quantityInput.value, 10) || 1,
-      amount: parseFloat(amountInput.value || 0), // ✅ ensure number
+      productName: selected.dataset.name || selected.textContent,
+      quantity: qty,
+      amount: amount,              // ✅ always numeric
       paymentType: document.getElementById("paymentType")?.value || "",
       customerName: document.getElementById("customerName")?.value || "",
       status: document.getElementById("status")?.value || "pending",
     };
+
+    console.log("Submitting sale:", sale); // debug
 
     const newSale = await safeCall(addSale, sale);
     if (newSale) {
@@ -370,14 +381,14 @@ function setupAddSaleModal() {
     }
   };
 
-  // 🔹 Open/close modal
+  // ---------------- Open/close modal ----------------
   btn.onclick = () => {
     modal.style.display = "block";
     loadProducts();
   };
+
   close.onclick = () => (modal.style.display = "none");
   window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
-
 
 
   // ---------------- Submit Form ----------------
