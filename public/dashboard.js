@@ -11,6 +11,12 @@ import {
   showToast,
 } from "./api.js";
 
+import { initSettings } from './settingsHelper.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSettings();  // This applies settings automatically
+});
+
 // ================= Helpers =================
 function parseServerError(err) {
   try {

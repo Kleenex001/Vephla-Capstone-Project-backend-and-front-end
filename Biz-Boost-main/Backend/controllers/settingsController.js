@@ -2,15 +2,25 @@
 const Settings = require('../models/settings');
 
 // GET current user's settings
+// GET current user's settings
 exports.getSettings = async (req, res) => {
   try {
     const settings = await Settings.findOne({ userId: req.user.id });
-    res.status(200).json(settings || {}); // return empty object if none exists
+
+    res.status(200).json({
+      status: "success",
+      data: settings || {}
+    });
   } catch (error) {
     console.error("Error fetching settings:", error);
-    res.status(500).json({ status: "error", message: "Failed to fetch settings", error: error.message });
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch settings",
+      error: error.message
+    });
   }
 };
+
 
 // SAVE or UPDATE current user's settings
 exports.saveSettings = async (req, res) => {
@@ -35,7 +45,7 @@ exports.saveSettings = async (req, res) => {
     }
 
     const updatedSettings = await Settings.findOneAndUpdate(
-      { userId: req.user.id }, // 👈 scope to this user
+      { userId: req.user.id }, // scope to this user
       {
         userId: req.user.id,
         businessName,

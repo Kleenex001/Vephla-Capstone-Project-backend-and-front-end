@@ -513,20 +513,34 @@ export async function getPendingOrdersSales() {
   return fetchWithAuth(`${BASE_URL}/sales/pending-orders`);
 }
 
-// =================================================
+
 // SETTINGS API
-// =================================================
+
+// GET current user's settings
 export async function getSettings() {
-  return fetchWithAuth(`${BASE_URL}/settings`);
+  const res = await fetchWithAuth(`${BASE_URL}/settings`);
+  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+
+  const json = await res.json();
+  // Always return raw settings object
+  return json.data || json;
 }
 
+// SAVE or UPDATE current user's settings
 export async function saveSettings(settings) {
-  return fetchWithAuth(`${BASE_URL}/settings`, {
+  const res = await fetchWithAuth(`${BASE_URL}/settings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(settings),
   });
+
+  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+
+  const json = await res.json();
+  // Always return raw settings object
+  return json.data || json;
 }
+
 
 
 // api.js

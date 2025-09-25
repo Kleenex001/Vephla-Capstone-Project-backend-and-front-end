@@ -3,7 +3,7 @@
 import { getSettings, saveSettings as saveSettingsAPI } from './api.js';
 
 // ---------- Toast Notification ----------
-function showToast(message, type = 'info') {
+export function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = message;
@@ -16,8 +16,27 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+// ---------- Formatters ----------
+export function formatCurrency(value) {
+  const settings = JSON.parse(localStorage.getItem('bizboostSettings')) || {};
+  const currency = settings.currency || '₦';
+  return `${currency}${Number(value || 0).toLocaleString()}`;
+}
+
+export function formatDate(date) {
+  const settings = JSON.parse(localStorage.getItem('bizboostSettings')) || {};
+  const format = settings.dateFormat || 'DD/MM/YYYY';
+
+  const d = new Date(date);
+  if (format === 'MM/DD/YYYY') return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+}
+
 // ---------- Apply Settings to Page ----------
-function applySettingsToPage(settings) {
+export function applySettingsToPage(settings) {
+  if (!settings) return;
+
+  // Business + User Info
   const businessNameEl = document.getElementById('businessNameHeader');
   if (businessNameEl && settings.businessName) {
     businessNameEl.textContent = settings.businessName;
@@ -28,15 +47,26 @@ function applySettingsToPage(settings) {
     userNameEl.textContent = settings.contactPerson;
   }
 
+  // Sync Status
   const syncStatusEl = document.getElementById('syncStatus');
   if (syncStatusEl) {
     syncStatusEl.textContent = settings.cloudBackup ? 'Online' : 'Offline';
     syncStatusEl.style.color = settings.cloudBackup ? 'green' : 'red';
   }
 
+  // Currency updates
   document.querySelectorAll('[data-currency]').forEach(el => {
-    el.textContent = settings.currency;
+    el.textContent = settings.currency || '₦';
   });
+
+  // Update all amount fields dynamically
+  document.querySelectorAll('.amount-cell').forEach(cell => {
+    const rawValue = cell.dataset.value || cell.textContent.replace(/\D/g, '');
+    cell.textContent = formatCurrency(rawValue);
+  });
+
+  // Trigger custom event for charts/tables to re-render
+  document.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
 }
 
 // ---------- Save Settings ----------
@@ -52,7 +82,7 @@ async function saveSettings(e) {
     phone: settingsForm?.phone?.value || '',
     businessCategory: settingsForm?.businessCategory?.value || '',
     language: settingsForm?.language?.value || 'English',
-    currency: settingsForm?.currency?.value || 'NGN',
+    currency: settingsForm?.currency?.value || '₦',
     dateFormat: settingsForm?.dateFormat?.value || 'DD/MM/YYYY',
     notifications: settingsForm?.notifications?.checked ?? true,
     exportData: settingsForm?.exportData?.checked ?? false,
@@ -60,13 +90,13 @@ async function saveSettings(e) {
   };
 
   try {
-    const saved = await saveSettingsAPI(updatedSettings);
+    const savedSettings = await saveSettingsAPI(updatedSettings);
 
     // Save to localStorage for cross-tab updates
-    localStorage.setItem('bizboostSettings', JSON.stringify(saved));
+    localStorage.setItem('bizboostSettings', JSON.stringify(savedSettings));
 
-    // Dispatch event for current tab
-    document.dispatchEvent(new CustomEvent('settingsApplied', { detail: saved }));
+    // Apply immediately
+    applySettingsToPage(savedSettings);
 
     showToast('✅ Settings saved successfully!', 'success');
   } catch (err) {
@@ -79,11 +109,10 @@ settingsForm?.addEventListener('submit', saveSettings);
 
 // ---------- Logout with Modal ----------
 document.getElementById('logoutBtn')?.addEventListener('click', () => {
-  openModal('logoutModal'); // Open the logout confirmation modal
+  openModal('logoutModal');
 });
 
 document.getElementById('confirmLogoutBtn')?.addEventListener('click', () => {
-  // Propagate logout to all tabs
   localStorage.setItem('logoutAll', Date.now());
   showToast('👋 Logged out', 'info');
   window.location.href = 'signin.html';
@@ -91,28 +120,6 @@ document.getElementById('confirmLogoutBtn')?.addEventListener('click', () => {
 
 document.getElementById('cancelLogoutBtn')?.addEventListener('click', () => {
   closeModal('logoutModal');
-});
-
-// ---------- Manual Sync ----------
-document.querySelector("#exportModal .btn.primary")?.addEventListener("click", async () => {
-  showToast("🔄 Sync started...", "info");
-  try {
-    const res = await fetch("/api/sync", { method: "POST" });
-    if (!res.ok) throw new Error("Sync failed");
-    showToast("✅ Sync completed!", "success");
-  } catch (err) {
-    console.error(err);
-    showToast("❌ Sync error", "error");
-  }
-});
-
-// ---------- Download Receipt ----------
-document.querySelector("#receiptModal .btn.primary")?.addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.href = "Assets/sample-receipt.pdf";
-  link.download = "Receipt.pdf";
-  link.click();
-  showToast("📄 Receipt downloaded", "success");
 });
 
 // ---------- Cross-Tab Event Listener ----------
@@ -140,7 +147,6 @@ function closeModal(id) {
   if (modal) modal.classList.remove('active');
 }
 
-// Close modal when clicking outside
 document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('click', e => {
     if (e.target === modal) closeModal(modal.id);

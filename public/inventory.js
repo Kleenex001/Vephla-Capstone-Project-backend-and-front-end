@@ -5,6 +5,13 @@ import {
   deleteProduct
 } from './api.js';
 
+
+import { initSettings } from './settingsHelper.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSettings();  // This applies settings automatically
+});
+
 // === DOM Elements ===
 const allProductsTable = document.querySelector('#allProductsTable tbody');
 const lowStockTable = document.querySelector('#lowStockTable tbody');

@@ -9,6 +9,12 @@ import {
   getTopSuppliers
 } from "./api.js";
 
+import { initSettings } from './settingsHelper.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSettings();  // This applies settings automatically
+});
+
 // --------------------- DOM Elements ---------------------
 const supplierBody = document.getElementById("supplierBody");
 const topSuppliers = document.getElementById("topSuppliers");

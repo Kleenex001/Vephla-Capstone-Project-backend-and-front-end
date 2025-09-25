@@ -8,6 +8,13 @@ import {
   addAgent as addAgentAPI,
 } from "./api.js";
 
+
+import { initSettings } from './settingsHelper.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSettings();  // This applies settings automatically
+});
+
 /* -------------------------
    DOM refs
 ------------------------- */
