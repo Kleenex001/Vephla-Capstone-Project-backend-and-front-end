@@ -2,6 +2,8 @@ const app = require('./app');
 const mongoose = require('mongoose');
 const PORT = process.env.PORT || 5000; // Define port
 
+console.log("Mongo URI:", process.env.MONGO_URI);
+
 // Connect to DB and start server
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

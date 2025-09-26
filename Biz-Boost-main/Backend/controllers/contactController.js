@@ -13,11 +13,15 @@ const submitContactForm = async (req, res) => {
       });
     }
 
-    // Send email to support inbo
+    // Prepare subject and content
+    const subject = `New Contact Form Submission from ${name}`;
+    const content = `Name: ${name}\nEmail: ${email}\nMessage: ${message}`;
+
+    // Send email to your support inbox
     await sendContactMail(
-      "vsen15024520ajoel@gmail.com", // your support email
-      `New Contact Form Submission from ${name}`,
-      `Name: ${name}\nEmail: ${email}\nMessage: ${message}`
+      process.env.SUPPORT_EMAIL || "vsen15024520ajoel@gmail.com", 
+      subject,
+      content
     );
 
     return res.status(200).json({
@@ -25,7 +29,7 @@ const submitContactForm = async (req, res) => {
       message: "Your enquiry has been sent successfully. We'll get back to you soon.",
     });
   } catch (err) {
-    console.error("Contact form submission error:", err.message);
+    console.error("❌ Contact form submission error:", err);
     return res.status(500).json({
       status: "error",
       message: "Failed to send your enquiry. Please try again later.",

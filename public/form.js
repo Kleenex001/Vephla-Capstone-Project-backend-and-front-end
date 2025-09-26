@@ -84,11 +84,7 @@ newsLetterForm.addEventListener("submit", async function (event) {
       newsLetterForm.style.opacity = "1";
     }, 500);
   } catch (err) {
-  console.error("Contact form submission error:", err); // log the actual error
-  return res.status(500).json({
-    status: "error",
-    message: err.message || "Failed to send your enquiry. Please try again later.",
-  });
-}
-
+    console.error("Contact form submission error:", err);
+    showToast(err.message || "Failed to send your enquiry. Please try again later.", "error");
+  }
 });
