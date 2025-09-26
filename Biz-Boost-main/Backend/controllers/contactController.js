@@ -1,7 +1,6 @@
 // controllers/contactController.js
 const sendContactMail = require('../utils/sendContactMail');
 
-// controllers/contactController.js
 const submitContactForm = async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -14,7 +13,7 @@ const submitContactForm = async (req, res) => {
     }
 
     await sendContactMail(
-      "vsen15024520ajoel@gmail.com",
+      email, // ✅ user's email, not your inbox
       `New Contact Form Submission from ${name}`,
       `Name: ${name}\nEmail: ${email}\nMessage: ${message}`
     );
@@ -24,7 +23,7 @@ const submitContactForm = async (req, res) => {
       message: "Your enquiry has been sent successfully. We'll get back to you soon.",
     });
   } catch (err) {
-    console.error("❌ Contact form submission error:", err); // log full error object
+    console.error("❌ Contact form submission error:", err);
     return res.status(500).json({
       status: "error",
       message: err.message || "Failed to send your enquiry. Please try again later.",

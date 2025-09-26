@@ -17,7 +17,7 @@ const createToken = (user) => {
   );
 };
 
-// ------------------ Controllers ------------------
+// ---------------- Controllers ------------------
 
 // @desc   Register a new user
 exports.signUp = async (req, res) => {

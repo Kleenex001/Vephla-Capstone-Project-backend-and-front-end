@@ -117,78 +117,10 @@
     
   </div>
   </li>
-  <script src="config.js"></script>
-<script src="app.js"></script>
+ <script src="config.js"></script>
+<script type="module" src="api.js"></script>
 
-  <script>
-    const newsLetterForm = document.getElementsByClassName("newsLetter-form")[0];
-    const successMsg = document.getElementById("successMsg");
-
-    newsLetterForm.addEventListener("submit", function(event) {
-      event.preventDefault();
-    //get form values
-    const name=document.getElementById("name");
-    const email=document.getElementById("email");
-    const comments=document.getElementById("comments");
-
-    //error handling
-
-
-    const errors = {
-      name: document.getElementById("nameError"),
-      email: document.getElementById("emailError"),
-      comments: document.getElementById("commentsError"),
-    };
-
-    // Form validation
-    let isValid=true;
-    //name validation
-    if (name.value.trim() === "" || name.value.length < 3) {
-      nameError.textContent= "Enter your full name";
-      nameError.style.display="block";
-      name.classList.add("input-error");
-      isValid=false;
-    } else {
-      nameError.textContent="";
-      nameError.style.display="none";
-      name.classList.remove("input-error");
-    }
-    //email validation
-    if (email.value.includes("@") && email.value.includes(".com")) {
-      emailError.textContent = "";
-      emailError.style.display = "none";
-      email.classList.remove("input-error");
-    } else {
-      emailError.textContent = "Enter a valid email address";
-      emailError.style.display = "block";
-      email.classList.add("input-error");
-      isValid = false;
-    }
-    //comments validation
-    if (comments.value.trim() === "") {
-      commentsError.textContent = "Enter your comments";
-      commentsError.style.display = "block";
-      comments.classList.add("input-error");
-      isValid = false;
-    } else {
-      commentsError.style.display = "none";
-      comments.classList.remove("input-error");
-    }
-
-    if (isValid) {
-      successMsg.style.display = "block";
-      // Clear form fields
-      name.value = "";
-      email.value = "";
-      comments.value = "";
-      newsLetterForm.reset();
-    } else {
-      successMsg.style.display = "none";
-    }
-  });
-
-  </script>
-  
+  <script type="module" src="form.js" defer></script>
     <!-- Right: Contact Info -->
      <li>
     <div class="contact-info">
