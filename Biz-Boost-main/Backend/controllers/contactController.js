@@ -1,6 +1,6 @@
-// controllers/contactController.js
-const sendContactMail = require('../utils/sendContactMail');
+const ContactMessage = require('../models/ContactMessage');
 
+// Save contact form submission to DB
 const submitContactForm = async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -12,23 +12,45 @@ const submitContactForm = async (req, res) => {
       });
     }
 
-    await sendContactMail(
-      email, // ✅ user's email, not your inbox
-      `New Contact Form Submission from ${name}`,
-      `Name: ${name}\nEmail: ${email}\nMessage: ${message}`
-    );
+    const contactMessage = new ContactMessage({
+      name,
+      email,
+      message,
+    });
 
-    return res.status(200).json({
+    await contactMessage.save();
+
+    return res.status(201).json({
       status: "success",
-      message: "Your enquiry has been sent successfully. We'll get back to you soon.",
+      message: "Your enquiry has been submitted successfully.",
+      data: contactMessage,
     });
   } catch (err) {
-    console.error("❌ Contact form submission error:", err);
+    console.error("❌ Failed to save contact form:", err);
     return res.status(500).json({
       status: "error",
-      message: err.message || "Failed to send your enquiry. Please try again later.",
+      message: "Something went wrong while submitting your enquiry.",
     });
   }
 };
 
-module.exports = { submitContactForm };
+// Fetch all contact messages
+const getContactMessages = async (req, res) => {
+  try {
+    const messages = await ContactMessage.find().sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      status: "success",
+      count: messages.length,
+      data: messages,
+    });
+  } catch (err) {
+    console.error("Failed to fetch contact messages:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong while fetching messages.",
+    });
+  }
+};
+
+module.exports = { submitContactForm, getContactMessages };

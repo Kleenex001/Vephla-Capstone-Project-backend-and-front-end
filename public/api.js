@@ -578,6 +578,8 @@ export function showToast(message, type = "info", duration = 3000) {
 }
 
 // ================== Contact Form API ==================
+
+// Save a contact form submission
 export async function submitContactForm(data) {
   try {
     const res = await fetch(`${BASE_URL}/contact`, { 
@@ -585,11 +587,31 @@ export async function submitContactForm(data) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
-    const result = await handleFetch(res);
-    return result;
+    return await handleFetch(res);
   } catch (err) {
     console.error("Contact form submission failed:", err.message);
+    throw err;
+  }
+}
+
+// Fetch all contact messages (admin only, or protected if you want)
+export async function getContactMessages() {
+  try {
+    const res = await fetchWithAuth(`${BASE_URL}/contact`);
+    return await handleFetch(res);
+  } catch (err) {
+    console.error("Failed to fetch contact messages:", err.message);
+    throw err;
+  }
+}
+
+// Fetch a single contact message by ID
+export async function getContactMessageById(id) {
+  try {
+    const res = await fetchWithAuth(`${BASE_URL}/contact/${id}`);
+    return await handleFetch(res);
+  } catch (err) {
+    console.error("Failed to fetch contact message:", err.message);
     throw err;
   }
 }
