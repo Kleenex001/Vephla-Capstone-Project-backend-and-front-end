@@ -1,13 +1,9 @@
 // app.js
-
 require('dotenv').config();
-
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const path = require('path');
-
-
 
 const app = express();
 
@@ -15,16 +11,42 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
-app.use(helmet());
+
+// ✅ Configure Helmet with strong, custom security headers
+app.use(
+  helmet({
+    frameguard: { action: 'deny' }, // X-Frame-Options: DENY
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    permissionsPolicy: {
+      features: {
+        geolocation: ["none"],
+        microphone: ["none"],
+        camera: ["none"],
+        fullscreen: ["none"],
+        payment: ["none"],
+      },
+    },
+  })
+);
 
 // ------------------- CORS --------------------
 const allowedOrigins = [
   'https://bizboostcom.vercel.app',
   'http://localhost:3000',
   'http://localhost:5500',
-  'http://127.0.0.1:5500'
+  'http://127.0.0.1:5500',
 ];
-
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -69,7 +91,7 @@ app.use('/api/settings', protect, settingsRoutes);
 
 // -------------------- HEALTH CHECK --------------------
 app.get('/', (req, res) => {
-  res.send('Biz-Boost Backend is running!');
+  res.send('Biz-Boost Backend is running securely!');
 });
 
 // -------------------- 404 HANDLER --------------------
