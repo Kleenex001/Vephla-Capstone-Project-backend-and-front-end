@@ -12,33 +12,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// ✅ Configure Helmet with strong, custom security headers
-app.use(
-  helmet({
-    frameguard: { action: 'deny' }, // X-Frame-Options: DENY
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'"],
-        imgSrc: ["'self'", "data:"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        frameAncestors: ["'none'"],
-      },
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
     },
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-    permissionsPolicy: {
-      features: {
-        geolocation: ["none"],
-        microphone: ["none"],
-        camera: ["none"],
-        fullscreen: ["none"],
-        payment: ["none"],
-      },
-    },
-  })
-);
+  },
+  frameguard: { action: 'deny' },
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permissionsPolicy: {
+    features: {
+      geolocation: ['none'],
+      camera: ['none'],
+      microphone: ['none'],
+      fullscreen: ['self']
+    }
+  }
+}));
 
 // ------------------- CORS --------------------
 const allowedOrigins = [
