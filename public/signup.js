@@ -1,5 +1,5 @@
 // signup.js
-import { signupUser } from './api.js';
+import { signupUser, dueToast } from './api.js';
 
 const signupForm = document.getElementById('signupForm');
 
@@ -16,7 +16,7 @@ const clearError = (input, errorElement) => {
   input.classList.remove('input-error');
 };
 
-//  Main Submit Handler 
+// Main Submit Handler 
 signupForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -30,7 +30,6 @@ signupForm.addEventListener('submit', async (e) => {
     password: document.getElementById('pWord'),
     confirmPassword: document.getElementById('cPassword'),
     terms: document.getElementById('terms'),
-    successMsg: document.getElementById('successMsg'),
   };
 
   // Collect error fields
@@ -43,12 +42,11 @@ signupForm.addEventListener('submit', async (e) => {
     password: document.getElementById('pwordError'),
     confirmPassword: document.getElementById('cPasswordError'),
     terms: document.getElementById('termsError'),
-    successMsg: document.getElementById('successMsg'),
   };
 
   let valid = true;
 
-  // Field Validations 
+  // ===== Field Validations =====
   if (fields.firstName.value.trim().length < 2) {
     showError(fields.firstName, errors.firstName, 'First name must be at least 2 characters.');
     valid = false;
@@ -106,11 +104,9 @@ signupForm.addEventListener('submit', async (e) => {
   try {
     const response = await signupUser(payload);
 
-    // Check if backend returned a success message
     if (response && (response.message || response.token)) {
-      errors.successMsg.textContent = 'Signup successful! Redirecting to login...';
-      errors.successMsg.style.display = 'block';
-      errors.successMsg.classList.remove('input-error');
+      // SUCCESS TOAST
+      dueToast('Signup successful! Redirecting to login...', 'success');
 
       signupForm.reset();
 
@@ -118,14 +114,11 @@ signupForm.addEventListener('submit', async (e) => {
         window.location.href = 'signin.html';
       }, 2000);
     } else {
-      errors.successMsg.textContent = `Signup failed: ${response?.message || 'Unknown error'}`;
-      errors.successMsg.style.display = 'block';
-      errors.successMsg.classList.add('input-error');
+      // ERROR TOAST
+      dueToast(`Signup failed: ${response?.message || 'Unknown error'}`, 'error');
     }
   } catch (error) {
     console.error('Signup error:', error);
-    errors.successMsg.textContent = `Signup failed: ${error.message}`;
-    errors.successMsg.style.display = 'block';
-    errors.successMsg.classList.add('input-error');
+    dueToast(`Signup failed: ${error.message}`, 'error');
   }
 });
