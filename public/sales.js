@@ -72,7 +72,7 @@ let currentAnalyticsView = "monthly";
 async function initSalesAnalytics(view = "monthly") {
   currentAnalyticsView = view;
 
-  // 1️⃣ Fetch analytics from backend
+  // 1 Fetch analytics from backend
   const res = await safeCall(getSalesAnalytics, view);
   if (!res) return;
 
@@ -80,7 +80,7 @@ async function initSalesAnalytics(view = "monthly") {
 
   let analyticsData = res.analytics || [];
 
-  // 2️⃣ Ensure proper format
+  // 2 Ensure proper format
   if (view === "monthly") {
     if (!Array.isArray(analyticsData) || analyticsData.length !== 12) {
       console.warn("Analytics array invalid, defaulting to zeros");
@@ -91,18 +91,18 @@ async function initSalesAnalytics(view = "monthly") {
     analyticsData = Object.values(analyticsData).map(v => Number(v) || 0);
   }
 
-  // 3️⃣ Prepare labels
+  // 3 Prepare labels
   const labels = view === "monthly"
     ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     : Object.keys(res.analytics || {});
 
-  // 4️⃣ Target values (numbers only)
+  // 4 Target values (numbers only)
   const targetValues = analyticsData.map(v => Number(v) || 0);
 
   console.log("Sales Analytics Labels:", labels);
   console.log("Sales Analytics Target Values:", targetValues);
 
-  // 5️⃣ Chart.js setup
+  // 5 Chart.js setup
   const canvas = document.getElementById("salesAnalyticsChart");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -150,7 +150,7 @@ async function initSalesAnalytics(view = "monthly") {
     }
   }
 
-  // 6️⃣ Animate chart smoothly
+  // 6 Animate chart smoothly
   const duration = 1200; // ms
   const frameRate = 60;  // fps
   const totalFrames = Math.round(duration / (1000 / frameRate));

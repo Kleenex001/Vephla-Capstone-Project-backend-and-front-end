@@ -769,7 +769,7 @@ details[open] summary::after {
   margin: 0;
 }
 /* Tablet portrait */
-@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+@media (min-width: 768px) and (max-width: 1024px) {
 
 body {
   font-family: Arial, sans-serif;
@@ -823,7 +823,7 @@ body {
     text-decoration: none;
     color: var(--text-color);
     font-weight: 500;
-    font-size: 18px;
+    font-size: 1rem;
     transition: color 0.3s ease;
     font-family: 'Poppins', sans-serif;
     text-decoration: none;
@@ -834,8 +834,8 @@ body {
 }
 .spacer {
   position: relative;
-  top: 10px;;
-  left:100px;
+  top: 10px;
+  left: 100px;
 }
 #logo img {
   position: relative;
@@ -987,7 +987,7 @@ body {
   width: 400px;
   margin: 20px auto;     /* centers container horizontally */
   position: absolute;    /* allows shifting without affecting others */
-  top: 200px;            /* move upwards (adjust value as needed) */
+  top: 10rem;            /* move upwards (adjust value as needed) */
   left: 50%;
   transform: translateX(-50%);
 }
@@ -1010,7 +1010,7 @@ body {
 /* Hero Content */
 .hero-content {
   position: absolute;
-  top: 300px;
+  top: 40%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -1020,14 +1020,14 @@ body {
 }
 
 .hero h1 {
-  font-size: 2.8rem;
+  font-size: 1.6rem;
   margin-bottom: 20px;
   line-height: 1.3;
   color: #222;
 }
 
 .hero p {
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   max-width: 700px;
   margin: 0 auto 30px;
   color: #555;
@@ -1227,7 +1227,7 @@ background-color: #009688;
 }
 
 .footer-column h3 {
-  font-size: 18px;
+  font-size: 1rem;
   margin-bottom: 20px;
   font-weight: bold;
 }
@@ -1236,12 +1236,12 @@ background-color: #009688;
   margin: 12px 0;
   display: flex;
   align-items: center;
-  font-size: 15px;
+  font-size: 0.6rem;
 }
 
 .footer-column i {
   margin-right: 10px;
-  font-size: 16px;
+  font-size: 0.8rem;
 }
 
 /* Social Icons */
@@ -1275,7 +1275,7 @@ background-color: #009688;
 }
 
 .footer-bottom p {
-  font-size: 14px;
+  font-size: 0.8rem;
   margin: 0;
 }
 }
@@ -1302,7 +1302,7 @@ background-color: #009688;
    .side-bar {
     position: fixed;
     top:0px;
-    left: 250px;
+    left: 200px;
     height: 100vh;
     width: 250px;
     z-index: 1000;
@@ -1373,10 +1373,16 @@ background-color: #009688;
 .user-stat {
   top:80px;
   left: 50%;
- width: 75%;
- height: 8vh;
+ width: 85%;
+ height: 10vh;
 }
-
+.user-text {
+  font-size: 0.6rem;
+}
+.user-count {
+  font-size: 0.6rem;
+  padding: 6px 6px;
+}
 /* Hero Content */
 .hero-content {
   position: relative;
@@ -1387,12 +1393,12 @@ background-color: #009688;
 }
 
 .hero h1 {
-  font-size: 30px;
+  font-size: 1.5rem;
   color: #000; /* white text */
 }
 
 .hero p {
-  font-size: 1rem;
+  font-size: 0.8rem;
   text-align: center;
   color: #000; /* softer white for readability */
 }
@@ -1404,7 +1410,7 @@ background-color: #009688;
 .btn-primary, .btn-secondary {
     color: var(--button-color);
     background-color: var(--button-hover-color);
-    padding: 10px 15px;
+    padding: 7px 10px;
     border-radius: 5px;
     border: 1px solid var(--button-color);
     text-decoration: none;
@@ -1423,11 +1429,11 @@ background-color: #009688;
   margin: 20px auto;
   text-align: center;
   padding: 0 20px;
-  font-size: 1.3rem;
+  font-size: 1rem;
   color: #6e6e6e;
 }
 .features-intro p {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   line-height: 1.6;
   color: #555;
   padding: 0 20px;
@@ -1443,10 +1449,10 @@ background-color: #009688;
 
 .pricing-card {
   position: relative;
-  top: 120px;
+  top: 13rem;
   border-radius: 12px;
   padding: 20px;
-  width: 300px;
+  width: 16rem;
   height: 100vh;
   display: flex;
 }
@@ -1462,12 +1468,12 @@ background-color: #009688;
 
 .pricing-header h3 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1rem;
   color: #009688; /* product green */
 }
 
 .price {
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #333;
 }
@@ -1475,7 +1481,7 @@ background-color: #009688;
 .pricing-subtext {
   margin: 10px 0;
   color: #666;
-  font-size: 0.95rem;
+  font-size: 0.7rem;
 }
 
 .pricing-features {
@@ -1486,7 +1492,7 @@ background-color: #009688;
 
 .pricing-features li {
   margin: 8px 0;
-  font-size: 0.95rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
 }
@@ -1501,7 +1507,7 @@ background-color: #009688;
 }
 
 .testimonials-title {
-  font-size: 32px;
+  font-size: 10rem;
   font-weight: bold;
   margin-bottom: 40px;
   color: #009688;
@@ -1516,7 +1522,7 @@ background-color: #009688;
 }
 .testimonial-intro {
   position: relative;
-  top: 20rem;
+  top: 22rem;
 }
 .testimonial-card {
   background: #fff;
@@ -1531,7 +1537,7 @@ background-color: #009688;
 }
 
 .testimonial-text {
-  font-size: 16px;
+  font-size: 0.8rem;
   color: #333;
   line-height: 1.6;
   margin-bottom: 20px;
@@ -1571,7 +1577,7 @@ background-color: #009688;
 }
 
 .testimonial-user small {
-  font-size: 12px;
+  font-size: 0.6rem;
   color: #666;
 }
 .faq-section {
@@ -1579,10 +1585,10 @@ background-color: #009688;
   top:17rem;
 }
 .faq-section h2 {
-  font-size: 22px;
+  font-size: 1.1rem;
 }
 .faq-section p {
-  font-size: 13px;
+  font-size: 0.7rem;
   padding: 5px;
 }
 .cta-container {
@@ -1594,12 +1600,19 @@ background-color: #009688;
   margin: 0 auto 60px;
 }
 .cta-container h2 {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 .cta-container p {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
-
+#btn-outline {
+  
+  font-size: 0.6rem;
+}
+#btn-brand {
+  
+  font-size: 0.6rem;
+}
 .footer {
   background-color: #009688;
   color: #ffffff;
@@ -1612,7 +1625,7 @@ background-color: #009688;
 .footer-column a {
   display: block;
   margin: 12px 0;
-  font-size: 15px;
+  font-size: 0.8rem;
   color: #ffffff;
   text-decoration: none;
   transition: color 0.3s ease;
@@ -1639,7 +1652,7 @@ background-color: #009688;
 }
 
 .footer-column h3 {
-  font-size: 18px;
+  font-size: 1rem;
   font-weight: bold;
 }
 
@@ -1647,12 +1660,12 @@ background-color: #009688;
   margin-left: -5px;
   display: flex;
   align-items: center;
-  font-size: 13px;
+  font-size: 0.7rem;
 }
 
 .footer-column i {
   margin-right: 10px;
-  font-size: 16px;
+  font-size: 0.8rem;
 }
 
 /* Social Icons */
@@ -1689,5 +1702,8 @@ background-color: #009688;
 .footer-bottom p {
   font-size: 14px;
   margin: 0;
+}
+.footer img {
+  width: 80px;
 }
 }

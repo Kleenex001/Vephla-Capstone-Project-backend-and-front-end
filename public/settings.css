@@ -445,7 +445,7 @@ footer {
     flex-direction: column;
   }
   .content {
-  margin-left: 20px; /* offset for sidebar */
+  margin-left: 5px; /* offset for sidebar */
  
 }
 .grid-two {
@@ -456,8 +456,6 @@ footer {
 }
 .modal .modal-content{
     position: relative;
-    top: 5%;
-    left: 20%;
   width: 65%;
   max-width: 95vw;
   background:#fff;

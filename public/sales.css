@@ -456,10 +456,11 @@ footer {
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 0.6rem;
       font-weight: 600;
       align-items: center; 
-      width: 90px;
+      width: 80px;
+      margin-left: 10px;
       transition: background 0.3s ease;
     }
     .btn.primary:hover {
@@ -502,14 +503,24 @@ footer {
   max-width:50%;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 .kpis {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 2fr));
     padding: 0.5rem;
-    font-size: 10px;
+    font-size: 0.25rem;
 }
 .kpi i {
-  font-size: 1rem;
+  font-size: 0.7rem;
   color: #10b981;
 }
 .topbar img {
